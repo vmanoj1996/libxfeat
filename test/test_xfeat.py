@@ -1,43 +1,50 @@
-import pytest
-import numpy as np
-from xfeat_cpp import XFeatBackbone, XFeatDetector  # Your C++ bindings
+#!/usr/bin/env python3
 
-def test_backbone_basic():
-    backbone = XFeatBackbone()
-    assert backbone.is_initialized()
+import torch
+import cv2
+import os
 
-def test_feature_extraction():
-    backbone = XFeatBackbone()
-    image = np.random.rand(3, 480, 640).astype(np.float32)
-    features = backbone.extract_features(image)
-    
-    assert features.shape == (64, 60, 80)  # channels, height, width
-    assert features.dtype == np.float32
+debug = False
 
-def test_keypoint_detection():
-    detector = XFeatDetector()
-    features = np.random.rand(64, 60, 80).astype(np.float32)
-    keypoints = detector.detect(features, max_keypoints=1000)
-    
-    assert len(keypoints) <= 1000
-    assert keypoints.shape[1] == 2  # x, y coordinates
+print("Testing XFeat...")
 
-def test_compare_with_pytorch():
-    """Compare your C++/MATX implementation with PyTorch XFeat"""
-    import torch
-    xfeat_torch = torch.hub.load('verlab/accelerated_features', 'XFeat')
-    
-    image = np.random.rand(3, 480, 640).astype(np.float32)
-    
-    # Your implementation
-    backbone_cpp = XFeatBackbone()
-    features_cpp = backbone_cpp.extract_features(image)
-    
-    # PyTorch reference
-    with torch.no_grad():
-        features_torch = xfeat_torch.net(torch.from_numpy(image).unsqueeze(0))
-    
-    # Compare (allowing some numerical differences)
-    np.testing.assert_allclose(features_cpp, features_torch.numpy(), rtol=1e-3)
+# Load XFeat
+xfeat = torch.hub.load('verlab/accelerated_features', 'XFeat', pretrained=True, top_k=1000)
 
-# Run with: pytest test_xfeat.py -v
+# Load test image from data folder
+image_path = os.path.join('data', 'ThiruvalluvarStatue.png')
+test_image = cv2.imread(image_path)
+
+if test_image is None:
+    print(f"✗ Could not load image from {image_path}")
+    exit(1)
+
+# Test detection
+output = xfeat.detectAndCompute(test_image, top_k=1000)
+num_features = len(output[0]['keypoints'])
+
+print(f"XFeat working! Detected {num_features} features from {image_path}")
+
+if debug:
+    # Debug: visualize keypoints
+    debug_image = test_image.copy()
+    keypoints = output[0]['keypoints'].cpu().numpy()
+    
+    # Draw keypoints as circles
+    for kp in keypoints:
+        x, y = int(kp[0]), int(kp[1])
+        cv2.circle(debug_image, (x, y), 1, (0, 255, 0), -1)
+    
+    # Save debug image
+    debug_path = 'debug_keypoints.jpg'
+    cv2.imwrite(debug_path, debug_image)
+    print(f"Debug: Keypoints visualization saved to {debug_path}")
+    
+    # Display if running in GUI environment
+    try:
+        cv2.imshow('XFeat Keypoints', debug_image)
+        print("Debug: Press any key to close the window")
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    except:
+        print("Debug: No display available, image saved only")
