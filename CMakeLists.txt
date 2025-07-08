@@ -14,12 +14,14 @@ enable_testing()
 set(cpp_tests
    test_matx
    test_matx_blur
+   benchmark_matx
    # Add more C++ tests here
 )
 
 # Python tests  
 set(python_tests
    test_xfeat.py
+   benchmark_torch.py
    # Add more Python tests here
 )
 
