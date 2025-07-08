@@ -13,6 +13,7 @@ enable_testing()
 # C++ tests
 set(cpp_tests
    test_matx
+   test_matx_blur
    # Add more C++ tests here
 )
 
@@ -37,5 +38,5 @@ endforeach()
 foreach(test ${python_tests})
    add_test(NAME ${test} 
             COMMAND bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate cusfm && python3 ${CMAKE_CURRENT_SOURCE_DIR}/test/${test}"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+            )
 endforeach()

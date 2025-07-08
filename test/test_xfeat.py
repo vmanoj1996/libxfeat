@@ -12,7 +12,7 @@ print("Testing XFeat...")
 xfeat = torch.hub.load('verlab/accelerated_features', 'XFeat', pretrained=True, top_k=1000)
 
 # Load test image from data folder
-image_path = os.path.join('data', 'ThiruvalluvarStatue.png')
+image_path = os.path.join('../data', 'ThiruvalluvarStatue.png')
 test_image = cv2.imread(image_path)
 
 if test_image is None:
