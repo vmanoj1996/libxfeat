@@ -34,17 +34,9 @@ if debug:
     for kp in keypoints:
         x, y = int(kp[0]), int(kp[1])
         cv2.circle(debug_image, (x, y), 1, (0, 255, 0), -1)
-    
-    # Save debug image
-    debug_path = 'debug_keypoints.jpg'
-    cv2.imwrite(debug_path, debug_image)
-    print(f"Debug: Keypoints visualization saved to {debug_path}")
-    
+        
     # Display if running in GUI environment
-    try:
-        cv2.imshow('XFeat Keypoints', debug_image)
-        print("Debug: Press any key to close the window")
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    except:
-        print("Debug: No display available, image saved only")
+    cv2.imshow('XFeat Keypoints', debug_image)
+    print("Debug: Press any key to close the window")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
