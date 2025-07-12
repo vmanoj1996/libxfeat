@@ -5,6 +5,7 @@ project(test_matx LANGUAGES CXX CUDA)
 find_package(CUDAToolkit REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(matx REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS C)
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
 
@@ -20,14 +21,21 @@ file(GLOB_RECURSE SOURCE_FILES
 add_library(src_lib ${SOURCE_FILES})
 target_include_directories(src_lib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${HDF5_INCLUDE_DIRS}
 )
-target_link_libraries(src_lib PUBLIC matx::matx)
+target_link_libraries(src_lib PUBLIC 
+   matx::matx
+   ${HDF5_LIBRARIES}
+)
+
+target_compile_definitions(src_lib PUBLIC ${HDF5_DEFINITIONS})
 
 # Enable testing ------------------------------------------------------------------------------------
 # Create a common test library
 add_library(test_lib INTERFACE)
 target_include_directories(test_lib INTERFACE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${HDF5_INCLUDE_DIRS}
 )
 target_link_libraries(test_lib INTERFACE src_lib)
 
@@ -38,6 +46,7 @@ set(cpp_tests
    test_matx
    test_matx_blur
    test_libxfeat
+   test_xfeat_param
    # Add more C++ tests here
 )
 
