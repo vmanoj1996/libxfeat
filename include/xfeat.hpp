@@ -148,6 +148,15 @@ public:
     }
     
     // Helper functions to construct tensors of specific ranks
+
+    matx::tensor_t<float, 0> makeParam0D(const std::string& name) {
+        auto [data, shape] = getParamInfo(name);
+        if (data && shape.size() == 0) {
+            return matx::make_tensor<float>(data, {}, false);
+        }
+        // Return empty 0D tensor if not found or wrong rank
+        return matx::make_tensor<float>(nullptr, {}, false);
+    }
     matx::tensor_t<float, 1> makeParam1D(const std::string& name) {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 1) {
