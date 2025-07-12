@@ -3,6 +3,7 @@
 import torch
 import cv2
 import os
+import ipdb
 
 debug = False
 
@@ -10,6 +11,19 @@ print("Testing XFeat...")
 
 # Load XFeat
 xfeat = torch.hub.load('verlab/accelerated_features', 'XFeat', pretrained=True, top_k=1000)
+
+# network structure
+# xfeat.net()
+
+# list the network parameters
+for name, param in xfeat.named_parameters():
+    print(f"{name}: {param.shape}")
+    
+# Show all buffers (including BatchNorm running stats)
+for name, buffer in xfeat.named_buffers():
+    print(f"{name}: {buffer.shape}")
+    
+ipdb.set_trace()
 
 # Load test image from data folder
 image_path = os.path.join('../data', 'ThiruvalluvarStatue.png')

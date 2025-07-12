@@ -1,3 +1,4 @@
+# Setup ------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.18)
 project(test_matx LANGUAGES CXX CUDA)
 
@@ -7,13 +8,36 @@ find_package(matx REQUIRED)
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
 
-# Enable testing
+# Source --------------------------------------------------------------------------------------------
+
+# Source files
+file(GLOB_RECURSE SOURCE_FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cu
+)
+
+# Create source library
+add_library(src_lib ${SOURCE_FILES})
+target_include_directories(src_lib PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(src_lib PUBLIC matx::matx)
+
+# Enable testing ------------------------------------------------------------------------------------
+# Create a common test library
+add_library(test_lib INTERFACE)
+target_include_directories(test_lib INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(test_lib INTERFACE src_lib)
+
 enable_testing()
 
 # C++ tests (regular unit tests)
 set(cpp_tests
    test_matx
    test_matx_blur
+   test_libxfeat
    # Add more C++ tests here
 )
 
@@ -34,10 +58,6 @@ set(python_benchmarks
    benchmark_torch.py
    # Add more Python benchmarks here
 )
-
-# Create a common test library
-add_library(test_lib INTERFACE)
-target_link_libraries(test_lib INTERFACE matx::matx)
 
 # Build C++ test executables
 foreach(test ${cpp_tests})
