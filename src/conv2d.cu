@@ -27,40 +27,48 @@ k1 for row and k2 for column
 
 using FLOAT=float;
 
-__global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* param_device, FLOAT *output_device, int height, int width, int k1, int k2, int ci, int co)
+__global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* param_device, FLOAT *output_device, 
+                                    int input_height, int input_width,
+                                    int output_height, int output_width, 
+                                    int k1, int k2, int ci, int co, 
+                                    int s1, int s2, int p1, int p2)
 {
-    int idx_co  = threadIdx.x + blockIdx.x * blockDim.x;
-    int idx_row = threadIdx.y + blockIdx.y * blockDim.y;
-    int idx_col = threadIdx.z + blockIdx.z * blockDim.z;
+    /* Parameter documentation:
 
-    if(idx_row<height && idx_col<width && idx_co<co)
+
+    */
+    int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output 
+    int out_row = threadIdx.y + blockIdx.y * blockDim.y;
+    int out_col = threadIdx.z + blockIdx.z * blockDim.z;
+
+    if(out_row<output_height && out_col<output_width && idx_co<co)
     {
         FLOAT sum = 0.0f;
+
+        // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
+        int in_row_start = out_row * s1 - p1;
+        int in_col_start = out_col * s2 - p2;
         
         for(int idx_ci=0; idx_ci<ci; idx_ci++)
         {
-            for(int kernel_row=-k1/2; kernel_row<=k1/2; kernel_row++)
+            for(int kernel_row=0; kernel_row<k1; kernel_row++)
             {
-                int idx_kernel_row = kernel_row + k1/2;
-
-                for(int kernel_col=-k2/2; kernel_col<=k2/2; kernel_col++)
+                for(int kernel_col=0; kernel_col<k2; kernel_col++)
                 {
-                    int idx_kernel_col = kernel_col + k2/2;
-
                     // co x ci x k1 x k2
-                    FLOAT kernel_value = param_device[idx_co*(ci*k1*k2) + idx_ci*(k1*k2) + idx_kernel_row*(k2) + idx_kernel_col];
+                    FLOAT kernel_value = param_device[idx_co*(ci*k1*k2) + idx_ci*(k1*k2) + kernel_row*(k2) + kernel_col];
 
-                    FLOAT input_value  =  ((idx_row + kernel_row)>=0 && (idx_row + kernel_row)<height && 
-                                            (idx_col + kernel_col)>=0 && (idx_col + kernel_col)<width) ?
-                                            input_device[idx_ci*height*width + (idx_row + kernel_row)*width + (idx_col + kernel_col)]:
+                    FLOAT input_value  =  ((in_row_start + kernel_row)>=0 && (in_row_start + kernel_row)<input_height && 
+                                            (in_col_start + kernel_col)>=0 && (in_col_start + kernel_col)<input_width) ?
+                                            input_device[idx_ci*input_height*input_width + (in_row_start + kernel_row)*input_width + (in_col_start + kernel_col)]:
                                             0.0f;
 
-                    sum += input_value * input_value;
+                    sum += input_value * kernel_value;
                 }
             }
         }
 
-        int o_index = idx_co*height*width + idx_row*width + idx_col;
+        int o_index = idx_co*output_height*output_width + out_row*output_width + out_col;
         output_device[o_index] = sum;
 
         printf("%d ", o_index);
