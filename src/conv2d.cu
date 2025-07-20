@@ -13,19 +13,6 @@
 #include <string>
 #include "conv2d.h"
 
-using FLOAT = float;
-
-struct Conv2DParams
-{
-    int k1, k2, ci, co;
-    int s1, s2, p1, p2;
-};
-
-struct ImgProperty
-{
-    int height;
-    int width;
-};
 
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop)
 {
@@ -129,6 +116,16 @@ FLOAT *Convolve2D::get_output()
 Conv2DParams Convolve2D::get_param()
 {
     return params;
+}
+
+ImgProperty Convolve2D::get_output_spec()
+{
+    return output_prop;
+}
+
+ImgProperty Convolve2D::get_input_spec()
+{
+    return input_prop;
 }
 
 void Convolve2D::validate_params()

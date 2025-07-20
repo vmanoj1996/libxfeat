@@ -14,6 +14,7 @@ Pytorch saves the parameters for conv layers in this format according to claude.
 k1 for row and k2 for column
 */
 
+#pragma once
 
 #include <vector>
 
@@ -51,5 +52,9 @@ public:
 
     FLOAT *get_output();
     Conv2DParams get_param();
+
+    ImgProperty get_output_spec();
+    ImgProperty get_input_spec();
+
     void validate_params();
 };
