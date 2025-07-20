@@ -35,6 +35,10 @@ struct Conv2DParams
     int s1, s2, p1, p2;
 };
 
+template<int CO, int CI, int K1, int K2>
+using Kernel4D = std::array<std::array<std::array<std::array<FLOAT, K2>, K1>, CI>, CO>;
+
+
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p)
 {
     /* Parameter documentation:
@@ -140,6 +144,12 @@ public:
     {
         convolve2d_kernel<<<blocks, threadcount>>>(input_device, kernel_device, output_device, params);
         cudaDeviceSynchronize();
+    }
+
+    void set_kernel(const Kernel4D<params.co, params.ci, k1, k2>& kernel)
+    {
+        size_t total_size = params.co * params.ci * k1 * k2 * sizeof(FLOAT);
+        cudaMemcpy(kernel_device, kernel.data(), total_size, cudaMemcpyHostToDevice);
     }
 
     FLOAT *get_output()
