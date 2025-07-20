@@ -146,6 +146,11 @@ public:
     {
         return output_device;
     }
+
+    Conv2DParams get_param()
+    {
+        return params;
+    }
 };
 
 #ifdef ACTIVATE_MAIN
@@ -153,19 +158,19 @@ int main()
 {
     int width = 60;
     int height = 40;
-    int ci = 3;  // Add input channels
-    int co = 16; // Add output channels
+    int ci = 3;
+    int co = 16;
 
-    Convolve2D<1, 1, 2, 2, 1, 1> convlayer(height, width, ci, co); // Fix: Add missing template params and constructor args
+    Convolve2D<1, 1, 2, 2, 1, 1> convlayer(height, width, ci, co);
 
     float *input_device;
-    cudaMalloc(&input_device, ci * height * width * sizeof(float)); // Fix: Include input channels
+    cudaMalloc(&input_device, ci * height * width * sizeof(float));
 
-    cudaMemset(input_device, 0, ci * height * width * sizeof(float)); // Fix: Include input channels
+    cudaMemset(input_device, 0, ci * height * width * sizeof(float));
 
     convlayer.forward(input_device);
 
-    cudaFree(input_device); // Add cleanup
+    cudaFree(input_device);
 
     return 0;
 }
