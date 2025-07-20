@@ -4,8 +4,8 @@
 Requirements:
 1. No batch needed
 2. preserve the size of the input image
-3. input is  ci*HxW
-4. output is coxHxW
+3. input is  ci x H1 x W1
+4. output is co x H2 x W2
 5. Parameter count is co x ci x k1 x k2
 
 Pytorch saves the parameters for conv layers in this format according to claude. Verify this
@@ -27,11 +27,14 @@ k1 for row and k2 for column
 
 using FLOAT=float;
 
-__global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* param_device, FLOAT *output_device, 
-                                    int input_height, int input_width,
-                                    int output_height, int output_width, 
-                                    int k1, int k2, int ci, int co, 
-                                    int s1, int s2, int p1, int p2)
+struct Conv2DParams {
+    int input_height, input_width;
+    int output_height, output_width;
+    int k1, k2, ci, co;
+    int s1, s2, p1, p2;
+};
+
+__global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* kernel_device, FLOAT *output_device, Conv2DParams p)
 {
     /* Parameter documentation:
 
@@ -41,26 +44,26 @@ __global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* param_
     int out_row = threadIdx.y + blockIdx.y * blockDim.y;
     int out_col = threadIdx.z + blockIdx.z * blockDim.z;
 
-    if(out_row<output_height && out_col<output_width && idx_co<co)
+    if(out_row<p.output_height && out_col<p.output_width && idx_co<p.co)
     {
         FLOAT sum = 0.0f;
 
         // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
-        int in_row_start = out_row * s1 - p1;
-        int in_col_start = out_col * s2 - p2;
+        int in_row_start = out_row * p.s1 - p.p1;
+        int in_col_start = out_col * p.s2 - p.p2;
         
-        for(int idx_ci=0; idx_ci<ci; idx_ci++)
+        for(int idx_ci=0; idx_ci<p.ci; idx_ci++)
         {
-            for(int kernel_row=0; kernel_row<k1; kernel_row++)
+            for(int kernel_row=0; kernel_row<p.k1; kernel_row++)
             {
-                for(int kernel_col=0; kernel_col<k2; kernel_col++)
+                for(int kernel_col=0; kernel_col<p.k2; kernel_col++)
                 {
                     // co x ci x k1 x k2
-                    FLOAT kernel_value = param_device[idx_co*(ci*k1*k2) + idx_ci*(k1*k2) + kernel_row*(k2) + kernel_col];
+                    FLOAT kernel_value = kernel_device[idx_co*(p.ci*p.k1*p.k2) + idx_ci*(p.k1*p.k2) + kernel_row*(p.k2) + kernel_col];
 
-                    FLOAT input_value  =  ((in_row_start + kernel_row)>=0 && (in_row_start + kernel_row)<input_height && 
-                                            (in_col_start + kernel_col)>=0 && (in_col_start + kernel_col)<input_width) ?
-                                            input_device[idx_ci*input_height*input_width + (in_row_start + kernel_row)*input_width + (in_col_start + kernel_col)]:
+                    FLOAT input_value  =  ((in_row_start + kernel_row)>=0 && (in_row_start + kernel_row)<p.input_height && 
+                                            (in_col_start + kernel_col)>=0 && (in_col_start + kernel_col)<p.input_width) ?
+                                            input_device[idx_ci*p.input_height*p.input_width + (in_row_start + kernel_row)*p.input_width + (in_col_start + kernel_col)]:
                                             0.0f;
 
                     sum += input_value * kernel_value;
@@ -68,62 +71,76 @@ __global__ void convolve2d_kernel(const FLOAT* input_device, const FLOAT* param_
             }
         }
 
-        int o_index = idx_co*output_height*output_width + out_row*output_width + out_col;
+        int o_index = idx_co*p.output_height*p.output_width + out_row*p.output_width + out_col;
         output_device[o_index] = sum;
-
-        printf("%d ", o_index);
-
     }
 }
 
-template <int k1, int k2, int c1, int c2>
+template <int k1, int k2, int s1, int s2, int p1, int p2>
 class Convolve2D
 {
     static_assert(k1 % 2 == 1, "k1 must be odd");
     static_assert(k2 % 2 == 1, "k2 must be odd");
 
     private:
-    FLOAT *param_device;
-    // c2, c1, k2, k1 order for cache optimality
 
-    // input is assumed to be allocated else where
-    FLOAT *output_device;
-    int width, height;
+    FLOAT *kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
+    FLOAT *output_device; // co x output_height x output_width
 
-    const int TC = 8;
-    dim3 threadcount = dim3(TC, TC, TC);
-    dim3 blocks;
+    Conv2DParams params;
+    dim3 threadcount, blocks;
 
     public:
-    Convolve2D(int height_, int width_): width(width_), height(height_)
+    Convolve2D(int input_height_, int input_width_, int ci_, int co_)
     {
-        blocks = dim3((c2-1+TC)/TC, (height-1+TC)/TC, (width-1+TC)/TC);
+        /*
+        compute the params
+        */
 
-        cudaMalloc(&output_device, width*height*sizeof(FLOAT));
-        cudaMemset(output_device, 0, width*height*sizeof(FLOAT));
+        params.input_height = input_height_;
+        params.input_width = input_width_;
+        params.ci = ci_;
+        params.co = co_;
+        params.k1 = k1; params.k2 = k2;
+        params.s1 = s1; params.s2 = s2;
+        params.p1 = p1; params.p2 = p2;
+        
+        params.output_height = (input_height_ + 2*p1 - k1) / s1 + 1;
+        params.output_width  = (input_width_  + 2*p2 - k2) / s2 + 1;
 
+        /*
+        Set the kernel launch configuration
+        */
+        const int TC = 8;
+        threadcount = dim3(TC, TC, TC);
+        blocks = dim3((params.co + TC - 1) / TC, 
+                    (params.output_height + TC - 1) / TC, 
+                    (params.output_width + TC - 1) / TC);
 
-        cudaMalloc(&param_device, k1*k2*ci*co*sizeof(FLOAT));
-
-        set_param();
-    }
-
-    void set_param()
-    {
-
+        /*
+        Allocate the memory for output and kernel
+        */
+        cudaMalloc(&output_device,   params.co * params.output_height * params.output_width * sizeof(FLOAT));
+        cudaMemset(output_device, 0, params.co * params.output_height * params.output_width * sizeof(FLOAT));
+        cudaMalloc(&kernel_device,   params.co * params.ci * k1 * k2 * sizeof(FLOAT)); 
     }
 
     ~Convolve2D()
     {
         if(output_device != nullptr) cudaFree(output_device);
+        if(kernel_device != nullptr) cudaFree(kernel_device);
     }
 
     void forward(const FLOAT *input_device)
     {
-        convolve2d_kernel<<<blocks, threadcount>>>(input_device, param_device, output_device, height, width, k1, k2, ci, co);
+        convolve2d_kernel<<<blocks, threadcount>>>(input_device, kernel_device, output_device, params);
         cudaDeviceSynchronize();
     }
 
+    FLOAT* get_output() 
+    { 
+        return output_device; 
+    }
 };
 
  
@@ -138,7 +155,6 @@ int main()
     cudaMalloc(&input_device, height*width*sizeof(float));
 
     cudaMemset(input_device, 0, height*width*sizeof(float));
-
 
     convlayer.forward(input_device);
 
