@@ -13,7 +13,7 @@ nvcc -std=c++20 -arch=sm_89 fold.cu && ./a.out
 #include <cstdio>
 #include <iostream>
 
-#define FLOAT float
+using FLOAT=float;
 
 __global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
 {
@@ -127,59 +127,59 @@ public:
     }
 };
 
-int main()
-{
-    const int H = 16, W = 16;
-    const int size = H * W;
+// int main()
+// {
+//     const int H = 16, W = 16;
+//     const int size = H * W;
 
-    // Managed memory
-    FLOAT *data, *data_output;
-    cudaMallocManaged(&data, size * sizeof(FLOAT));
-    cudaMallocManaged(&data_output, size * sizeof(FLOAT));
+//     // Managed memory
+//     FLOAT *data, *data_output;
+//     cudaMallocManaged(&data, size * sizeof(FLOAT));
+//     cudaMallocManaged(&data_output, size * sizeof(FLOAT));
 
-    // Initialize with numbers 1-256
-    for (int i = 0; i < size; i++)
-    {
-        data[i] = i + 1;
-    }
+//     // Initialize with numbers 1-256
+//     for (int i = 0; i < size; i++)
+//     {
+//         data[i] = i + 1;
+//     }
 
-    // Test fold/unfold
-    Fold2D folder(H, W);
-    Fold2D unfolder(H, W);
+//     // Test fold/unfold
+//     Fold2D folder(H, W);
+//     Fold2D unfolder(H, W);
 
-    FLOAT *out_folded = folder.fold(data);
-    FLOAT *out_unfolded = unfolder.unfold(out_folded);
+//     FLOAT *out_folded = folder.fold(data);
+//     FLOAT *out_unfolded = unfolder.unfold(out_folded);
 
-    // Verify
-    cudaDeviceSynchronize();
-    bool success = true;
-    for (int i = 0; i < size; i++)
-    {
-        printf("%d ", (int)data[i]);
-    }
+//     // Verify
+//     cudaDeviceSynchronize();
+//     bool success = true;
+//     for (int i = 0; i < size; i++)
+//     {
+//         printf("%d ", (int)data[i]);
+//     }
     
-    printf("\n\n");
-    for (int i = 0; i < 64; i++)
-    {
-        for (int j = 1; j < 2; j++)
-        {
-            for (int k = 0; k < 1; k++)
-            {
-                printf("%d ", (int)out_folded[i * 4 + j * 2 + k]);
-            }
-        }
-    }
-    printf("\n\n");
-    for (int i = 0; i < size; i++)
-    {
-        printf("%d ", (int)out_unfolded[i]);
-    }
+//     printf("\n\n");
+//     for (int i = 0; i < 64; i++)
+//     {
+//         for (int j = 1; j < 2; j++)
+//         {
+//             for (int k = 0; k < 1; k++)
+//             {
+//                 printf("%d ", (int)out_folded[i * 4 + j * 2 + k]);
+//             }
+//         }
+//     }
+//     printf("\n\n");
+//     for (int i = 0; i < size; i++)
+//     {
+//         printf("%d ", (int)out_unfolded[i]);
+//     }
 
 
-    printf("\n");
+//     printf("\n");
 
-    printf("Test %s\n", success ? "PASSED" : "FAILED");
+//     printf("Test %s\n", success ? "PASSED" : "FAILED");
 
-    cudaFree(data);
-    return 0;
-}
+//     cudaFree(data);
+//     return 0;
+// }
