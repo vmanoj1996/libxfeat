@@ -149,7 +149,8 @@ public:
     
     // Helper functions to construct tensors of specific ranks
 
-    matx::tensor_t<float, 0> makeParam0D(const std::string& name) {
+    matx::tensor_t<float, 0> makeParam0D(const std::string& name) 
+    {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 0) {
             return matx::make_tensor<float>(data, {}, false);
@@ -157,7 +158,8 @@ public:
         // Return empty 0D tensor if not found or wrong rank
         return matx::make_tensor<float>(nullptr, {}, false);
     }
-    matx::tensor_t<float, 1> makeParam1D(const std::string& name) {
+    matx::tensor_t<float, 1> makeParam1D(const std::string& name) 
+    {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 1) {
             cuda::std::array<matx::index_t, 1> matx_shape{static_cast<matx::index_t>(shape[0])};
@@ -168,7 +170,8 @@ public:
         return matx::make_tensor<float>(nullptr, empty_shape, false);
     }
 
-    matx::tensor_t<float, 2> makeParam2D(const std::string& name) {
+    matx::tensor_t<float, 2> makeParam2D(const std::string& name) 
+    {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 2) {
             cuda::std::array<matx::index_t, 2> matx_shape{static_cast<matx::index_t>(shape[0]), 
@@ -180,7 +183,8 @@ public:
         return matx::make_tensor<float>(nullptr, empty_shape, false);
     }
 
-    matx::tensor_t<float, 3> makeParam3D(const std::string& name) {
+    matx::tensor_t<float, 3> makeParam3D(const std::string& name) 
+    {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 3) {
             cuda::std::array<matx::index_t, 3> matx_shape{static_cast<matx::index_t>(shape[0]), 
@@ -193,7 +197,8 @@ public:
         return matx::make_tensor<float>(nullptr, empty_shape, false);
     }
 
-    matx::tensor_t<float, 4> makeParam4D(const std::string& name) {
+    matx::tensor_t<float, 4> makeParam4D(const std::string& name) 
+    {
         auto [data, shape] = getParamInfo(name);
         if (data && shape.size() == 4) {
             cuda::std::array<matx::index_t, 4> matx_shape{static_cast<matx::index_t>(shape[0]), 
@@ -208,7 +213,8 @@ public:
     }
     
     // Get parameter shape
-    std::vector<size_t> getShape(const std::string& name) const {
+    std::vector<size_t> getShape(const std::string& name) const 
+    {
         auto it = params_.find(name);
         if (it != params_.end()) return it->second.shape;
         
@@ -219,7 +225,8 @@ public:
     }
     
     // Print all parameters and their shapes
-    void printParams() const {
+    void printParams() const 
+    {
         std::cout << "\n=== PARAMETERS ===\n";
         for (const auto& [name, param] : params_) {
             std::cout << std::setw(50) << std::left << name 
@@ -237,7 +244,8 @@ public:
     }
     
     // Check if parameter exists
-    bool hasParam(const std::string& name) const {
+    bool hasParam(const std::string& name) const 
+    {
         return params_.find(name) != params_.end() || 
                buffers_.find(name) != buffers_.end();
     }
