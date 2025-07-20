@@ -30,4 +30,14 @@ target_link_libraries(conv2d_lib PUBLIC
 set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # MEX target
-matlab_add_mex(NAME conv2d_mex SRC src/conv2d_mex.cu LINK_TO conv2d_lib)
+if(Matlab_FOUND)
+    matlab_add_mex(NAME conv2d_mex 
+                   SRC src/conv2d_mex.cu 
+                   LINK_TO conv2d_lib)
+    
+    # Add static linking flags for libstdc++ and libgcc
+    target_link_options(conv2d_mex PRIVATE 
+        -static-libgcc 
+        -static-libstdc++
+    )
+endif()
