@@ -11,8 +11,7 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
-#include "conv2d.h"
-
+#include "conv2d.hpp"
 
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop)
 {
@@ -56,79 +55,67 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
     }
 }
 
-Convolve2D::Convolve2D(ImgProperty input_prop_, Conv2DParams params_)
+Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data)
     : input_prop(input_prop_), params(params_)
 {
-    /*
-    compute the params
-    */
-
     validate_params();
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
     output_prop.width = (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
 
-    /*
-    Set the kernel launch configuration
-    */
+    output_device.alloc(params.co * output_prop.height * output_prop.width);
+    kernel_device.alloc(params.co * params.ci * params.k1 * params.k2);
+
+    set_kernel(kernel_data);
+}
+
+Conv2D::~Conv2D()
+{
+    
+}
+
+void Conv2D::forward(DevicePointer<FLOAT>& input_device)
+{
     const int TC = 8;
-    threadcount = dim3(TC, TC, TC);
-    blocks = dim3((params.co + TC - 1) / TC,
-                  (output_prop.height + TC - 1) / TC,
-                  (output_prop.width + TC - 1) / TC);
+    dim3 threadcount(TC, TC, TC);
+    dim3 blocks((params.co + TC - 1) / TC,
+                (output_prop.height + TC - 1) / TC,
+                (output_prop.width + TC - 1) / TC);
 
-    /*
-    Allocate the memory for output and kernel
-    */
-    cudaMalloc(&output_device, params.co * output_prop.height * output_prop.width * sizeof(FLOAT));
-    cudaMemset(output_device, 0, params.co * output_prop.height * output_prop.width * sizeof(FLOAT));
-    cudaMalloc(&kernel_device, params.co * params.ci * params.k1 * params.k2 * sizeof(FLOAT));
-}
-
-Convolve2D::~Convolve2D()
-{
-    if (output_device != nullptr)
-        cudaFree(output_device);
-    if (kernel_device != nullptr)
-        cudaFree(kernel_device);
-}
-
-void Convolve2D::forward(const FLOAT *input_device)
-{
-    convolve2d_kernel<<<blocks, threadcount>>>(input_device, kernel_device, output_device, params, input_prop, output_prop);
+    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop);
     cudaDeviceSynchronize();
 }
 
-void Convolve2D::set_kernel(const std::vector<FLOAT> &kernel_data)
+void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
 {
     size_t expected_size = params.co * params.ci * params.k1 * params.k2;
     if (kernel_data.size() != expected_size)
     {
         throw std::invalid_argument("Kernel size mismatch: expected " + std::to_string(expected_size) + " weights, got " + std::to_string(kernel_data.size()));
     }
-    cudaMemcpy(kernel_device, kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
+    cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
 
-FLOAT *Convolve2D::get_output()
+DevicePointer<FLOAT>& Conv2D::get_output()
 {
     return output_device;
 }
 
-Conv2DParams Convolve2D::get_param()
+Conv2DParams Conv2D::get_param()
 {
     return params;
 }
 
-ImgProperty Convolve2D::get_output_spec()
+ImgProperty Conv2D::get_output_spec()
 {
     return output_prop;
 }
 
-ImgProperty Convolve2D::get_input_spec()
+ImgProperty Conv2D::get_input_spec()
 {
     return input_prop;
 }
 
-void Convolve2D::validate_params()
+void Conv2D::validate_params()
 {
     if (params.k1 % 2 == 0)
     {
@@ -156,14 +143,13 @@ void Convolve2D::validate_params()
     }
 }
 
-
 #ifdef ACTIVATE_MAIN
 int main()
 {
     ImgProperty input_prop = {40, 60};                    // height, width
     Conv2DParams conv_params = {1, 1, 3, 16, 2, 2, 1, 1}; // k1,k2,ci,co,s1,s2,p1,p2
 
-    Convolve2D convlayer(input_prop, conv_params);
+    Conv2D convlayer(input_prop, conv_params);
 
     float *input_device;
     // Fix: use conv_params values instead of undefined variables

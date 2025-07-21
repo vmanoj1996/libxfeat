@@ -1,0 +1,1899 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MF0 version="1.1" packageUris="http://schema.mathworks.com/mf0/cxxfe_ast/R2024b http://schema.mathworks.com/mf0/cxxfe_ast_annotations/20180710">
+  <mwAnnotation.FundamentalArray type="mwAnnotation.FundamentalArray" uuid="9dac7897-f0f2-4695-93b0-1f595e67f1c1">
+    <cppElemType>float</cppElemType>
+    <mlElemType>single</mlElemType>
+    <name>clib.array.conv2d.Float</name>
+  </mwAnnotation.FundamentalArray>
+  <cxxfe.ast.Project type="cxxfe.ast.Project" uuid="4e89c3e5-1d7c-4493-b2f6-c8729b0b8df5">
+    <Compilations type="cxxfe.ast.source.CompilationUnit" uuid="49432a1e-f90c-458a-be4c-3bb0c851afad">
+      <Files type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+      <Language>CXX</Language>
+      <Annotations type="mwAnnotation.AbsolutePathBuildInfo" uuid="7887775e-1ba0-473f-9f72-850f2d81045f">
+        <additionalCompilerFlags></additionalCompilerFlags>
+        <additionalLinkerFlags>-lcudart</additionalLinkerFlags>
+        <additionalLinkerFlags>-L/usr/local/cuda/lib64</additionalLinkerFlags>
+        <fundamentalArrays type="mwAnnotation.FundamentalArray" uuid="9dac7897-f0f2-4695-93b0-1f595e67f1c1"/>
+        <headers>/home/manoj/Dropbox/work/learn/libxfeat/include/conv2d.h</headers>
+        <headersRelative>/home/manoj/Dropbox/work/learn/libxfeat/include/conv2d.h</headersRelative>
+        <libraries>../build/libconv2d_lib.a</libraries>
+        <librariesRelative>../build/libconv2d_lib.a</librariesRelative>
+        <location>/home/manoj/Dropbox/work/learn/libxfeat/binding</location>
+        <locationRelative>/home/manoj/Dropbox/work/learn/libxfeat/binding</locationRelative>
+        <libData type="mwAnnotation.LibraryAnnotation" uuid="7f2cf871-d026-48a1-bd8a-4bdf9b73a6f4">
+          <architecture>glnxa64</architecture>
+          <matlabVersion>R2024b</matlabVersion>
+          <packageName>conv2d</packageName>
+        </libData>
+      </Annotations>
+      <Namespaces type="cxxfe.ast.Namespace" uuid="c8ab052f-171e-49b7-8d11-c8a6cdc1edaa">
+        <IsStd>true</IsStd>
+        <Name>std</Name>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="b02d1638-857b-44c3-82b6-9e6cfd0f1cd7">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="de139d42-5452-4160-82bd-ba63e4efabba"/>
+          <IsTemplatePrototype>true</IsTemplatePrototype>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="7501a725-66eb-4a5a-886f-93adff4ff694">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="1d7939ba-d484-4d8f-98ca-6781e0f48615"/>
+          </TemplateArgs>
+          <Name>__new_allocator</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="1a108e13-eee4-41de-aa1f-f8d5762f0751"/>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="2f39a535-82e9-44de-abb9-f63a1ba4341e">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb"/>
+            <Line>63</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.Template" uuid="de139d42-5452-4160-82bd-ba63e4efabba">
+          <Kind>Class</Kind>
+          <ProtoTypeInstantiation type="cxxfe.ast.types.ClassType" uuid="b02d1638-857b-44c3-82b6-9e6cfd0f1cd7"/>
+          <Name>__new_allocator</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="dc4e35e6-0840-4133-9032-6722f3036769">
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="1d7939ba-d484-4d8f-98ca-6781e0f48615">
+              <Name>_Tp</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="bc2f5b94-ba17-4f96-966b-44e3d818d8b8">
+                <Col>21</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb"/>
+                <Line>62</Line>
+              </DefPos>
+            </Symbols>
+          </Scope>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="ecdd8a0d-a3f4-44b2-8200-dbf7392275a6">
+            <Col>3</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb"/>
+            <Line>62</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="cd1d06e1-8312-4c1b-a128-7e7fd0587447">
+          <BaseClasses type="cxxfe.ast.types.BaseClass" uuid="aa2cf0fe-77a7-4cb5-b06b-d17aff2adb0f">
+            <Type type="cxxfe.ast.types.ClassType" uuid="d45be798-4155-446a-a6a2-4065fc37cecb"/>
+          </BaseClasses>
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="b010b5f7-e26b-4533-a985-60d37f353de7"/>
+          <IsTemplatePrototype>true</IsTemplatePrototype>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="411f7973-0249-4ba1-b8fc-ba0b4d1c7275">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="1824108a-42f3-4133-82bb-f1bcbd8d1fe2"/>
+          </TemplateArgs>
+          <Name>allocator</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="272a92bd-b55e-4bac-9eb7-ce7da5650681"/>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="06033e08-7281-4ef3-b13f-590cb9c00a36">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c"/>
+            <Line>130</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.Template" uuid="b010b5f7-e26b-4533-a985-60d37f353de7">
+          <Kind>Class</Kind>
+          <ProtoTypeInstantiation type="cxxfe.ast.types.ClassType" uuid="cd1d06e1-8312-4c1b-a128-7e7fd0587447"/>
+          <Name>allocator</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="d73202e9-8e32-4df0-8854-d46b75951724">
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="1824108a-42f3-4133-82bb-f1bcbd8d1fe2">
+              <Name>_Tp</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="f5fbd3e1-707f-4fdd-8f38-f0946a82dd1d">
+                <Col>21</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c"/>
+                <Line>129</Line>
+              </DefPos>
+            </Symbols>
+          </Scope>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="e7f1a034-3f58-45dd-b59a-25e0a3ed0b19">
+            <Col>3</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c"/>
+            <Line>129</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="d45be798-4155-446a-a6a2-4065fc37cecb">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="de139d42-5452-4160-82bd-ba63e4efabba"/>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="a2a70d87-e7c2-4e36-90a0-c647736db755">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="1824108a-42f3-4133-82bb-f1bcbd8d1fe2"/>
+          </TemplateArgs>
+          <Name>__new_allocator</Name>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="80497664-35b3-409f-bfd9-85c70a47f5b2">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb"/>
+            <Line>63</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.StructType" uuid="652ee6e5-8a73-4a96-a206-d281aa6cc0d0">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="fc714bea-0edd-4ff8-83da-a7afed10f553"/>
+          <IsTemplatePrototype>true</IsTemplatePrototype>
+          <Members type="cxxfe.ast.types.Member" uuid="fee82c0c-336a-48fe-b0eb-8344aea64657">
+            <Access>Public</Access>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="bb6a01ca-adfe-47d1-83fd-1c0dac6024ac"/>
+            <Name>_M_impl</Name>
+            <DefPos type="cxxfe.ast.source.SourcePosition" uuid="8f2aed45-16e8-4139-b417-baa46ba7d3c4">
+              <Col>20</Col>
+              <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+              <Line>374</Line>
+            </DefPos>
+          </Members>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="b2b861d0-8d3c-4716-8e86-c84a7760e1fe">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="89c980a8-15fa-4ec2-bf58-0b5cd0c9b6d2"/>
+          </TemplateArgs>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="b2df5c8c-10ef-4abe-8ae4-0fab38c0cc23">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="7c1ae0eb-6e92-454b-b27b-18c7bdee20d3"/>
+          </TemplateArgs>
+          <Name>_Vector_base</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="41263900-f631-4f2f-9679-495374079811">
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="bb6a01ca-adfe-47d1-83fd-1c0dac6024ac">
+              <Access>Public</Access>
+              <Name>_Vector_impl</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="dce9c269-ebb5-4856-bd84-fa517be58763">
+                <Col>14</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+                <Line>133</Line>
+              </DefPos>
+            </Symbols>
+          </Scope>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="9f87bbe2-6c02-4337-8db3-33c3e06b8989">
+            <Col>12</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>85</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.Template" uuid="fc714bea-0edd-4ff8-83da-a7afed10f553">
+          <Kind>Class</Kind>
+          <ProtoTypeInstantiation type="cxxfe.ast.types.StructType" uuid="652ee6e5-8a73-4a96-a206-d281aa6cc0d0"/>
+          <Name>_Vector_base</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="06c38ebc-648e-4518-8681-bb7ed1291a7b">
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="89c980a8-15fa-4ec2-bf58-0b5cd0c9b6d2">
+              <Name>_Tp</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="a0fea1a9-6876-424b-ae32-268abfc90574">
+                <Col>21</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+                <Line>84</Line>
+              </DefPos>
+            </Symbols>
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="7c1ae0eb-6e92-454b-b27b-18c7bdee20d3">
+              <Name>_Alloc</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="0d4c22e6-f804-4570-8046-49c5f87e7a8b">
+                <Col>35</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+                <Line>84</Line>
+              </DefPos>
+            </Symbols>
+          </Scope>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="2a86d072-e31e-4ac8-8741-36c4ea711272">
+            <Col>3</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>84</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="a82a573d-8e9f-4df5-af0d-972625b87356">
+          <BaseClasses type="cxxfe.ast.types.BaseClass" uuid="391d7165-95f8-42b7-bea7-4272badec5a0">
+            <Inheritance>Protected</Inheritance>
+            <Type type="cxxfe.ast.types.StructType" uuid="2315719f-8e49-4ac1-8cf3-0763b0d19173"/>
+          </BaseClasses>
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="747618d1-20f3-4fdd-a487-5a94c892e66d"/>
+          <IsTemplatePrototype>true</IsTemplatePrototype>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="56bb7756-1657-474c-9c50-1a7072881d3a">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="4e0cc1b7-9ea7-48c1-8b36-b411d9bd1cad"/>
+          </TemplateArgs>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="105db928-92e2-404e-9437-26f740ceb83c">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="e1732920-8a49-47bb-ac7f-296e987ea675"/>
+          </TemplateArgs>
+          <Name>vector</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="4b209785-c8a7-43d8-b11a-2982cef5a87f"/>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="0a04a3b3-9103-4880-b59b-de6607fc24ae">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>428</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.Template" uuid="747618d1-20f3-4fdd-a487-5a94c892e66d">
+          <Kind>Class</Kind>
+          <ProtoTypeInstantiation type="cxxfe.ast.types.ClassType" uuid="a82a573d-8e9f-4df5-af0d-972625b87356"/>
+          <Name>vector</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="9087a82a-7459-4e19-91d2-2a82ac131827">
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="4e0cc1b7-9ea7-48c1-8b36-b411d9bd1cad">
+              <Name>_Tp</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="d37272a6-442a-41c3-8725-6db928b570a3">
+                <Col>21</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+                <Line>427</Line>
+              </DefPos>
+            </Symbols>
+            <Symbols type="cxxfe.ast.types.TemplateParamType" uuid="e1732920-8a49-47bb-ac7f-296e987ea675">
+              <Name>_Alloc</Name>
+              <DefPos type="cxxfe.ast.source.SourcePosition" uuid="e9e9dc7a-bb6a-44cd-b347-be6c5b5ec8cc">
+                <Col>35</Col>
+                <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+                <Line>427</Line>
+              </DefPos>
+            </Symbols>
+          </Scope>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="e302434a-c392-4250-aba7-859740eea39d">
+            <Col>3</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>427</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.StructType" uuid="2315719f-8e49-4ac1-8cf3-0763b0d19173">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="fc714bea-0edd-4ff8-83da-a7afed10f553"/>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="6611b79b-ec6b-42d8-af8d-8d092179bbab">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="4e0cc1b7-9ea7-48c1-8b36-b411d9bd1cad"/>
+          </TemplateArgs>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="51fddbce-1408-44ef-815b-afab63802ce6">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TemplateParamType" uuid="e1732920-8a49-47bb-ac7f-296e987ea675"/>
+          </TemplateArgs>
+          <Name>_Vector_base</Name>
+          <Scope type="cxxfe.ast.Scope" uuid="d84552ff-e412-4198-bad7-3bf74d7d9eea"/>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="d0aae55c-bf3e-409d-a787-cae134bdec35">
+            <Col>12</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>85</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="9c29c910-4258-41ed-850f-70c975d51017">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="b010b5f7-e26b-4533-a985-60d37f353de7"/>
+          <IsIncomplete>true</IsIncomplete>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="260d3146-e775-4682-879a-73ca451699b2">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TypedefType" uuid="6854396c-d442-4994-b2c8-aa91385b7f9d"/>
+          </TemplateArgs>
+          <Name>allocator</Name>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="b6b46cb4-b883-4e12-bbdf-a427397cc4fc">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c"/>
+            <Line>130</Line>
+          </DefPos>
+        </Symbols>
+        <Symbols type="cxxfe.ast.types.ClassType" uuid="1fc2d468-358d-47c0-9c70-73753e16f13e">
+          <Linkage>ExternalCXX</Linkage>
+          <NeedsImplicitConstructor>true</NeedsImplicitConstructor>
+          <NeedsImplicitCopyConstructor>true</NeedsImplicitCopyConstructor>
+          <AssocTemplate type="cxxfe.ast.Template" uuid="747618d1-20f3-4fdd-a487-5a94c892e66d"/>
+          <IsIncomplete>true</IsIncomplete>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="ca5656cf-2f20-446d-91c7-9019b1af466b">
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.TypedefType" uuid="6854396c-d442-4994-b2c8-aa91385b7f9d"/>
+          </TemplateArgs>
+          <TemplateArgs type="cxxfe.ast.TemplateArg" uuid="32f86726-8cb2-455d-b043-b23e2ccb4102">
+            <FromDefault>true</FromDefault>
+            <Kind>Type</Kind>
+            <Type type="cxxfe.ast.types.ClassType" uuid="9c29c910-4258-41ed-850f-70c975d51017"/>
+          </TemplateArgs>
+          <Name>vector</Name>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="00595b95-12d1-46b7-83ed-107238e14bbb">
+            <Col>11</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+            <Line>428</Line>
+          </DefPos>
+        </Symbols>
+      </Namespaces>
+      <Symbols type="cxxfe.ast.types.TypedefType" uuid="6854396c-d442-4994-b2c8-aa91385b7f9d">
+        <IsAlias>true</IsAlias>
+        <Type type="cxxfe.ast.types.FloatType" uuid="ba4add43-1812-4b89-8542-6c58bfb172ea"/>
+        <Name>FLOAT</Name>
+        <DefPos type="cxxfe.ast.source.SourcePosition" uuid="94497dbb-6ccc-430d-86df-c434828e52e4">
+          <Col>7</Col>
+          <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+          <Line>21</Line>
+        </DefPos>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FloatType" uuid="ba4add43-1812-4b89-8542-6c58bfb172ea">
+        <Kind>Single</Kind>
+        <NumBits>32</NumBits>
+        <Name>float</Name>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0">
+        <Linkage>ExternalCXX</Linkage>
+        <Methods type="cxxfe.ast.types.Method" uuid="926af76f-6b2d-4d3c-8abb-17ae2ee1a403">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <SpecialKind>Destructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="57ae7989-0ac9-4e79-b88f-fa7df298d48a"/>
+          <Name>~Conv2DParams</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="d2c75fd0-a684-4344-88ac-85b31c56165e">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="9b7f750b-f696-4a3b-baa9-47e7b4fcc932">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="e3d613df-39ce-4b0d-adf7-5908ed1e2647">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="1bc2ad4e-62cf-41c3-a333-758ac6884d5c">
+            <Type type="cxxfe.ast.types.RValueReferenceType" uuid="f3835ca4-e941-4370-9f2b-d8daf804862b"/>
+          </Params>
+          <SpecialKind>CopyConstructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="0a4e334d-af6f-45f1-bdc3-a25e7075c0b3"/>
+          <Name>Conv2DParams</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="75889b97-fe6e-4ea8-bbdf-056f2f217c44">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="21db34e5-2ac7-4941-b04a-e5d9ad585c2d">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="221529ee-66bd-474d-9a5d-aa9eab23fb40">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="b605d7d6-35c7-4ee5-bfb6-d825cd1a963c">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="e0eb3efd-af70-42a3-a80f-67b0d979f819"/>
+          </Params>
+          <SpecialKind>CopyConstructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="4569759e-070c-4a3a-8a0b-f266fdca97f4"/>
+          <Name>Conv2DParams</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="2c333803-90e0-4153-bca3-5f43851d860d">
+            <cppPosition>2</cppPosition>
+            <cppSignature>Conv2DParams::Conv2DParams(Conv2DParams const &amp; input1)</cppSignature>
+            <cppSignatureFcnType>void(*)(Conv2DParams const &amp;)</cppSignatureFcnType>
+            <description>clib.conv2d.Conv2DParams Constructor of C++ class Conv2DParams.</description>
+            <inputs type="mwAnnotation.Argument" uuid="40d9c6e2-d26b-4126-b1ef-28e4f687ef7e">
+              <cppPosition>1</cppPosition>
+              <cppType>[Conv2DParams]ConstRef</cppType>
+              <isConstData>true</isConstData>
+              <mwType>clib.conv2d.Conv2DParams</mwType>
+              <name>input1</name>
+              <validTypes>clib.conv2d.Conv2DParams</validTypes>
+            </inputs>
+            <name>Conv2DParams</name>
+            <ptKey>A/Conv2DParams@[Conv2DParams]ConstRef</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="8277b047-f210-44df-a3d7-958ad28bca7a"/>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="7a643b7e-b027-4c03-8a05-bb2752839906">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <SpecialKind>Constructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="5aa4c29d-03f1-49f4-98d2-8a041805859a"/>
+          <Name>Conv2DParams</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="84fea71a-b5ef-4be2-8af9-34788513c61b">
+            <cppPosition>2</cppPosition>
+            <cppSignature>Conv2DParams::Conv2DParams()</cppSignature>
+            <cppSignatureFcnType>void(*)()</cppSignatureFcnType>
+            <description>clib.conv2d.Conv2DParams Constructor of C++ class Conv2DParams.</description>
+            <name>Conv2DParams</name>
+            <ptKey>A/Conv2DParams</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="89564952-84c0-45be-8964-c992244920fe"/>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="0a48491a-e108-496b-bff1-d02c276ad403">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="d64716b8-02eb-47f0-998a-4d26d079405c">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="e0eb3efd-af70-42a3-a80f-67b0d979f819"/>
+          </Params>
+          <SpecialKind>Operator</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="697d9534-c879-4655-9dcd-6132668e4d45"/>
+          <Name>operator=</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="a6992214-013c-4555-944e-a7ec14b28808">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="2f8969dd-881d-4b45-89f0-95f3b596624b">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="ba0c5c03-78d7-41c2-8635-005d811f8b82">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="12b5f8c3-91d0-4bcd-b940-0c0826afe3f8">
+            <Type type="cxxfe.ast.types.RValueReferenceType" uuid="f3835ca4-e941-4370-9f2b-d8daf804862b"/>
+          </Params>
+          <SpecialKind>Operator</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="649eaedc-4e88-4980-bc72-d7a45e241fb6"/>
+          <Name>operator=</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="400a99d7-d54b-48ed-8f64-527cea20c33c">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="f130f235-1e80-4805-84c7-9d65091f7e24">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <IsPOD>true</IsPOD>
+        <IsStandardLayout>true</IsStandardLayout>
+        <Members type="cxxfe.ast.types.Member" uuid="7b5f537d-4322-4069-87d8-bfaa6d476075">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>k1</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="899de5b9-170e-4630-af7d-9f3646b374e4">
+            <cppSignature>int Conv2DParams::k1</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="b300a132-e03a-4057-9546-bb628d44e721">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="f8dcf2d4-9cc0-429b-8f99-acace87d6851">
+            <Col>9</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>25</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="a7b4e35c-95c0-4c03-a288-a721c48a64f5">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>k2</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="d6f26d25-f2a3-4ff1-9290-8cbd1ec23e49">
+            <cppSignature>int Conv2DParams::k2</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="05b0f8f5-be8f-43be-8b40-ddd3713e259f">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="93ec16b7-3ebe-44b0-8d31-f7b0dc88c5c5">
+            <Col>13</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>25</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="7d210700-7304-482f-83ae-6e68b4e793f4">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>ci</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="e8764645-74b2-4b57-bb17-9d6b3ec09e3f">
+            <cppSignature>int Conv2DParams::ci</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="79a64442-5049-4485-9e11-4505d860057f">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="4456c18f-5834-434a-a0c6-6be608ed5c4e">
+            <Col>17</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>25</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="7f1c92e8-ea97-43c4-bf79-0602b7c60bba">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>co</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="baffe7cf-8246-4324-9d7c-889678e3f792">
+            <cppSignature>int Conv2DParams::co</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="61e5428f-ce69-4798-aafd-66db32c4f9b5">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="964b867e-f4c4-4536-94a5-6f4526ccde9a">
+            <Col>21</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>25</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="5030c4a2-219e-483c-9b99-95845d0b6330">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>s1</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="66efe6b9-7d65-4d96-9f0d-68c81383b72c">
+            <cppSignature>int Conv2DParams::s1</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="5abf4f1f-18c8-4bc0-96c9-a64b112e403d">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="84f5315a-1d54-4e77-89b1-5b34d30e0e33">
+            <Col>9</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>26</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="d0ac5e31-1c82-47d9-a5eb-f43e79ec5feb">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>s2</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="fdc7195f-85a3-4ef1-a045-ba5bdbbabe63">
+            <cppSignature>int Conv2DParams::s2</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="2009da6d-1567-4768-a3b7-7ca040e0946c">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="a5c73bc4-5a14-4301-9df2-d4479713936a">
+            <Col>13</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>26</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="39aca216-aca3-469b-83e2-7fb0de112959">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>p1</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="e4e763d8-aaa7-4b39-bc87-fba656764d33">
+            <cppSignature>int Conv2DParams::p1</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="ad8a3c9a-6f93-4bed-8534-d660281a87af">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="2719a754-02c6-4f3b-806f-834a8317f96f">
+            <Col>17</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>26</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="d893cd9b-de18-4756-ade0-4e3b859603dc">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>p2</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="ae8079b7-3b73-404b-825f-50358afd09fe">
+            <cppSignature>int Conv2DParams::p2</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="888e7132-b892-4a95-bda0-9b10f453712b">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="def9de57-a597-4c90-896f-da15a2db454e">
+            <Col>21</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>26</Line>
+          </DefPos>
+        </Members>
+        <Name>Conv2DParams</Name>
+        <Annotations type="mwAnnotation.ClassAnnotation" uuid="9f1d8a1b-7d26-4374-aaf4-1271049c7e17">
+          <cppStructConvPTKey>S/Conv2DParams/convertScalarCPPStruct</cppStructConvPTKey>
+          <deallocatorPTKey>D/Conv2DParams</deallocatorPTKey>
+          <description>clib.conv2d.Conv2DParams    Representation of C++ class Conv2DParams.</description>
+          <isAssignable>true</isAssignable>
+          <isDestructible>true</isDestructible>
+          <mlStructConvPTKey>S/Conv2DParams/convertScalarMLStruct</mlStructConvPTKey>
+          <name>clib.conv2d.Conv2DParams</name>
+          <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="e419a76d-59f9-41de-ab0d-e06bac91f5bf"/>
+        </Annotations>
+        <Scope type="cxxfe.ast.Scope" uuid="112b6651-62d2-4f78-b508-08aba3e44bb8">
+          <Annotations type="mwAnnotation.ScopeAnnotation" uuid="a9f172e5-87a4-4359-95ee-b2ebc9738696">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="1e3eb2fa-fe50-4eae-b3dd-a010242636eb"/>
+          </Annotations>
+        </Scope>
+        <DefPos type="cxxfe.ast.source.SourcePosition" uuid="5ccb1ff9-bccf-4582-8eb3-af5018e4f512">
+          <Col>8</Col>
+          <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+          <Line>23</Line>
+        </DefPos>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492">
+        <NumBits>32</NumBits>
+        <Name>int</Name>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="57ae7989-0ac9-4e79-b88f-fa7df298d48a">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd">
+        <Name>void</Name>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="0a4e334d-af6f-45f1-bdc3-a25e7075c0b3">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.RValueReferenceType" uuid="f3835ca4-e941-4370-9f2b-d8daf804862b"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.RValueReferenceType" uuid="f3835ca4-e941-4370-9f2b-d8daf804862b">
+        <Type type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="4569759e-070c-4a3a-8a0b-f266fdca97f4">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="e0eb3efd-af70-42a3-a80f-67b0d979f819"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="e0eb3efd-af70-42a3-a80f-67b0d979f819">
+        <Type type="cxxfe.ast.types.QualifiedType" uuid="a8039aa0-6c27-45d2-b680-ee7ec6365206"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.QualifiedType" uuid="a8039aa0-6c27-45d2-b680-ee7ec6365206">
+        <IsConst>true</IsConst>
+        <Type type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="5aa4c29d-03f1-49f4-98d2-8a041805859a">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="697d9534-c879-4655-9dcd-6132668e4d45">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="e0eb3efd-af70-42a3-a80f-67b0d979f819"/>
+        <RetType type="cxxfe.ast.types.LValueReferenceType" uuid="debfe7da-a651-4b80-b14f-69a70542f806"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="debfe7da-a651-4b80-b14f-69a70542f806">
+        <Type type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="649eaedc-4e88-4980-bc72-d7a45e241fb6">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.RValueReferenceType" uuid="f3835ca4-e941-4370-9f2b-d8daf804862b"/>
+        <RetType type="cxxfe.ast.types.LValueReferenceType" uuid="debfe7da-a651-4b80-b14f-69a70542f806"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d">
+        <Linkage>ExternalCXX</Linkage>
+        <Methods type="cxxfe.ast.types.Method" uuid="88b2dd62-dadf-46ce-98a3-25788e0c1981">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <SpecialKind>Destructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="c5f83e12-2876-400d-baa3-7cd4f0ffb2ce"/>
+          <Name>~ImgProperty</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="60351602-78fb-4b7a-8153-cb55b6dba901">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="74f5e421-5c57-4f34-9f0f-c5b9d0c965de">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="b40df05e-60ce-434a-a1ba-681b0ec8fc38">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="d315553a-8c5c-43e5-9777-6a080a121070">
+            <Type type="cxxfe.ast.types.RValueReferenceType" uuid="dcee2e28-5922-44dd-af08-b9721b1d031e"/>
+          </Params>
+          <SpecialKind>CopyConstructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="8db7ef80-33bd-4af9-98e4-1cb1fc5addd4"/>
+          <Name>ImgProperty</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="9af2a389-2ac8-472d-93ba-7a430c5eeec5">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="cd2ec670-2a20-4538-81e9-f02c59c3c66b">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="42059d7d-34b4-4f80-9786-136378de7ce4">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="f3f93dea-56a8-456f-903f-5db62c21c412">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="eecbb255-1749-42aa-9277-eb72d1cd8d7c"/>
+          </Params>
+          <SpecialKind>CopyConstructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="d5af63c8-aba0-43c6-924a-fa3e46cc53bf"/>
+          <Name>ImgProperty</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="8ada4035-cb9c-4be5-9429-29c8b9b81c9c">
+            <cppPosition>2</cppPosition>
+            <cppSignature>ImgProperty::ImgProperty(ImgProperty const &amp; input1)</cppSignature>
+            <cppSignatureFcnType>void(*)(ImgProperty const &amp;)</cppSignatureFcnType>
+            <description>clib.conv2d.ImgProperty Constructor of C++ class ImgProperty.</description>
+            <inputs type="mwAnnotation.Argument" uuid="3398cefc-8879-4a9a-9a19-6695ab40d6e3">
+              <cppPosition>1</cppPosition>
+              <cppType>[ImgProperty]ConstRef</cppType>
+              <isConstData>true</isConstData>
+              <mwType>clib.conv2d.ImgProperty</mwType>
+              <name>input1</name>
+              <validTypes>clib.conv2d.ImgProperty</validTypes>
+            </inputs>
+            <name>ImgProperty</name>
+            <ptKey>A/ImgProperty@[ImgProperty]ConstRef</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="c7dc42cc-3b39-46da-a882-77867bba33fe"/>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="7dab764a-a2d5-4a67-8d54-44a15c199ca2">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <SpecialKind>Constructor</SpecialKind>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="39a67966-5656-49bf-b0b9-6ec647576ad0"/>
+          <Name>ImgProperty</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="31489402-e064-4191-87fd-0828c60e855c">
+            <cppPosition>2</cppPosition>
+            <cppSignature>ImgProperty::ImgProperty()</cppSignature>
+            <cppSignatureFcnType>void(*)()</cppSignatureFcnType>
+            <description>clib.conv2d.ImgProperty Constructor of C++ class ImgProperty.</description>
+            <name>ImgProperty</name>
+            <ptKey>A/ImgProperty</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="27ef7c1a-0d40-41dc-a034-0ada6810f711"/>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="01fc41d9-ee0e-4a30-8e13-0b7909d6214b">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="dd5cfed4-0837-4bd6-ade0-402144b37522">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="eecbb255-1749-42aa-9277-eb72d1cd8d7c"/>
+          </Params>
+          <SpecialKind>Operator</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="a7ab9986-b780-49e9-85cd-038b8cea1f23"/>
+          <Name>operator=</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="2ecabeb9-bf4d-4997-8170-e4f78b4a61f2">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="702f72eb-2448-49ba-8faf-17017cce877e">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="18a68cd0-1da2-4ed6-8092-f6c95a9cbf7b">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="89d56f7f-55ea-4cd4-a467-0913aa51d21b">
+            <Type type="cxxfe.ast.types.RValueReferenceType" uuid="dcee2e28-5922-44dd-af08-b9721b1d031e"/>
+          </Params>
+          <SpecialKind>Operator</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="3677ab3b-31aa-4599-b00d-9b35b3978972"/>
+          <Name>operator=</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="c5166f3a-ddf8-4ce4-b2b0-f5e20fa7ff27">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="4a7c5b37-6c8f-4f73-a9af-a0a21ade3a8f">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <IsPOD>true</IsPOD>
+        <IsStandardLayout>true</IsStandardLayout>
+        <Members type="cxxfe.ast.types.Member" uuid="dbcd8777-89b6-428b-a8b8-698316170440">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>height</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="c9558f0c-3d78-44c5-8955-72dac58fe5e0">
+            <cppSignature>int ImgProperty::height</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="de3ed465-3bc3-46b2-8dfc-722c076d6671">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="27474eda-8857-4072-aa06-eaa169ac270a">
+            <Col>9</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>31</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="8675e6eb-8992-4547-96bc-38630103ff3b">
+          <Access>Public</Access>
+          <Type type="cxxfe.ast.types.IntegerType" uuid="8f5b74bd-8556-485e-ad33-327fef1eb492"/>
+          <Name>width</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="efb9b5fd-fa28-4109-a2a9-5de84795d7a6">
+            <cppSignature>int ImgProperty::width</cppSignature>
+            <cppType>[int]</cppType>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="762f6222-ae70-4f1e-9d48-5601b1f11153">
+              <definitionStatus>Unsupported</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="1ce210b9-c8dc-429e-8c4d-09032f763bdc">
+            <Col>9</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>32</Line>
+          </DefPos>
+        </Members>
+        <Name>ImgProperty</Name>
+        <Annotations type="mwAnnotation.ClassAnnotation" uuid="f1a8d698-cd32-473d-aecc-88494e364314">
+          <cppStructConvPTKey>S/ImgProperty/convertScalarCPPStruct</cppStructConvPTKey>
+          <deallocatorPTKey>D/ImgProperty</deallocatorPTKey>
+          <description>clib.conv2d.ImgProperty    Representation of C++ class ImgProperty.</description>
+          <isAssignable>true</isAssignable>
+          <isDestructible>true</isDestructible>
+          <mlStructConvPTKey>S/ImgProperty/convertScalarMLStruct</mlStructConvPTKey>
+          <name>clib.conv2d.ImgProperty</name>
+          <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="84022e53-7e16-42f1-a750-c2796523fc1d"/>
+        </Annotations>
+        <Scope type="cxxfe.ast.Scope" uuid="b03c396b-02ed-40ba-ad55-ad944b5cc9a6">
+          <Annotations type="mwAnnotation.ScopeAnnotation" uuid="5df76cfa-cb26-409d-b5a2-374e56306727">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="3214ddd5-0be3-426f-9dc9-6fba06f395bf"/>
+          </Annotations>
+        </Scope>
+        <DefPos type="cxxfe.ast.source.SourcePosition" uuid="e36d03e6-2844-4718-9c36-166254ce2ea7">
+          <Col>8</Col>
+          <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+          <Line>29</Line>
+        </DefPos>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="c5f83e12-2876-400d-baa3-7cd4f0ffb2ce">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="8db7ef80-33bd-4af9-98e4-1cb1fc5addd4">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.RValueReferenceType" uuid="dcee2e28-5922-44dd-af08-b9721b1d031e"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.RValueReferenceType" uuid="dcee2e28-5922-44dd-af08-b9721b1d031e">
+        <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="d5af63c8-aba0-43c6-924a-fa3e46cc53bf">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="eecbb255-1749-42aa-9277-eb72d1cd8d7c"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="eecbb255-1749-42aa-9277-eb72d1cd8d7c">
+        <Type type="cxxfe.ast.types.QualifiedType" uuid="4c540c74-0f1f-40ff-b5d8-843d0643e151"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.QualifiedType" uuid="4c540c74-0f1f-40ff-b5d8-843d0643e151">
+        <IsConst>true</IsConst>
+        <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="39a67966-5656-49bf-b0b9-6ec647576ad0">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="a7ab9986-b780-49e9-85cd-038b8cea1f23">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="eecbb255-1749-42aa-9277-eb72d1cd8d7c"/>
+        <RetType type="cxxfe.ast.types.LValueReferenceType" uuid="c6ef734e-2f18-4041-a26f-1af448c4bf89"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="c6ef734e-2f18-4041-a26f-1af448c4bf89">
+        <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="3677ab3b-31aa-4599-b00d-9b35b3978972">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.RValueReferenceType" uuid="dcee2e28-5922-44dd-af08-b9721b1d031e"/>
+        <RetType type="cxxfe.ast.types.LValueReferenceType" uuid="c6ef734e-2f18-4041-a26f-1af448c4bf89"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.ClassType" uuid="d0737cf6-d38c-4ff8-88d3-2693d20e6c2f">
+        <Linkage>ExternalCXX</Linkage>
+        <Methods type="cxxfe.ast.types.Method" uuid="caa00900-03a2-4824-80aa-17c37f3759b4">
+          <Params type="cxxfe.ast.Variable" uuid="a78cb2f8-001e-4b02-885c-459095d878d0">
+            <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+            <Name>input_prop_</Name>
+          </Params>
+          <Params type="cxxfe.ast.Variable" uuid="a93b6641-5e7c-49f0-b2f0-f55f47ead7d7">
+            <Type type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+            <Name>params_</Name>
+          </Params>
+          <SpecialKind>Constructor</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="de462722-65ea-4507-9b1f-bcd7b59cade5"/>
+          <Name>Convolve2D</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="eb253489-a8c8-45d6-a2ae-204c71231277">
+            <cppPosition>1</cppPosition>
+            <cppSignature>Convolve2D::Convolve2D(ImgProperty input_prop_,Conv2DParams params_)</cppSignature>
+            <cppSignatureFcnType>void(*)(ImgProperty, Conv2DParams)</cppSignatureFcnType>
+            <description>clib.conv2d.Convolve2D Constructor of C++ class Convolve2D.</description>
+            <inputs type="mwAnnotation.Argument" uuid="ca05da4c-b415-452c-af6e-efb2ac57251b">
+              <cppPosition>1</cppPosition>
+              <cppType>[ImgProperty]</cppType>
+              <mwType>clib.conv2d.ImgProperty</mwType>
+              <name>input_prop_</name>
+              <storage>Value</storage>
+              <validTypes>clib.conv2d.ImgProperty</validTypes>
+            </inputs>
+            <inputs type="mwAnnotation.Argument" uuid="365ecedd-f2ef-4b3c-80e9-50038ec1b2de">
+              <cppPosition>2</cppPosition>
+              <cppType>[Conv2DParams]</cppType>
+              <mwType>clib.conv2d.Conv2DParams</mwType>
+              <name>params_</name>
+              <storage>Value</storage>
+              <validTypes>clib.conv2d.Conv2DParams</validTypes>
+            </inputs>
+            <name>Convolve2D</name>
+            <ptKey>A/Convolve2D@[ImgProperty],[Conv2DParams]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="64a38f09-2040-4bba-ad69-7669f430271b"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="4eb53efe-04a2-4739-8ea7-b5e87a899a11">
+            <Col>5</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>46</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="8f0c81fe-321b-458d-9a7c-d8686bfcdee9">
+          <SpecialKind>Destructor</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="0aaa220a-2d42-40e5-be17-88aa9e210606"/>
+          <Name>~Convolve2D</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="5835be37-f4d7-45b1-a1dc-6ffa806c6945">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="299f8982-eb20-41af-8257-1f38022c8a02">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="884fc93c-eb39-436d-8e7b-3ed7a008f4ad">
+            <Col>5</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>47</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="5361bad5-e908-40ef-a7cb-3cc2e783967c">
+          <Params type="cxxfe.ast.Variable" uuid="8d6c2a5a-df8c-45e2-97d2-3a33849c084d">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="76b3cd96-668b-4b4c-9ab2-ed39befaabd4"/>
+            <Name>kernel_data</Name>
+          </Params>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="29847394-3f25-404b-bf7c-cd37603885ef"/>
+          <Name>set_kernel</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="6044144c-cab6-4000-8208-b2731c2818f5">
+            <cppPosition>3</cppPosition>
+            <cppSignature>void Convolve2D::set_kernel(std::vector&lt;float, std::allocator&lt;float&gt;&gt; const &amp; kernel_data)</cppSignature>
+            <cppSignatureFcnType>void(*)(std::vector&lt;float, std::allocator&lt;float&gt;&gt; const &amp;)</cppSignatureFcnType>
+            <cppType>[void]</cppType>
+            <description>set_kernel Method of C++ class Convolve2D.</description>
+            <inputs type="mwAnnotation.Argument" uuid="7f030e88-40a3-4831-92c0-73bfe631ae8c">
+              <cppPosition>1</cppPosition>
+              <cppType>[std::vector&lt;float, std::allocator&lt;float&gt;&gt;]ConstRef</cppType>
+              <isConstData>true</isConstData>
+              <mwType>clib.array.conv2d.Float</mwType>
+              <name>kernel_data</name>
+              <outerConstness>true</outerConstness>
+              <outerStorage>Reference</outerStorage>
+              <storage>Vector</storage>
+              <validTypes>clib.array.conv2d.Float</validTypes>
+            </inputs>
+            <name>set_kernel</name>
+            <ptKey>MF/Convolve2D/set_kernel@[std::vector&lt;float, std::allocator&lt;float&gt;&gt;]ConstRef#[void]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="001ef985-b18c-4b81-b9e2-0078676613ba"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="14d87558-7287-42b4-ac9d-82c4540bfce8">
+            <Col>10</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>49</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="f2cf3c11-57fd-4838-91f5-a65cdfbd8082">
+          <Params type="cxxfe.ast.Variable" uuid="45a1b424-222d-4ca0-b258-498acdc91f73">
+            <Type type="cxxfe.ast.types.PointerType" uuid="95b89ef2-e6b0-42b2-9a7f-25f03451f0d3"/>
+            <Name>input_device</Name>
+          </Params>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="23af41df-d32e-4981-a52b-c3f283afbc10"/>
+          <Name>forward</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="a78bdaf1-e582-4549-83cc-f82ae5d4a66f">
+            <cppPosition>4</cppPosition>
+            <cppSignature>void Convolve2D::forward(FLOAT const * input_device)</cppSignature>
+            <cppSignatureFcnType>void(*)(FLOAT const *)</cppSignatureFcnType>
+            <cppType>[void]</cppType>
+            <description>forward Method of C++ class Convolve2D.</description>
+            <inputs type="mwAnnotation.Argument" uuid="973000f0-5362-44ba-b621-ce12c1fa39c2">
+              <cppPosition>1</cppPosition>
+              <cppType>[float]ConstPtr</cppType>
+              <isConstData>true</isConstData>
+              <mwType>clib.array.conv2d.Float</mwType>
+              <name>input_device</name>
+              <shape>Undefined</shape>
+              <storage>Pointer</storage>
+              <validTypes>clib.array.conv2d.Float</validTypes>
+              <validTypes>single</validTypes>
+            </inputs>
+            <name>forward</name>
+            <ptKey>MF/Convolve2D/forward@[float]ConstPtr#[void]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="b51017d0-f0ce-4705-94d4-80e5fa3f2be1">
+              <definitionStatus>PartiallySpecified</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="5384f830-4d90-4d31-bc68-8f769c167a3d">
+            <Col>10</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>50</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="993c402f-ebbd-4197-91f8-070e325bdde7">
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="1c1b5bce-cc75-4b91-9cdc-90342c7f756c"/>
+          <Name>get_output</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="5883209c-b3ef-4c02-b537-1dc947aeccf3">
+            <cppPosition>5</cppPosition>
+            <cppSignature>FLOAT * Convolve2D::get_output()</cppSignature>
+            <cppSignatureFcnType>FLOAT *(*)()</cppSignatureFcnType>
+            <cppType>[float]Ptr</cppType>
+            <description>get_output Method of C++ class Convolve2D.</description>
+            <name>get_output</name>
+            <outputs type="mwAnnotation.Argument" uuid="8d05a4b4-3e9d-4b45-b0a9-a04ff4e8742d">
+              <cppType>[float]Ptr</cppType>
+              <direction>Out</direction>
+              <mwType>single</mwType>
+              <name>RetVal</name>
+              <shape>Undefined</shape>
+              <storage>Pointer</storage>
+              <validTypes>single</validTypes>
+            </outputs>
+            <ptKey>MF/Convolve2D/get_output#[float]Ptr</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="c97b89d3-7354-4d84-ae1e-a9f0b92d9d71">
+              <definitionStatus>PartiallySpecified</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="0bb8be6e-733a-4884-aec2-cac6de66d877">
+            <Col>12</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>52</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="b8a3d5b2-fabc-4807-b915-5c013a521f33">
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="ab79d871-acd8-4c36-a3b1-dcf32333ac48"/>
+          <Name>get_param</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="fb686c79-b93e-4a3e-a96e-8b0f27d8b042">
+            <cppPosition>6</cppPosition>
+            <cppSignature>Conv2DParams Convolve2D::get_param()</cppSignature>
+            <cppSignatureFcnType>Conv2DParams(*)()</cppSignatureFcnType>
+            <cppType>[Conv2DParams]</cppType>
+            <description>get_param Method of C++ class Convolve2D.</description>
+            <name>get_param</name>
+            <outputs type="mwAnnotation.Argument" uuid="444971ae-75cb-4d1f-b54e-ed012bc85743">
+              <cppType>[Conv2DParams]</cppType>
+              <direction>Out</direction>
+              <isOwned>true</isOwned>
+              <mwType>clib.conv2d.Conv2DParams</mwType>
+              <name>RetVal</name>
+              <storage>Value</storage>
+              <validTypes>clib.conv2d.Conv2DParams</validTypes>
+            </outputs>
+            <ptKey>MF/Convolve2D/get_param#[Conv2DParams]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="0dcd6a69-3a4d-4311-8b1c-dde945b856f7"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="28669e83-ea1e-43a4-b33b-75497c329636">
+            <Col>18</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>53</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="5cd373e5-1c38-4754-9f73-1d404eb76a49">
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="67b2cc61-ef20-4aa2-8f0d-4d35d4fa136b"/>
+          <Name>get_output_spec</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="a6af504a-57ed-4b51-8fb6-359c77c6bbc4">
+            <cppPosition>7</cppPosition>
+            <cppSignature>ImgProperty Convolve2D::get_output_spec()</cppSignature>
+            <cppSignatureFcnType>ImgProperty(*)()</cppSignatureFcnType>
+            <cppType>[ImgProperty]</cppType>
+            <description>get_output_spec Method of C++ class Convolve2D.</description>
+            <name>get_output_spec</name>
+            <outputs type="mwAnnotation.Argument" uuid="d0368178-3469-4054-a6f5-cd1f98da829d">
+              <cppType>[ImgProperty]</cppType>
+              <direction>Out</direction>
+              <isOwned>true</isOwned>
+              <mwType>clib.conv2d.ImgProperty</mwType>
+              <name>RetVal</name>
+              <storage>Value</storage>
+              <validTypes>clib.conv2d.ImgProperty</validTypes>
+            </outputs>
+            <ptKey>MF/Convolve2D/get_output_spec#[ImgProperty]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="34d0b24c-bdc2-4f41-a9cc-71ea6033205e"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="58a5ec02-751a-4f39-9dcb-f0b8ab99b95b">
+            <Col>17</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>55</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="ec11d561-6812-4755-a302-e80e60e1ce7a">
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="6dcad147-d7dd-48bc-ad0e-d40ab494c476"/>
+          <Name>get_input_spec</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="565746e6-509f-4024-a039-baa93ed1f6c5">
+            <cppPosition>8</cppPosition>
+            <cppSignature>ImgProperty Convolve2D::get_input_spec()</cppSignature>
+            <cppSignatureFcnType>ImgProperty(*)()</cppSignatureFcnType>
+            <cppType>[ImgProperty]</cppType>
+            <description>get_input_spec Method of C++ class Convolve2D.</description>
+            <name>get_input_spec</name>
+            <outputs type="mwAnnotation.Argument" uuid="f76721da-e981-48c2-b51f-71ccc36e341e">
+              <cppType>[ImgProperty]</cppType>
+              <direction>Out</direction>
+              <isOwned>true</isOwned>
+              <mwType>clib.conv2d.ImgProperty</mwType>
+              <name>RetVal</name>
+              <storage>Value</storage>
+              <validTypes>clib.conv2d.ImgProperty</validTypes>
+            </outputs>
+            <ptKey>MF/Convolve2D/get_input_spec#[ImgProperty]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="9be68d69-003d-4df6-8b74-c8cf80a29474"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="265c19dd-a9c5-4b87-9964-8602a8672a27">
+            <Col>17</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>56</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="07033b6d-7a4d-4884-857e-337d92b2f675">
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="0f87e710-3ab0-471d-ac1a-af00cbb5dc5d"/>
+          <Name>validate_params</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="8a639d9f-cc0b-4405-86d7-2a5f97a6a5c1">
+            <cppPosition>9</cppPosition>
+            <cppSignature>void Convolve2D::validate_params()</cppSignature>
+            <cppSignatureFcnType>void(*)()</cppSignatureFcnType>
+            <cppType>[void]</cppType>
+            <description>validate_params Method of C++ class Convolve2D.</description>
+            <name>validate_params</name>
+            <ptKey>MF/Convolve2D/validate_params#[void]</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="47b11a33-9995-47fe-a351-662d671484a5"/>
+          </Annotations>
+          <DeclPos type="cxxfe.ast.source.SourcePosition" uuid="86da3eb2-fddd-4c2a-97f1-a6fe42d823f1">
+            <Col>10</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>58</Line>
+          </DeclPos>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="06b607c7-7af7-404f-930d-39ecd8886912">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="08831b62-ad85-4db2-a19e-34d358ed6211">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="26eb73b8-726e-411d-9781-7729cf5e69cc"/>
+          </Params>
+          <SpecialKind>CopyConstructor</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="c534382d-bc63-490d-a570-4230b609c477"/>
+          <Name>Convolve2D</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="9a3f1cf7-5194-4cb3-bcb8-40534579bf99">
+            <cppPosition>1</cppPosition>
+            <cppSignature>Convolve2D::Convolve2D(Convolve2D const &amp; input1)</cppSignature>
+            <cppSignatureFcnType>void(*)(Convolve2D const &amp;)</cppSignatureFcnType>
+            <description>clib.conv2d.Convolve2D Constructor of C++ class Convolve2D.</description>
+            <inputs type="mwAnnotation.Argument" uuid="305a8895-ec83-4c96-b160-2da9bb716e25">
+              <cppPosition>1</cppPosition>
+              <cppType>[Convolve2D]ConstRef</cppType>
+              <isConstData>true</isConstData>
+              <mwType>clib.conv2d.Convolve2D</mwType>
+              <name>input1</name>
+              <validTypes>clib.conv2d.Convolve2D</validTypes>
+            </inputs>
+            <name>Convolve2D</name>
+            <ptKey>A/Convolve2D@[Convolve2D]ConstRef</ptKey>
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="6330ce71-0861-4726-81d7-8693753dc156"/>
+          </Annotations>
+        </Methods>
+        <Methods type="cxxfe.ast.types.Method" uuid="6bd16647-afd5-4822-85a7-ab229cb07b30">
+          <IsCompilerGenerated>true</IsCompilerGenerated>
+          <IsInline>true</IsInline>
+          <Params type="cxxfe.ast.Variable" uuid="2c29a87c-e2aa-4083-9c23-752e168d4099">
+            <Type type="cxxfe.ast.types.LValueReferenceType" uuid="26eb73b8-726e-411d-9781-7729cf5e69cc"/>
+          </Params>
+          <SpecialKind>Operator</SpecialKind>
+          <Linkage>ExternalCXX</Linkage>
+          <Type type="cxxfe.ast.types.FunctionType" uuid="48e4cabd-38a3-4a92-9059-4e875fd664f8"/>
+          <Name>operator=</Name>
+          <Annotations type="mwAnnotation.FunctionAnnotation" uuid="a958700b-ba2a-4146-95fe-70bc8a649a20">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="ad6839d2-7fab-4945-a6a2-fc5e45e478ac">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+        </Methods>
+        <IsStandardLayout>true</IsStandardLayout>
+        <Members type="cxxfe.ast.types.Member" uuid="d160e9bb-9711-47e8-895c-55ce2b4d7152">
+          <Access>Private</Access>
+          <Type type="cxxfe.ast.types.PointerType" uuid="a601b4f7-b605-4b37-a0bf-4da64b527e1e"/>
+          <Name>kernel_device</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="26c1ed2a-5df3-4711-ad44-f1eefa76e97d">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="1eb61298-89dd-47fe-a2f4-a46012769331">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="077bd4e1-f163-42df-aed7-3ff42024f5e2">
+            <Col>12</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>39</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="98590f3f-c15c-40f2-83ee-d37f723987fd">
+          <Access>Private</Access>
+          <Type type="cxxfe.ast.types.PointerType" uuid="a601b4f7-b605-4b37-a0bf-4da64b527e1e"/>
+          <Name>output_device</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="ddd1c31a-9c2c-4acc-93f3-fd73c38e3f0d">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="08297579-e087-4ad7-bcbc-56df73f60543">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="73b71660-c124-4df9-9c5a-4b258cfeecb4">
+            <Col>12</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>40</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="e9a411fe-e4ba-448b-bcf0-28e51281ffba">
+          <Access>Private</Access>
+          <Type type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+          <Name>params</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="d1965e78-5a9c-495d-b067-7956ef482763">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="8d42ac4e-73ba-45a6-8387-6762dcf4c7ff">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="91ba46d8-dd06-4453-a038-7cadd86785dc">
+            <Col>18</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>42</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="2061f402-8771-42d9-8bd6-e7ecbcd9ad7f">
+          <Access>Private</Access>
+          <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+          <Name>input_prop</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="a5715057-9e78-412f-b3e8-06f74862a055">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="c0d964f9-1b68-44a2-8285-5848581720d4">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="85283800-fd9d-4fe9-bd5e-d77e0d35568f">
+            <Col>17</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>43</Line>
+          </DefPos>
+        </Members>
+        <Members type="cxxfe.ast.types.Member" uuid="be2a53df-58d4-41d0-a6f0-e3188edd6c75">
+          <Access>Private</Access>
+          <Type type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+          <Name>output_prop</Name>
+          <Annotations type="mwAnnotation.VariableAnnotation" uuid="29862665-ef24-4f07-972c-122dad3976a7">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="97cc90dd-ef6a-421a-9eaf-aa4b925ba3d3">
+              <definitionStatus>Inaccessible</definitionStatus>
+            </integrationStatus>
+          </Annotations>
+          <DefPos type="cxxfe.ast.source.SourcePosition" uuid="cbd9005c-7664-46ad-a41c-7ae6b931bd3c">
+            <Col>29</Col>
+            <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+            <Line>43</Line>
+          </DefPos>
+        </Members>
+        <Name>Convolve2D</Name>
+        <Annotations type="mwAnnotation.ClassAnnotation" uuid="cc29bc07-a531-4c53-94f9-027eb3849b8a">
+          <cppStructConvPTKey>S/Convolve2D/convertScalarCPPStruct</cppStructConvPTKey>
+          <deallocatorPTKey>D/Convolve2D</deallocatorPTKey>
+          <description>clib.conv2d.Convolve2D    Representation of C++ class Convolve2D.</description>
+          <isAssignable>true</isAssignable>
+          <isDestructible>true</isDestructible>
+          <mlStructConvPTKey>S/Convolve2D/convertScalarMLStruct</mlStructConvPTKey>
+          <name>clib.conv2d.Convolve2D</name>
+          <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="c6a290d6-9c5d-4c92-b5f5-f607edbfd90f"/>
+        </Annotations>
+        <Scope type="cxxfe.ast.Scope" uuid="8a113743-0ea6-4053-8262-854ca733615b">
+          <Annotations type="mwAnnotation.ScopeAnnotation" uuid="5d431d6a-0092-4bbb-b740-e44ef96aa2a9">
+            <integrationStatus type="mwAnnotation.IntegrationStatus" uuid="501fd76a-b979-4acd-878a-e15b6ead4048"/>
+          </Annotations>
+        </Scope>
+        <DefPos type="cxxfe.ast.source.SourcePosition" uuid="8342f300-7222-4786-836d-1dba08c447cd">
+          <Col>7</Col>
+          <File type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0"/>
+          <Line>35</Line>
+        </DefPos>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.PointerType" uuid="a601b4f7-b605-4b37-a0bf-4da64b527e1e">
+        <Type type="cxxfe.ast.types.TypedefType" uuid="6854396c-d442-4994-b2c8-aa91385b7f9d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="de462722-65ea-4507-9b1f-bcd7b59cade5">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+        <ParamTypes type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="0aaa220a-2d42-40e5-be17-88aa9e210606">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="29847394-3f25-404b-bf7c-cd37603885ef">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="76b3cd96-668b-4b4c-9ab2-ed39befaabd4"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="76b3cd96-668b-4b4c-9ab2-ed39befaabd4">
+        <Type type="cxxfe.ast.types.QualifiedType" uuid="269eced9-9239-45a2-908d-e52415e7f018"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.QualifiedType" uuid="269eced9-9239-45a2-908d-e52415e7f018">
+        <IsConst>true</IsConst>
+        <Type type="cxxfe.ast.types.ClassType" uuid="1fc2d468-358d-47c0-9c70-73753e16f13e"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="23af41df-d32e-4981-a52b-c3f283afbc10">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.PointerType" uuid="95b89ef2-e6b0-42b2-9a7f-25f03451f0d3"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.PointerType" uuid="95b89ef2-e6b0-42b2-9a7f-25f03451f0d3">
+        <Type type="cxxfe.ast.types.QualifiedType" uuid="db00d025-d943-4965-a155-cddde0ef768e"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.QualifiedType" uuid="db00d025-d943-4965-a155-cddde0ef768e">
+        <IsConst>true</IsConst>
+        <Type type="cxxfe.ast.types.TypedefType" uuid="6854396c-d442-4994-b2c8-aa91385b7f9d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="1c1b5bce-cc75-4b91-9cdc-90342c7f756c">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.PointerType" uuid="a601b4f7-b605-4b37-a0bf-4da64b527e1e"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="ab79d871-acd8-4c36-a3b1-dcf32333ac48">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.StructType" uuid="1af3c5e9-0707-44ab-9163-e7b4ec5237e0"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="67b2cc61-ef20-4aa2-8f0d-4d35d4fa136b">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="6dcad147-d7dd-48bc-ad0e-d40ab494c476">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.StructType" uuid="7579c24b-a7da-4abc-b865-de4be2f7f06d"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="0f87e710-3ab0-471d-ac1a-af00cbb5dc5d">
+        <IsPrototyped>true</IsPrototyped>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="c534382d-bc63-490d-a570-4230b609c477">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="26eb73b8-726e-411d-9781-7729cf5e69cc"/>
+        <RetType type="cxxfe.ast.types.VoidType" uuid="a3168071-748e-4edc-acd8-4f9677d84cbd"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="26eb73b8-726e-411d-9781-7729cf5e69cc">
+        <Type type="cxxfe.ast.types.QualifiedType" uuid="815d3604-fc52-4933-bade-17101d14f20f"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.QualifiedType" uuid="815d3604-fc52-4933-bade-17101d14f20f">
+        <IsConst>true</IsConst>
+        <Type type="cxxfe.ast.types.ClassType" uuid="d0737cf6-d38c-4ff8-88d3-2693d20e6c2f"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.FunctionType" uuid="48e4cabd-38a3-4a92-9059-4e875fd664f8">
+        <IsPrototyped>true</IsPrototyped>
+        <ParamTypes type="cxxfe.ast.types.LValueReferenceType" uuid="26eb73b8-726e-411d-9781-7729cf5e69cc"/>
+        <RetType type="cxxfe.ast.types.LValueReferenceType" uuid="a17f90e5-d49a-4986-90f2-c51cb33616f9"/>
+      </Symbols>
+      <Symbols type="cxxfe.ast.types.LValueReferenceType" uuid="a17f90e5-d49a-4986-90f2-c51cb33616f9">
+        <Type type="cxxfe.ast.types.ClassType" uuid="d0737cf6-d38c-4ff8-88d3-2693d20e6c2f"/>
+      </Symbols>
+    </Compilations>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="287f161d-5b34-41c4-b7b3-2f45a55414b0">
+      <IncludedFileWrittenNames>vector</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="4b3bb7c3-03fd-4c87-b579-1fc8524711b5"/>
+      <IsTopLevelFile>true</IsTopLevelFile>
+      <Path>/home/manoj/Dropbox/work/learn/libxfeat/include/conv2d.h</Path>
+      <WrittenName>/home/manoj/Dropbox/work/learn/libxfeat/include/conv2d.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="644e806c-967c-484b-b0e1-f583abf53c08">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/backward/binders.h</Path>
+      <WrittenName>backward/binders.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="c0fd7534-ac5c-471a-b9ad-6b12a6d8a85d">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bit</Path>
+      <WrittenName>bit</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="e87ad84e-601d-4530-aadf-8bd4f34631af">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/alloc_traits.h</Path>
+      <WrittenName>bits/alloc_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c">
+      <IncludedFileWrittenNames>bits/c++allocator.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/memoryfwd.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="8def3697-57f5-4bc0-bc04-a04e6705177f"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="4962dc3f-0b1a-4a69-babc-05eb2c3e34aa"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/allocator.h</Path>
+      <WrittenName>bits/allocator.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="ca25aae0-83ca-457b-9e96-165469ad1a99">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/concept_check.h</Path>
+      <WrittenName>bits/concept_check.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="d2ddd5a6-e5a2-4f08-85ae-07b2b5883bdb">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/cpp_type_traits.h</Path>
+      <WrittenName>bits/cpp_type_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="726068b4-5ffe-41c6-a34a-de48fb7902a1">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/exception.h</Path>
+      <WrittenName>bits/exception.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="5c2d40ab-b889-4e6f-8c28-2b958ce59d57">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/exception_defines.h</Path>
+      <WrittenName>bits/exception_defines.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="a4c045eb-c122-4184-a2ee-f916683c3dee">
+      <IncludedFileWrittenNames>bits/exception_defines.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="5c2d40ab-b889-4e6f-8c28-2b958ce59d57"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/functexcept.h</Path>
+      <WrittenName>bits/functexcept.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="d5524822-2676-483c-bbd6-4e32a51db595">
+      <IncludedFileWrittenNames>bits/hash_bytes.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="d2aaa0d9-4150-4bd8-9223-e569a5bdeb56"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/functional_hash.h</Path>
+      <WrittenName>bits/functional_hash.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="d2aaa0d9-4150-4bd8-9223-e569a5bdeb56">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/hash_bytes.h</Path>
+      <WrittenName>bits/hash_bytes.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="aafa152c-2328-4743-9bd1-d0b7bf360451">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/invoke.h</Path>
+      <WrittenName>bits/invoke.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="29544562-d561-47cf-8a91-735e52a6325d">
+      <IncludedFileWrittenNames>cstddef</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/uses_allocator.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/uses_allocator_args.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>tuple</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9c0f84a0-5ab0-4b86-ad4e-f9c6cd8b9ebf"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="0ffea3ce-a94b-4b49-a4fb-2239f01eba36"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="b9caa3ee-ecf8-4174-bff0-3212483ed5ca"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="4087a9d6-2007-4b04-ae04-fe7d722d3f4e"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/memory_resource.h</Path>
+      <WrittenName>bits/memory_resource.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="4962dc3f-0b1a-4a69-babc-05eb2c3e34aa">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/memoryfwd.h</Path>
+      <WrittenName>bits/memoryfwd.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="ecfd1144-5fa2-4f53-8ae1-847392ea6c10">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/move.h</Path>
+      <WrittenName>bits/move.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb">
+      <IncludedFileWrittenNames>new</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="4a98fb5b-ba4f-479f-affe-dbf1bb983f3d"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/new_allocator.h</Path>
+      <WrittenName>bits/new_allocator.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="72f252a2-b185-4cc0-938e-b54c132fa248">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/predefined_ops.h</Path>
+      <WrittenName>bits/predefined_ops.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9e68ae3c-25c6-4a78-97c9-b298f7def829">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/ptr_traits.h</Path>
+      <WrittenName>bits/ptr_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="c170b03a-d4f6-4325-9c44-1385edf6b681">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/range_access.h</Path>
+      <WrittenName>bits/range_access.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="6be36e9e-d708-4870-8be5-90762ac56a4d">
+      <IncludedFileWrittenNames>bits/invoke.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_function.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="aafa152c-2328-4743-9bd1-d0b7bf360451"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9adfc007-0163-4f60-8dcb-8630ede71fc9"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/refwrap.h</Path>
+      <WrittenName>bits/refwrap.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="d77cfed9-eed8-42e7-ba42-4aeb7ed99442">
+      <IncludedFileWrittenNames>bits/c++config.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="32511f6d-40e8-4715-899c-2fa883b3b391"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/requires_hosted.h</Path>
+      <WrittenName>bits/requires_hosted.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="32f29b18-cf27-4dab-a915-42f6f026feb6">
+      <IncludedFileWrittenNames>bits/functexcept.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/cpp_type_traits.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>ext/type_traits.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>ext/numeric_traits.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_pair.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_iterator_base_types.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_iterator_base_funcs.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_iterator.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>debug/debug.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/predefined_ops.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bit</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="a4c045eb-c122-4184-a2ee-f916683c3dee"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="d2ddd5a6-e5a2-4f08-85ae-07b2b5883bdb"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="026506a7-536c-4ac3-879d-cb234a3ea1d8"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="78977903-c9a6-48d8-8e74-348252e73ff9"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="151149f7-f1ae-43c7-9b79-99fd8784ba0b"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="103df471-cb61-4444-bcb8-8cc7c7ced8b3"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9639efae-00b6-4935-9bd8-2d5b2e910ce1"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="7144782b-d30e-4b22-bd13-a24630e44f36"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="90aaf379-c3d8-479d-8b17-88ab5affe231"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="72f252a2-b185-4cc0-938e-b54c132fa248"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="c0fd7534-ac5c-471a-b9ad-6b12a6d8a85d"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_algobase.h</Path>
+      <WrittenName>bits/stl_algobase.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="23c29203-1839-4394-bb39-c0deba0bc7fe">
+      <IncludedFileWrittenNames>bits/functional_hash.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="d5524822-2676-483c-bbd6-4e32a51db595"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_bvector.h</Path>
+      <WrittenName>bits/stl_bvector.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="152b553c-c59f-4bb9-9978-35ff08d162bd">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_construct.h</Path>
+      <WrittenName>bits/stl_construct.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9adfc007-0163-4f60-8dcb-8630ede71fc9">
+      <IncludedFileWrittenNames>backward/binders.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="644e806c-967c-484b-b0e1-f583abf53c08"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_function.h</Path>
+      <WrittenName>bits/stl_function.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="7144782b-d30e-4b22-bd13-a24630e44f36">
+      <IncludedFileWrittenNames>bits/ptr_traits.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9e68ae3c-25c6-4a78-97c9-b298f7def829"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_iterator.h</Path>
+      <WrittenName>bits/stl_iterator.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9639efae-00b6-4935-9bd8-2d5b2e910ce1">
+      <IncludedFileWrittenNames>bits/concept_check.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>debug/assertions.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="ca25aae0-83ca-457b-9e96-165469ad1a99"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="90466d2a-318b-4e3c-b561-ea616c855915"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_iterator_base_funcs.h</Path>
+      <WrittenName>bits/stl_iterator_base_funcs.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="103df471-cb61-4444-bcb8-8cc7c7ced8b3">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_iterator_base_types.h</Path>
+      <WrittenName>bits/stl_iterator_base_types.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="151149f7-f1ae-43c7-9b79-99fd8784ba0b">
+      <IncludedFileWrittenNames>type_traits</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/move.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/utility.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="0eb6ae43-fa50-408b-b0e6-1e71cade6195"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="ecfd1144-5fa2-4f53-8ae1-847392ea6c10"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="2d4f023a-4364-4b6e-a2bb-c3381e572efd"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_pair.h</Path>
+      <WrittenName>bits/stl_pair.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="13c99469-cb1e-4ae1-9ea7-5947d7a6c29d">
+      <IncludedFileWrittenNames>ext/alloc_traits.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="be6d33ee-2cea-4302-b17a-8bd67f82cb88"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_uninitialized.h</Path>
+      <WrittenName>bits/stl_uninitialized.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613">
+      <IncludedFileWrittenNames>initializer_list</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="ab6272a7-8c7b-47e4-9523-71d447fcb24c"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/stl_vector.h</Path>
+      <WrittenName>bits/stl_vector.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="0ffea3ce-a94b-4b49-a4fb-2239f01eba36">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/uses_allocator.h</Path>
+      <WrittenName>bits/uses_allocator.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="b9caa3ee-ecf8-4174-bff0-3212483ed5ca">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/uses_allocator_args.h</Path>
+      <WrittenName>bits/uses_allocator_args.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="2d4f023a-4364-4b6e-a2bb-c3381e572efd">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/utility.h</Path>
+      <WrittenName>bits/utility.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="95fde644-2831-4395-9cfc-936840abd715">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/bits/vector.tcc</Path>
+      <WrittenName>bits/vector.tcc</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="9c0f84a0-5ab0-4b86-ad4e-f9c6cd8b9ebf">
+      <IncludedFileWrittenNames>stddef.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="ab67350c-4af1-416f-af94-fe0057bbbf54"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/cstddef</Path>
+      <WrittenName>cstddef</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="90466d2a-318b-4e3c-b561-ea616c855915">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/debug/assertions.h</Path>
+      <WrittenName>debug/assertions.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="90aaf379-c3d8-479d-8b17-88ab5affe231">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/debug/debug.h</Path>
+      <WrittenName>debug/debug.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="be6d33ee-2cea-4302-b17a-8bd67f82cb88">
+      <IncludedFileWrittenNames>bits/alloc_traits.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="e87ad84e-601d-4530-aadf-8bd4f34631af"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/ext/alloc_traits.h</Path>
+      <WrittenName>ext/alloc_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="78977903-c9a6-48d8-8e74-348252e73ff9">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/ext/numeric_traits.h</Path>
+      <WrittenName>ext/numeric_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="026506a7-536c-4ac3-879d-cb234a3ea1d8">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/ext/type_traits.h</Path>
+      <WrittenName>ext/type_traits.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="ab6272a7-8c7b-47e4-9523-71d447fcb24c">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/initializer_list</Path>
+      <WrittenName>initializer_list</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="4a98fb5b-ba4f-479f-affe-dbf1bb983f3d">
+      <IncludedFileWrittenNames>bits/exception.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="726068b4-5ffe-41c6-a34a-de48fb7902a1"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/new</Path>
+      <WrittenName>new</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="3db363ab-ce12-49ba-b8b9-2de5e51751ad">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/pstl/pstl_config.h</Path>
+      <WrittenName>pstl/pstl_config.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="4087a9d6-2007-4b04-ae04-fe7d722d3f4e">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/tuple</Path>
+      <WrittenName>tuple</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="0eb6ae43-fa50-408b-b0e6-1e71cade6195">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/type_traits</Path>
+      <WrittenName>type_traits</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="4b3bb7c3-03fd-4c87-b579-1fc8524711b5">
+      <IncludedFileWrittenNames>bits/requires_hosted.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_algobase.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/allocator.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_construct.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_uninitialized.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_vector.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/stl_bvector.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/refwrap.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/range_access.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/vector.tcc</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/memory_resource.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="d77cfed9-eed8-42e7-ba42-4aeb7ed99442"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="32f29b18-cf27-4dab-a915-42f6f026feb6"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9df9992e-453a-40fe-8cab-5c9f32255f2c"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="152b553c-c59f-4bb9-9978-35ff08d162bd"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="13c99469-cb1e-4ae1-9ea7-5947d7a6c29d"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="9e432803-cd47-4b59-a8af-60acea385613"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="23c29203-1839-4394-bb39-c0deba0bc7fe"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="6be36e9e-d708-4870-8be5-90762ac56a4d"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="c170b03a-d4f6-4325-9c44-1385edf6b681"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="95fde644-2831-4395-9cfc-936840abd715"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="29544562-d561-47cf-8a91-735e52a6325d"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/c++/13/vector</Path>
+      <WrittenName>vector</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="71d51d4c-ff20-4165-a7b4-eb5819f58b64">
+      <IncludedFileWrittenNames>bits/wordsize.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/timesize.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="87f3de14-27bd-4391-b6af-1c68479f8dcd"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="c9ba2ffc-47da-400a-9914-e26e869bcc55"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/features-time64.h</Path>
+      <WrittenName>features-time64.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="cd6a6503-1441-4df2-9412-feca5f635eef">
+      <IncludedFileWrittenNames>features-time64.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>stdc-predef.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>sys/cdefs.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>gnu/stubs.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="71d51d4c-ff20-4165-a7b4-eb5819f58b64"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="51b44ae6-4706-4c10-8189-6f7070663520"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="61ce72e2-ca54-4936-a181-6e062bab07f2"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="10bf5a81-c744-4e78-9080-94e4445b52bb"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/features.h</Path>
+      <WrittenName>features.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="51b44ae6-4706-4c10-8189-6f7070663520">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/stdc-predef.h</Path>
+      <WrittenName>stdc-predef.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="f1f8a101-e22f-4722-9682-a3dd9ba9abf8">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/bits/long-double.h</Path>
+      <WrittenName>bits/long-double.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="c9ba2ffc-47da-400a-9914-e26e869bcc55">
+      <IncludedFileWrittenNames>bits/wordsize.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="87f3de14-27bd-4391-b6af-1c68479f8dcd"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/bits/timesize.h</Path>
+      <WrittenName>bits/timesize.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="87f3de14-27bd-4391-b6af-1c68479f8dcd">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/bits/wordsize.h</Path>
+      <WrittenName>bits/wordsize.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="8def3697-57f5-4bc0-bc04-a04e6705177f">
+      <IncludedFileWrittenNames>bits/new_allocator.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="6082f2e3-ef7a-47c4-80be-3e6d6ef93eeb"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/c++/13/bits/c++allocator.h</Path>
+      <WrittenName>bits/c++allocator.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="32511f6d-40e8-4715-899c-2fa883b3b391">
+      <IncludedFileWrittenNames>bits/os_defines.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/cpu_defines.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>pstl/pstl_config.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="fa3e391c-fa69-434a-b1a4-c5a5ec299852"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="85d484cf-ab2d-4f89-a2a9-4e11d92c4520"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="3db363ab-ce12-49ba-b8b9-2de5e51751ad"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h</Path>
+      <WrittenName>bits/c++config.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="85d484cf-ab2d-4f89-a2a9-4e11d92c4520">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h</Path>
+      <WrittenName>bits/cpu_defines.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="fa3e391c-fa69-434a-b1a4-c5a5ec299852">
+      <IncludedFileWrittenNames>features.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="cd6a6503-1441-4df2-9412-feca5f635eef"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h</Path>
+      <WrittenName>bits/os_defines.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="4815c7ff-3a52-4c15-a384-948d3a490a8d">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/gnu/stubs-64.h</Path>
+      <WrittenName>gnu/stubs-64.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="10bf5a81-c744-4e78-9080-94e4445b52bb">
+      <IncludedFileWrittenNames>gnu/stubs-64.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="4815c7ff-3a52-4c15-a384-948d3a490a8d"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/gnu/stubs.h</Path>
+      <WrittenName>gnu/stubs.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="61ce72e2-ca54-4936-a181-6e062bab07f2">
+      <IncludedFileWrittenNames>bits/wordsize.h</IncludedFileWrittenNames>
+      <IncludedFileWrittenNames>bits/long-double.h</IncludedFileWrittenNames>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="87f3de14-27bd-4391-b6af-1c68479f8dcd"/>
+      <IncludedFiles type="cxxfe.ast.source.SourceFile" uuid="f1f8a101-e22f-4722-9682-a3dd9ba9abf8"/>
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/include/x86_64-linux-gnu/sys/cdefs.h</Path>
+      <WrittenName>sys/cdefs.h</WrittenName>
+    </Files>
+    <Files type="cxxfe.ast.source.SourceFile" uuid="ab67350c-4af1-416f-af94-fe0057bbbf54">
+      <IsInclude>true</IsInclude>
+      <IsIncludedBySystemIncludeSyntax>true</IsIncludedBySystemIncludeSyntax>
+      <IsIncludedFromSystemIncludeDir>true</IsIncludedFromSystemIncludeDir>
+      <Path>/usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h</Path>
+      <WrittenName>stddef.h</WrittenName>
+    </Files>
+    <LongDoubleNumBits>128</LongDoubleNumBits>
+    <LongNumBits>64</LongNumBits>
+    <PointerNumBits>64</PointerNumBits>
+    <PtrDiffTypeKind>SignedLong</PtrDiffTypeKind>
+    <SizeTypeKind>UnsignedLong</SizeTypeKind>
+    <WcharTypeKind>SignedInt</WcharTypeKind>
+  </cxxfe.ast.Project>
+</MF0>

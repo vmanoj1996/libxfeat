@@ -17,8 +17,7 @@ k1 for row and k2 for column
 #pragma once
 
 #include <vector>
-
-using FLOAT = float;
+#include "primitives.hpp"
 
 struct Conv2DParams
 {
@@ -26,31 +25,25 @@ struct Conv2DParams
     int s1, s2, p1, p2;
 };
 
-struct ImgProperty
-{
-    int height;
-    int width;
-};
-
-class Convolve2D
+class Conv2D
 {
 
 private:
-    FLOAT *kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
-    FLOAT *output_device; // co x output_height x output_width
+    DevicePointer<FLOAT> kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
+    DevicePointer<FLOAT> output_device; // co x output_height x output_width
 
     Conv2DParams params;
     ImgProperty input_prop, output_prop;
-    dim3 threadcount, blocks;
-
-public:
-    Convolve2D(ImgProperty input_prop_, Conv2DParams params_);
-    ~Convolve2D();
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);
-    void forward(const FLOAT *input_device);
 
-    FLOAT *get_output();
+public:
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data);
+    ~Conv2D();
+
+    void forward(DevicePointer<FLOAT>& input_device);
+
+    DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param();
 
     ImgProperty get_output_spec();

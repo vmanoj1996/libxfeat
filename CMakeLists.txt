@@ -6,7 +6,7 @@ find_package(CUDAToolkit REQUIRED)
 find_package(Matlab REQUIRED COMPONENTS MEX_COMPILER)
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Source --------------------------------------------------------------------------------------------
 
@@ -30,14 +30,14 @@ target_link_libraries(conv2d_lib PUBLIC
 set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # MEX target
-if(Matlab_FOUND)
-    matlab_add_mex(NAME conv2d_mex 
-                   SRC src/conv2d_mex.cu 
-                   LINK_TO conv2d_lib)
+# if(Matlab_FOUND)
+#     matlab_add_mex(NAME conv2d_mex 
+#                    SRC src/conv2d_mex.cu 
+#                    LINK_TO conv2d_lib)
     
-    # Add static linking flags for libstdc++ and libgcc
-    target_link_options(conv2d_mex PRIVATE 
-        -static-libgcc 
-        -static-libstdc++
-    )
-endif()
+#     # Add static linking flags for libstdc++ and libgcc
+#     target_link_options(conv2d_mex PRIVATE 
+#         -static-libgcc 
+#         -static-libstdc++
+#     )
+# endif()

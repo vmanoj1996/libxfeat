@@ -1,7 +1,8 @@
 // Minimal MEX wrapper - validation moved to MATLAB side
+// This wrapper is just for ensuring the correctness of the conv2d operation
 #include "mex.h"
 #include "conv2d.h"
-#include <cuda_runtime.h>
+#include <cuda_runtime.hpp>
 
 enum InputArgs
 {
