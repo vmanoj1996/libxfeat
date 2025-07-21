@@ -44,7 +44,7 @@ public:
 
     const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device);
 
-    DevicePointer<FLOAT>& get_output();
+    const DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);

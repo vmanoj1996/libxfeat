@@ -108,7 +108,7 @@ void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
 //     cudaMemcpy(kernel_device.get(), kernel_data, expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 // }
 
-DevicePointer<FLOAT>& Conv2D::get_output()
+const DevicePointer<FLOAT>& Conv2D::get_output()
 {
     return output_device;
 }
