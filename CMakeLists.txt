@@ -29,6 +29,13 @@ target_link_libraries(conv2d_lib PUBLIC
 
 set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# Enable MATLAB support if found
+# if(Matlab_FOUND)
+#     target_compile_definitions(conv2d_lib PUBLIC MATLAB_MEX_FILE)
+#     target_link_libraries(conv2d_lib PUBLIC ${Matlab_MEX_LIBRARY})
+# endif()
+
+
 # MEX target
 # if(Matlab_FOUND)
 #     matlab_add_mex(NAME conv2d_mex 

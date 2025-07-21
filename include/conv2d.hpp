@@ -19,10 +19,13 @@ k1 for row and k2 for column
 #include <vector>
 #include "primitives.hpp"
 
-struct Conv2DParams
-{
-    int k1, k2, ci, co;
-    int s1, s2, p1, p2;
+struct Conv2DParams {
+   int k1, k2, ci, co;
+   int s1, s2, p1, p2;
+   
+   Conv2DParams() = default;
+   Conv2DParams(int k1_, int k2_, int ci_, int co_, int s1_, int s2_, int p1_, int p2_)
+       : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
 };
 
 class Conv2D
@@ -35,19 +38,20 @@ private:
     Conv2DParams params;
     ImgProperty input_prop, output_prop;
 
-    void set_kernel(const std::vector<FLOAT> &kernel_data);
-
 public:
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data);
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_);
     ~Conv2D();
 
-    void forward(DevicePointer<FLOAT>& input_device);
+    const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device);
 
     DevicePointer<FLOAT>& get_output();
-    Conv2DParams get_param();
+    Conv2DParams get_param() const;
 
-    ImgProperty get_output_spec();
-    ImgProperty get_input_spec();
+    void set_kernel(const std::vector<FLOAT> &kernel_data);
+    // void set_kernel(const FLOAT* kernel_data, int kernel_size);
+
+    ImgProperty get_output_spec() const;
+    ImgProperty get_input_spec()  const;
 
     void validate_params();
 };

@@ -55,17 +55,18 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
     }
 }
 
-Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data)
+Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_)
     : input_prop(input_prop_), params(params_)
 {
     validate_params();
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
     output_prop.width = (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
 
-    output_device.alloc(params.co * output_prop.height * output_prop.width);
-    kernel_device.alloc(params.co * params.ci * params.k1 * params.k2);
+    std::vector<int> output_Shape = {params.co, output_prop.height, output_prop.width};
+    output_device.alloc(output_Shape);
 
-    set_kernel(kernel_data);
+    std::vector<int> kernel_Shape = {params.co,  params.ci, params.k1, params.k2};
+    kernel_device.alloc(kernel_Shape);
 }
 
 Conv2D::~Conv2D()
@@ -73,7 +74,7 @@ Conv2D::~Conv2D()
     
 }
 
-void Conv2D::forward(DevicePointer<FLOAT>& input_device)
+const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
@@ -83,6 +84,8 @@ void Conv2D::forward(DevicePointer<FLOAT>& input_device)
 
     convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop);
     cudaDeviceSynchronize();
+
+    return output_device;
 }
 
 void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
@@ -95,22 +98,32 @@ void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
     cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
 
+// void Conv2D::set_kernel(const FLOAT* kernel_data, int kernel_size)
+// {
+//     size_t expected_size = params.co * params.ci * params.k1 * params.k2;
+//     if (kernel_size != expected_size)
+//     {
+//         throw std::invalid_argument("Kernel size mismatch: expected " + std::to_string(expected_size) + " weights, got " + std::to_string(kernel_size));
+//     }
+//     cudaMemcpy(kernel_device.get(), kernel_data, expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
+// }
+
 DevicePointer<FLOAT>& Conv2D::get_output()
 {
     return output_device;
 }
 
-Conv2DParams Conv2D::get_param()
+Conv2DParams Conv2D::get_param() const
 {
     return params;
 }
 
-ImgProperty Conv2D::get_output_spec()
+ImgProperty Conv2D::get_output_spec() const
 {
     return output_prop;
 }
 
-ImgProperty Conv2D::get_input_spec()
+ImgProperty Conv2D::get_input_spec() const
 {
     return input_prop;
 }
@@ -142,6 +155,32 @@ void Conv2D::validate_params()
         throw std::invalid_argument("p2 (padding width) must be non-negative");
     }
 }
+
+/*
+void Conv2D::set_kernel(const mxArray* mx_kernel)
+{
+    if (!mxIsNumeric(mx_kernel) || mxIsComplex(mx_kernel)) {
+        throw std::invalid_argument("Kernel must be a real numeric array");
+    }
+    
+    if (!mxIsSingle(mx_kernel)) {
+        throw std::invalid_argument("Kernel must be single precision (use single() in MATLAB)");
+    }
+    
+    size_t num_elements = mxGetNumberOfElements(mx_kernel);
+    size_t expected_size = params.co * params.ci * params.k1 * params.k2;
+    
+    if (num_elements != expected_size) {
+        throw std::invalid_argument("Kernel size mismatch: expected " + 
+                                   std::to_string(expected_size) + " weights, got " + 
+                                   std::to_string(num_elements));
+    }
+    
+    float* data = (float*)mxGetData(mx_kernel);
+    cudaMemcpy(kernel_device.get(), data, expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
+}
+
+*/
 
 #ifdef ACTIVATE_MAIN
 int main()

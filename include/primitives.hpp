@@ -1,11 +1,15 @@
 #pragma once
+#include<vector>
 
-using FLOAT = float;
+// using FLOAT = float;
+#define FLOAT float
 
 struct ImgProperty
 {
     int height;
     int width;
+    ImgProperty() = default;
+    ImgProperty(int height_, int width_): height(height_), width(width_){}
 };
 
 template<typename T>
@@ -13,13 +17,24 @@ class DevicePointer
 {
     private:
     T *ptr;
-
+    size_t size; // total size
+    std::vector<int> dims;
+    
     public:
-    DevicePointer();
+    DevicePointer() = default;
+    DevicePointer(int total_dim);
+    DevicePointer(const std::vector<T> &input, std::vector<int> dims_);
     ~DevicePointer();
 
     T* get();
+    
+    void alloc(std::vector<int> dims_);
     void alloc(int total_dim);
+
+    void set_value(const std::vector<T> &input);
+    std::vector<T> get_value() const;
+    std::vector<int> get_shape() const;
+    // const means it wont modify the class object in any way
 
     // Disable copy/move operations
     DevicePointer(const DevicePointer&) = delete;
