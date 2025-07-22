@@ -13,7 +13,8 @@
 #include <string>
 #include "conv2d.hpp"
 
-__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop)
+template<typename Operation>
+__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
     /* Parameter documentation:
 
@@ -51,7 +52,8 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
         }
 
         int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
-        output_device[o_index] = sum;
+        output_device[o_index] = op.forward(sum);
+
     }
 }
 
@@ -74,7 +76,8 @@ Conv2D::~Conv2D()
     
 }
 
-const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
+template<typename Operation>
+const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device, Operation op)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
@@ -82,8 +85,16 @@ const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
                 (output_prop.height + TC - 1) / TC,
                 (output_prop.width + TC - 1) / TC);
 
-    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop);
+    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, op);
     cudaDeviceSynchronize();
+
+    return output_device;
+}
+
+const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
+{
+
+    forward(input_device, Identity());
 
     return output_device;
 }
@@ -97,16 +108,6 @@ void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
     }
     cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
-
-// void Conv2D::set_kernel(const FLOAT* kernel_data, int kernel_size)
-// {
-//     size_t expected_size = params.co * params.ci * params.k1 * params.k2;
-//     if (kernel_size != expected_size)
-//     {
-//         throw std::invalid_argument("Kernel size mismatch: expected " + std::to_string(expected_size) + " weights, got " + std::to_string(kernel_size));
-//     }
-//     cudaMemcpy(kernel_device.get(), kernel_data, expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
-// }
 
 const DevicePointer<FLOAT>& Conv2D::get_output()
 {

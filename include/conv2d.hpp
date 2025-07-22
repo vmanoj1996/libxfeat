@@ -28,6 +28,33 @@ struct Conv2DParams {
        : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
 };
 
+
+
+struct BatchNormRelu
+{
+public:
+    float bias;
+    float scale;
+
+   __device__ float forward(float u)
+   {
+       float y = scale * u + bias;
+       return (y > 0) ? y : 0.0f;
+   }
+
+};
+
+struct Identity
+{
+public:
+
+   __device__ float forward(float u)
+   {
+       return u;
+   }
+
+};
+
 class Conv2D
 {
 
@@ -42,13 +69,15 @@ public:
     Conv2D(ImgProperty input_prop_, Conv2DParams params_);
     ~Conv2D();
 
+    template<typename Operation>
+    const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device, Operation op);
+
     const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device);
 
     const DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);
-    // void set_kernel(const FLOAT* kernel_data, int kernel_size);
 
     ImgProperty get_output_spec() const;
     ImgProperty get_input_spec()  const;
