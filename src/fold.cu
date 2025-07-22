@@ -13,7 +13,7 @@ nvcc -std=c++20 -arch=sm_89 fold.cu && ./a.out
 #include <cstdio>
 #include <iostream>
 
-using FLOAT = float;
+#include "fold.hpp"
 
 __global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
 {
@@ -57,16 +57,7 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
     }
 }
 
-class Fold2D
-{
-private:
-    FLOAT *output_device; // can mean folded or unfolded. This class does not care what exactly is stored in the output side
-    int height, width;
-    const int reduction_ratio = 8;
-    int channel_out = reduction_ratio * reduction_ratio;
-
-public:
-    Fold2D(int height_, int width_) : height(height_), width(width_)
+Fold2D::Fold2D(int height_, int width_) : height(height_), width(width_)
     {
         if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
         {
@@ -76,7 +67,7 @@ public:
         cudaMalloc(&output_device, width * height * sizeof(FLOAT));
     }
 
-    ~Fold2D()
+Fold2D::~Fold2D()
     {
         if (output_device)
         {
@@ -84,7 +75,11 @@ public:
         }
     }
 
-    FLOAT *fold(const FLOAT *input_device)
+FLOAT *Fold2D::get_output()
+{
+    return output_device;
+}
+FLOAT* Fold2D::fold(const FLOAT *input_device)
     {
         if (input_device == output_device)
         {
@@ -103,29 +98,23 @@ public:
         return output_device;
     }
 
-    FLOAT *unfold(const FLOAT *input_device)
+FLOAT *Fold2D::unfold(const FLOAT *input_device)
+{
+    if (input_device == output_device)
     {
-        if (input_device == output_device)
-        {
-            std::cerr << "input cannot be equal to output pointer in unfold\n";
-            exit(1);
-        }
-        const int TC = 16;
-        dim3 threads(TC, TC);
-        dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
-
-        unfold_kernel<<<blocks, threads>>>(input_device, output_device, height, width, reduction_ratio);
-
-        cudaDeviceSynchronize();
-
-        return output_device;
+        std::cerr << "input cannot be equal to output pointer in unfold\n";
+        exit(1);
     }
+    const int TC = 16;
+    dim3 threads(TC, TC);
+    dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
-    FLOAT *get_output()
-    {
-        return output_device;
-    }
-};
+    unfold_kernel<<<blocks, threads>>>(input_device, output_device, height, width, reduction_ratio);
+
+    cudaDeviceSynchronize();
+
+    return output_device;
+}
 
 #ifdef ACTIVATE_MAIN
 int main()

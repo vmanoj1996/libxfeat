@@ -155,33 +155,9 @@ void Conv2D::validate_params()
     }
 }
 
-/*
-void Conv2D::set_kernel(const mxArray* mx_kernel)
-{
-    if (!mxIsNumeric(mx_kernel) || mxIsComplex(mx_kernel)) {
-        throw std::invalid_argument("Kernel must be a real numeric array");
-    }
-    
-    if (!mxIsSingle(mx_kernel)) {
-        throw std::invalid_argument("Kernel must be single precision (use single() in MATLAB)");
-    }
-    
-    size_t num_elements = mxGetNumberOfElements(mx_kernel);
-    size_t expected_size = params.co * params.ci * params.k1 * params.k2;
-    
-    if (num_elements != expected_size) {
-        throw std::invalid_argument("Kernel size mismatch: expected " + 
-                                   std::to_string(expected_size) + " weights, got " + 
-                                   std::to_string(num_elements));
-    }
-    
-    float* data = (float*)mxGetData(mx_kernel);
-    cudaMemcpy(kernel_device.get(), data, expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
-}
 
-*/
 
-#ifdef ACTIVATE_MAIN
+#ifdef ACTIVATE_CONV_MAIN
 int main()
 {
     ImgProperty input_prop = {40, 60};                    // height, width
