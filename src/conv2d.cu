@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include "conv2d.hpp"
+#include "device_ops.hpp"
 
 template<typename Operation>
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
@@ -93,10 +94,7 @@ const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device, 
 
 const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
 {
-
-    forward(input_device, Identity());
-
-    return output_device;
+    return forward(input_device, Identity());
 }
 
 void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
