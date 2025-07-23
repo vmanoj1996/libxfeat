@@ -14,7 +14,6 @@
 #include "conv2d.hpp"
 #include "device_ops.hpp"
 
-template <typename Operation>
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, DeviceOp* op)
 {
     /* Parameter documentation:
@@ -53,7 +52,8 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
         }
 
         int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
-        output_device[o_index] = op->forward(sum, idx_co);
+
+        output_device[o_index] = (op)?op->forward(sum, idx_co):sum;
     }
 }
 

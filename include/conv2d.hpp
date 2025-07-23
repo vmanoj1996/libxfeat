@@ -42,7 +42,7 @@ private:
     ImgProperty input_prop, output_prop;
 
     // post operation
-    DeviceOp* post_op;
+    DeviceOp* post_op=nullptr;
 
 public:
     Conv2D(ImgProperty input_prop_, Conv2DParams params_);
