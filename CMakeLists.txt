@@ -35,6 +35,6 @@ set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 # Add executable for XFeat main
-add_executable(xfeat_main src/xfeat.cpp)  # or wherever your xfeat file is
-target_compile_definitions(xfeat_main PRIVATE ACTIVATE_XFEAT_MAIN)
-target_link_libraries(xfeat_main conv2d_lib)
+# add_executable(xfeat_main src/xfeat.cpp)  # or wherever your xfeat file is
+# target_compile_definitions(xfeat_main PRIVATE ACTIVATE_XFEAT_MAIN)
+# target_link_libraries(xfeat_main conv2d_lib)

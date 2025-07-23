@@ -14,8 +14,8 @@
 #include "conv2d.hpp"
 #include "device_ops.hpp"
 
-template<typename Operation>
-__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
+template <typename Operation>
+__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, DeviceOp* op)
 {
     /* Parameter documentation:
 
@@ -53,8 +53,7 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
         }
 
         int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
-        output_device[o_index] = op.forward(sum);
-
+        output_device[o_index] = op->forward(sum, idx_co);
     }
 }
 
@@ -68,17 +67,30 @@ Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_)
     std::vector<int> output_Shape = {params.co, output_prop.height, output_prop.width};
     output_device.alloc(output_Shape);
 
-    std::vector<int> kernel_Shape = {params.co,  params.ci, params.k1, params.k2};
+    std::vector<int> kernel_Shape = {params.co, params.ci, params.k1, params.k2};
     kernel_device.alloc(kernel_Shape);
+}
+
+Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data) : Conv2D(input_prop_, params_)
+{
+    set_kernel(kernel_data);
+}
+
+Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, DeviceOp *post_op_): Conv2D(input_prop_, params_, kernel_data)
+{
+    post_op = post_op_;
 }
 
 Conv2D::~Conv2D()
 {
-    
+    if (post_op)
+    {
+        delete_op_kernel<<<1, 1>>>(&post_op);
+        cudaDeviceSynchronize();
+    }
 }
 
-template<typename Operation>
-const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device, Operation op)
+const DevicePointer<FLOAT> &Conv2D::forward(DevicePointer<FLOAT> &input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
@@ -86,15 +98,10 @@ const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device, 
                 (output_prop.height + TC - 1) / TC,
                 (output_prop.width + TC - 1) / TC);
 
-    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, op);
+    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
 
     return output_device;
-}
-
-const DevicePointer<FLOAT>& Conv2D::forward(DevicePointer<FLOAT>& input_device)
-{
-    return forward(input_device, Identity());
 }
 
 void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
@@ -107,7 +114,7 @@ void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
     cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
 
-const DevicePointer<FLOAT>& Conv2D::get_output()
+const DevicePointer<FLOAT> &Conv2D::get_output()
 {
     return output_device;
 }
@@ -154,8 +161,6 @@ void Conv2D::validate_params()
         throw std::invalid_argument("p2 (padding width) must be non-negative");
     }
 }
-
-
 
 #ifdef ACTIVATE_CONV_MAIN
 int main()

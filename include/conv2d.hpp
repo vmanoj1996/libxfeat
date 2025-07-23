@@ -19,6 +19,8 @@ k1 for row and k2 for column
 #include <vector>
 #include "primitives.hpp"
 
+#include "device_ops.hpp"
+
 struct Conv2DParams {
    int k1, k2, ci, co;
    int s1, s2, p1, p2;
@@ -39,13 +41,15 @@ private:
     Conv2DParams params;
     ImgProperty input_prop, output_prop;
 
+    // post operation
+    DeviceOp* post_op;
+
 public:
     Conv2D(ImgProperty input_prop_, Conv2DParams params_);
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data);
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, DeviceOp* post_op_);
     ~Conv2D();
-
-    template<typename Operation>
-    const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device, Operation op);
-
+    
     const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device);
 
     const DevicePointer<FLOAT>& get_output();
