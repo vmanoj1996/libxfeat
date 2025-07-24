@@ -6,10 +6,13 @@ using FLOAT = float;
 
 struct ImgProperty
 {
+    int channels; // used only in few places
     int height;
     int width;
+
     ImgProperty() = default;
     ImgProperty(int height_, int width_): height(height_), width(width_){}
+    ImgProperty(int channels_, int height_, int width_): channels(channels_), height(height_), width(width_){}
 };
 
 template<typename T>
@@ -46,3 +49,12 @@ class DevicePointer
 // forward declarations of all potential combinations 
 template class DevicePointer<FLOAT>;
 template class DevicePointer<int>;
+
+
+class Layer
+{
+    public:
+    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
+
+    virtual ~Layer() = default;
+};

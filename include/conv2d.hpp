@@ -32,7 +32,7 @@ struct Conv2DParams {
 };
 
 
-class Conv2D
+class Conv2D: public Layer
 {
 
 private:
@@ -49,9 +49,9 @@ public:
     Conv2D(ImgProperty input_prop_, Conv2DParams params_);
     Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data);
     Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, DeviceOp* post_op_);
-    ~Conv2D();
+    ~Conv2D(); // automatically made virtual by the compiler
     
-    const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
     const DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
@@ -65,7 +65,12 @@ public:
 };
 
 
+// template<typename... Args>
+// auto make_conv2d(Args&&... args) {
+//     return std::make_unique<Conv2D>(std::forward<Args>(args)...);
+// }
+
 template<typename... Args>
-auto make_conv2d(Args&&... args) {
+std::unique_ptr<Layer> make_conv2d(Args&&... args) {
     return std::make_unique<Conv2D>(std::forward<Args>(args)...);
 }

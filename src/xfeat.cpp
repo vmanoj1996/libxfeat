@@ -4,7 +4,7 @@
 #include <opencv2/opencv.hpp>
 
 
-XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file), height(height_), width(width_), folder(height, width), unfolder(height, width)
+XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file), height(height_), width(width_)
 {
     /* Keypoint head - separate branch using fold/unfold
             (keypoint_head): Sequential(
@@ -31,12 +31,14 @@ XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file)
             )
                 (3): Conv2d(64, 65, kernel_size=(1, 1), stride=(1, 1))
     */
-    int cheight = height/8;
-    int cwidth  = width/8;
 
     using std::to_string;
 
-    kp_layers.reserve(4);
+    kp_layers.emplace_back(make_fold(height, width));
+
+    int cheight = height/8;
+    int cwidth  = width/8;
+
     for(int i=0; i<3; i++)
     {
         auto img_property = ImgProperty(cheight, cwidth);
@@ -57,6 +59,7 @@ XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file)
     Conv2DParams params(1, 1, 64, 65, 1, 1, 1, 1);
 
     kp_layers.emplace_back(make_conv2d(img_property, params, weight));
+    kp_layers.emplace_back(make_unfold(height, width));
 
 }
 
@@ -85,7 +88,7 @@ int main()
 
     std::vector<float> img_vec(img_float.begin<float>(), img_float.end<float>());
     std::vector<int> dims = {img.rows, img.cols};
-    
+
     DevicePointer<float> img_device(img_vec, dims);
 
 

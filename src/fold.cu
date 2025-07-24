@@ -53,35 +53,37 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
         int idx1_dim = height / ratio;
         int idx2_dim = width / ratio;
 
-        output_device[idx1 * width + idx2] = input_device[idx0_in * (idx1_dim * idx2_dim) + idx1_in * idx2_dim + idx2_in];
+        // each page is 65 sized but it is automatically discarded by this operation. skip page size of 65 
+        // Double check this TODO
+        output_device[idx1 * width + idx2] = input_device[idx0_in * (idx1_dim * idx2_dim + 1) + idx1_in * idx2_dim + idx2_in];
     }
 }
 
-Fold2D::Fold2D(int height_, int width_) : height(height_), width(width_)
-    {
-        if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
-        {
-            std::cerr << "height and width should be multiple of " << reduction_ratio << std::endl;
-            exit(1);
-        }
-        cudaMalloc(&output_device, width * height * sizeof(FLOAT));
-    }
 
-Fold2D::~Fold2D()
-    {
-        if (output_device)
-        {
-            cudaFree(output_device);
-        }
-    }
-
-FLOAT *Fold2D::get_output()
+Fold2D::Fold2D(int height_, int width_): Fold2D_common(height_, width_)
 {
-    return output_device;
-}
-FLOAT* Fold2D::fold(const FLOAT *input_device)
+    
+    if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
     {
-        if (input_device == output_device)
+        std::cerr << "height and width should be multiple of " << reduction_ratio << std::endl;
+        exit(1);
+    }
+    input_prop.channels = 1;
+    input_prop.height = height;
+    input_prop.width  = width;
+
+    output_prop.channels = reduction_ratio*reduction_ratio;
+    output_prop.height = height/reduction_ratio;
+    output_prop.width  = width/reduction_ratio;
+
+    output_device.alloc(height*width); // alloc the storage. automagically checked and cleared by the destructor
+
+}
+
+
+const DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
+    {
+        if (input_device.get() == output_device.get())
         {
             std::cerr << "input cannot be equal to output pointer in fold\n";
             exit(1);
@@ -91,16 +93,36 @@ FLOAT* Fold2D::fold(const FLOAT *input_device)
         dim3 threads(TC, TC);
         dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
-        fold_kernel<<<blocks, threads>>>(input_device, output_device, height, width, reduction_ratio);
+        fold_kernel<<<blocks, threads>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
 
         cudaDeviceSynchronize();
 
         return output_device;
     }
 
-FLOAT *Fold2D::unfold(const FLOAT *input_device)
+UnFold2D::UnFold2D(int height_, int width_): Fold2D_common(height_, width_)
 {
-    if (input_device == output_device)
+    
+    if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
+    {
+        std::cerr << "height and width should be multiple of " << reduction_ratio << std::endl;
+        exit(1);
+    }
+    input_prop.channels = reduction_ratio*reduction_ratio + 1;
+    input_prop.height = height/reduction_ratio;
+    input_prop.width  = width/reduction_ratio;
+
+    output_prop.channels = 1;
+    output_prop.height = height;
+    output_prop.width  = width;
+
+    output_device.alloc(height*width); // alloc the storage. automagically checked and cleared by the destructor
+
+}
+
+const DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device)
+{
+    if (input_device.get() == output_device.get())
     {
         std::cerr << "input cannot be equal to output pointer in unfold\n";
         exit(1);
@@ -109,7 +131,7 @@ FLOAT *Fold2D::unfold(const FLOAT *input_device)
     dim3 threads(TC, TC);
     dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
-    unfold_kernel<<<blocks, threads>>>(input_device, output_device, height, width, reduction_ratio);
+    unfold_kernel<<<blocks, threads>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
 
     cudaDeviceSynchronize();
 

@@ -11,12 +11,8 @@ class XFeat
 private:
     XFeatParams model;
     const int height, width;
-    
-    // Keypoint layers
-    Fold2D folder;
-    Fold2D unfolder;
 
-    std::vector<std::unique_ptr<Conv2D>> kp_layers;
+    std::vector<std::unique_ptr<Layer>> kp_layers;
 
 
 public:
