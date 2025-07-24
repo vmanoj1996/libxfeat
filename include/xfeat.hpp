@@ -9,25 +9,18 @@
 class XFeat
 {
 private:
-    XFeatParams model_params;
+    XFeatParams model;
+    const int height, width;
     
-    // Network layers
-    std::unique_ptr<Conv2D> block1_conv1, block1_conv2, block1_conv3, block1_conv4;
-    std::unique_ptr<Conv2D> block2_conv1, block2_conv2;
-    std::unique_ptr<Conv2D> block3_conv1, block3_conv2, block3_conv3;
-    std::unique_ptr<Conv2D> block4_conv1, block4_conv2, block4_conv3;
-    std::unique_ptr<Conv2D> block5_conv1, block5_conv2, block5_conv3, block5_conv4;
-    std::unique_ptr<Conv2D> skip1_conv;
-    std::unique_ptr<Conv2D> fusion_conv1, fusion_conv2, fusion_final;
-    std::unique_ptr<Conv2D> keypoint_conv1, keypoint_conv2, keypoint_conv3, keypoint_final;
-    std::unique_ptr<Conv2D> heatmap_conv1, heatmap_conv2, heatmap_final;
-    
-    std::unique_ptr<Fold2D> keypoint_fold;
-    
-    void loadWeights();
-    
+    // Keypoint layers
+    Fold2D folder;
+    Fold2D unfolder;
+
+    std::vector<std::unique_ptr<Conv2D>> kp_layers;
+
+
 public:
-    XFeat(std::string model_file);
+    XFeat(std::string model_file, int height_, int width_);
     ~XFeat() = default;
     
     DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input);

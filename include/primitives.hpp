@@ -1,8 +1,8 @@
 #pragma once
 #include<vector>
 
-// using FLOAT = float;
-#define FLOAT float
+using FLOAT = float;
+// #define FLOAT float
 
 struct ImgProperty
 {
@@ -26,7 +26,7 @@ class DevicePointer
     DevicePointer(const std::vector<T> &input, std::vector<int> dims_);
     ~DevicePointer();
 
-    T* get();
+    T* get() const;
     
     void alloc(std::vector<int> dims_);
     void alloc(int total_dim);

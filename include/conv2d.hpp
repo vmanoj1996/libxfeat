@@ -18,6 +18,7 @@ k1 for row and k2 for column
 
 #include <vector>
 #include "primitives.hpp"
+#include <memory>
 
 #include "device_ops.hpp"
 
@@ -50,7 +51,7 @@ public:
     Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, DeviceOp* post_op_);
     ~Conv2D();
     
-    const DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input_device);
+    const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
     const DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
@@ -62,3 +63,9 @@ public:
 
     void validate_params();
 };
+
+
+template<typename... Args>
+auto make_conv2d(Args&&... args) {
+    return std::make_unique<Conv2D>(std::forward<Args>(args)...);
+}

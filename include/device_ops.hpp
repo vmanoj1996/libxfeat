@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <cmath>
+
 
 struct DeviceOp
 {
@@ -25,7 +27,7 @@ public:
         float y = 0.0f;
         if (buffer_index < N)
         {
-            y = (u - mean[buffer_index]) / (sqrtf(var[buffer_index] + eps));
+            y = (u - mean[buffer_index]) / (sqrtf(var[buffer_index]) + eps);
             y = (y > 0) ? y : 0.0f;
         }
 
@@ -73,4 +75,5 @@ __global__ void init_BatchNormRelu_kernel(DeviceOp **p);
 __global__ void setup_BatchNormRelu_kernel(DeviceOp *p, float *d_mean, float *d_var, int N);
 __global__ void delete_op_kernel(DeviceOp** p);
 
+// factory method to create a new batch norm relu device layer
 DeviceOp* create_BatchNormRelu(const std::vector<float>& mean_host, const std::vector<float>& var_host);

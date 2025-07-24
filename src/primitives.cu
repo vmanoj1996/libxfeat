@@ -25,7 +25,7 @@ DevicePointer<T>::~DevicePointer()
 }
 
 template<typename T>
-T* DevicePointer<T>::get()
+T* DevicePointer<T>::get() const
 {
     return ptr;
 }

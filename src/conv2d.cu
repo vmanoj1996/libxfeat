@@ -90,7 +90,7 @@ Conv2D::~Conv2D()
     }
 }
 
-const DevicePointer<FLOAT> &Conv2D::forward(DevicePointer<FLOAT> &input_device)
+const DevicePointer<FLOAT> &Conv2D::forward(const DevicePointer<FLOAT> &input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
