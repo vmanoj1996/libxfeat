@@ -78,6 +78,8 @@ Fold2D::Fold2D(int height_, int width_): Fold2D_common(height_, width_)
 
     output_device.alloc(height*width); // alloc the storage. automagically checked and cleared by the destructor
 
+    std::cout<<"alloc complete\n";
+    if(output_device.get()) std::cout<<"not null\n";
 }
 
 
@@ -85,8 +87,9 @@ const DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_de
     {
         if (input_device.get() == output_device.get())
         {
-            std::cerr << "input cannot be equal to output pointer in fold\n";
-            exit(1);
+            if(output_device.get() == nullptr) std::cout<<"Null ptr for some reason in fold forward\n";
+
+            throw std::invalid_argument("Input and output buffers cannot be the same in fold");
         }
 
         const int TC = 16;
@@ -116,7 +119,11 @@ UnFold2D::UnFold2D(int height_, int width_): Fold2D_common(height_, width_)
     output_prop.height = height;
     output_prop.width  = width;
 
+    // std::cout<<"height: "<<height<<" width: "<<width<<" "<<height*width<<std::endl;
+    std::cout<<"Allocating storage for unfold operation\n";
+
     output_device.alloc(height*width); // alloc the storage. automagically checked and cleared by the destructor
+
 
 }
 
@@ -124,15 +131,15 @@ const DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_
 {
     if (input_device.get() == output_device.get())
     {
-        std::cerr << "input cannot be equal to output pointer in unfold\n";
-        exit(1);
+        if(output_device.get() == nullptr) std::cout<<"Null ptr for some reason\n";
+
+        throw std::invalid_argument("Input and output buffers cannot be the same in unfold");
     }
     const int TC = 16;
     dim3 threads(TC, TC);
     dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
     unfold_kernel<<<blocks, threads>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
-
     cudaDeviceSynchronize();
 
     return output_device;

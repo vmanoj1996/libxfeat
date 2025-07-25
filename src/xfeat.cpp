@@ -39,6 +39,8 @@ XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file)
     int cheight = height/8;
     int cwidth  = width/8;
 
+    std::cout<<"Added fold layer\n";
+
     for(int i=0; i<3; i++)
     {
         auto img_property = ImgProperty(cheight, cwidth);
@@ -52,14 +54,17 @@ XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file)
         
         kp_layers.emplace_back(make_conv2d(img_property, params, weight, op));
 
+        std::cout<<"Added conv2d layer\n";
+
     }
 
     auto img_property = ImgProperty(cheight, cwidth);
     auto weight = model.getParam("net.keypoint_head.3.weight");
     Conv2DParams params(1, 1, 64, 65, 1, 1, 1, 1);
 
-    kp_layers.emplace_back(make_conv2d(img_property, params, weight));
-    kp_layers.emplace_back(make_unfold(height, width));
+    kp_layers.emplace_back(make_conv2d(img_property, params, weight));     std::cout<<"Added conv2d layer\n";
+
+    kp_layers.emplace_back(make_unfold(height, width));     std::cout<<"Added unfold layer\n";
 
 }
 
@@ -68,8 +73,10 @@ DevicePointer<FLOAT>& XFeat::forward(DevicePointer<FLOAT>& input)
     auto* previous_output = &input;
     
     // run through the keypoint layers
+    int count = 0;
     for(auto& layer: kp_layers)
     {
+        std::cout<<"Layer "<<count++<<"\n";
         // although I am taking the const, trust Manoj lol
         auto* output = const_cast<DevicePointer<float>*>( &(layer->forward(*previous_output)) );
         previous_output = output;
@@ -91,5 +98,9 @@ int main()
 
     DevicePointer<float> img_device(img_vec, dims);
 
+    XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
+
+    // feat.forward(img_device);
+    
 
 }

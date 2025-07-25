@@ -36,6 +36,7 @@ public:
 
     __device__ void deleter()
     {
+        // do not delete any thing allocated with cuda malloc
         if (mean)
         {
             delete[] mean;

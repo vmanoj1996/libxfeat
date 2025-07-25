@@ -5,10 +5,14 @@ project(cuda_conv2d LANGUAGES CXX CUDA)
 find_package(CUDAToolkit REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS C)
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CXX_STANDARD 20)
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 # Source --------------------------------------------------------------------------------------------
 
@@ -39,3 +43,7 @@ set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_executable(xfeat_main src/xfeat.cpp)  # or wherever your xfeat file is
 target_compile_definitions(xfeat_main PRIVATE ACTIVATE_XFEAT_MAIN)
 target_link_libraries(xfeat_main conv2d_lib)
+
+
+target_link_libraries(xfeat_main ${Boost_LIBRARIES} dl)
+target_compile_definitions(xfeat_main PRIVATE BOOST_STACKTRACE_USE_ADDR2LINE)

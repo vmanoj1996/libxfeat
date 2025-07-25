@@ -1,5 +1,7 @@
 #pragma once
 #include<vector>
+#include <boost/stacktrace.hpp>
+
 
 using FLOAT = float;
 // #define FLOAT float
@@ -19,7 +21,7 @@ template<typename T>
 class DevicePointer
 {
     private:
-    T *ptr;
+    T *ptr = nullptr;
     size_t size; // total size
     std::vector<int> dims;
     

@@ -65,11 +65,6 @@ public:
 };
 
 
-// template<typename... Args>
-// auto make_conv2d(Args&&... args) {
-//     return std::make_unique<Conv2D>(std::forward<Args>(args)...);
-// }
-
 template<typename... Args>
 std::unique_ptr<Layer> make_conv2d(Args&&... args) {
     return std::make_unique<Conv2D>(std::forward<Args>(args)...);

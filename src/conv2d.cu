@@ -85,8 +85,14 @@ Conv2D::~Conv2D()
 {
     if (post_op)
     {
-        delete_op_kernel<<<1, 1>>>(&post_op);
+        DeviceOp** unified_ptr;
+        cudaMallocManaged(&unified_ptr, sizeof(DeviceOp*));
+        *unified_ptr = post_op;
+        
+        delete_op_kernel<<<1, 1>>>(unified_ptr);
         cudaDeviceSynchronize();
+        
+        cudaFree(unified_ptr);
     }
 }
 
