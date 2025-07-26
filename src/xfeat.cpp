@@ -105,6 +105,6 @@ int main()
     feat.forward(img_device);
     
 
-    std::cout<<"Program terminated safely I guess\n";
+    std::cout<<"Reached the end of main\n";
 
 }

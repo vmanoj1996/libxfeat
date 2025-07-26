@@ -62,7 +62,8 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
 }
 
 template<typename Operation>
-Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_): post_op(post_op_)
+Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_): 
+    params(params_), input_prop(input_prop_), post_op(post_op_)
 {
     validate_params();
     output_prop.channels = params.co;
@@ -82,7 +83,7 @@ Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const s
 template<typename Operation>
 Conv2D<Operation>::~Conv2D()
 {
-
+    post_op.destroy();
 }
 
 template<typename Operation>

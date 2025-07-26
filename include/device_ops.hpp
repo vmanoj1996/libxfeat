@@ -102,12 +102,8 @@ public:
         return u;
     }
 
-    __device__ void deleter(){}
+    inline void destroy() 
+    {
+
+    }
 };
-
-__global__ void init_BatchNormRelu_kernel(BatchNormRelu **p);
-__global__ void setup_BatchNormRelu_kernel(BatchNormRelu *p, float *d_mean, float *d_var, int N);
-__global__ void delete_op_kernel(BatchNormRelu** p);
-
-// factory method to create a new batch norm relu device layer
-BatchNormRelu* create_BatchNormRelu(const std::vector<float>& mean_host, const std::vector<float>& var_host);
