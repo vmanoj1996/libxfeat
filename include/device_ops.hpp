@@ -63,6 +63,12 @@ inline BatchNormRelu BNR(const std::vector<float>& mean, const std::vector<float
     return BatchNormRelu::create(mean, var);
 }
 
+template<typename Model>
+inline BatchNormRelu BNR(Model model, std::string layername) 
+{
+    return BatchNormRelu::create(model.getParam(layername + ".running_mean"), model.getParam(layername + ".running_var"));
+}
+
 struct BiasOp
 {
     // all the pointers should be on the device

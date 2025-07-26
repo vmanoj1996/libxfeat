@@ -12,8 +12,10 @@ private:
     XFeatParams model;
     const int height, width;
 
-    std::vector<std::unique_ptr<Layer>> kp_layers;
+    std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers;
 
+    void setup_kp();
+    void setup_backbone();
 
 public:
     XFeat(std::string model_file, int height_, int width_);
