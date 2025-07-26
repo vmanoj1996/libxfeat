@@ -111,6 +111,18 @@ inline BiasOp Bias(const std::vector<float>& data)
     return BiasOp::create(data);
 }
 
+struct Sigmoid
+{
+public:
+    __device__ float forward(float u, int buffer_index)
+    {
+        return 1.0f / (1.0f + expf(-u));
+    }
+
+    inline void destroy() {}
+};
+
+
 struct ScaleRelu
 {
 public:

@@ -12,10 +12,12 @@ private:
     XFeatParams model;
     const int height, width;
 
-    std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers;
+    std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers, block_fusion_layers, heatmap_layers, ;
 
     void setup_kp();
-    void setup_backbone();
+    void setup_descriptor();
+    void setup_heatmap();
+    void setup_block_fusion();
 
 public:
     XFeat(std::string model_file, int height_, int width_);

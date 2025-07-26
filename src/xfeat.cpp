@@ -68,7 +68,7 @@ void XFeat::setup_kp()
     kp_layers.emplace_back(make_unfold(height, width));
 }
 
-void XFeat::setup_backbone()
+void XFeat::setup_descriptor()
 {
    using std::to_string;
 
@@ -157,13 +157,80 @@ void XFeat::setup_backbone()
    // TODO: AvgPool2d for skip1
    // TODO: F.interpolate + element-wise add for pyramid fusion
    // TODO: block_fusion layers
-   // TODO: heatmap_head layers
 }
+
+void XFeat::setup_heatmap()
+{
+   using std::to_string;
+   
+   if (heatmap_layers.size() != 0)
+   {
+       std::cout << "already heatmap_layers populated\n";
+       return;
+   }
+
+   auto [cheight, cwidth] = std::make_pair(height / 8, width / 8);
+   const int HM_CH = 64;
+
+   // 2 BasicLayers with 1x1 conv + BatchNorm + ReLU
+   for (int i = 0; i < 2; i++)
+   {
+       auto layername = "net.heatmap_head." + to_string(i) + ".layer.";
+       heatmap_layers.emplace_back(conv2d(
+           {HM_CH, cheight, cwidth},
+           {1, 1, HM_CH, HM_CH, 1, 1, 0, 0},
+           model.getParam(layername + "0.weight"),
+           BNR(model, layername + "1")));
+   }
+
+   // Final conv: 64 -> 1 channel (with bias)
+   heatmap_layers.emplace_back(conv2d(
+       {HM_CH, cheight, cwidth},
+       {1, 1, HM_CH, 1, 1, 1, 0, 0},
+       model.getParam("net.heatmap_head.2.weight"),
+       Bias(model.getParam("net.heatmap_head.2.bias"))));
+
+   // Sigmoid activation
+   heatmap_layers.emplace_back(sigmoid({1, cheight, cwidth}));
+}
+
+void XFeat::setup_block_fusion()
+{
+   using std::to_string;
+   
+   if (block_fusion_layers.size() != 0)
+   {
+       std::cout << "already block_fusion_layers populated\n";
+       return;
+   }
+
+   auto [cheight, cwidth] = std::make_pair(height / 8, width / 8);
+   const int BF_CH = 64;
+
+   // 2 BasicLayers with 3x3 conv + BatchNorm + ReLU, stride=1
+   for (int i = 0; i < 2; i++)
+   {
+       auto layername = "net.block_fusion." + to_string(i) + ".layer.";
+       block_fusion_layers.emplace_back(conv2d(
+           {BF_CH, cheight, cwidth},
+           {3, 3, BF_CH, BF_CH, 1, 1, 1, 1},
+           model.getParam(layername + "0.weight"),
+           BNR(model, layername + "1")));
+   }
+
+   // Final conv: 64 -> 64, 1x1 kernel (no BatchNorm/ReLU)
+   block_fusion_layers.emplace_back(conv2d(
+       {BF_CH, cheight, cwidth},
+       {1, 1, BF_CH, BF_CH, 1, 1, 0, 0},
+       model.getParam("net.block_fusion.2.weight"),
+       Bias(model.getParam("net.block_fusion.2.bias"))));
+}
+
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
     setup_kp();
-    setup_backbone();
+    setup_descriptor();
 }
 
 void save_layer_data(const DevicePointer<float> &data, const std::string &name)

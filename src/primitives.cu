@@ -115,3 +115,9 @@ void DevicePointer<T>::print_shape() const
     }
     std::cout<<"\n";
 }
+
+
+
+// forward declarations of all potential combinations 
+template class DevicePointer<FLOAT>;
+template class DevicePointer<int>;

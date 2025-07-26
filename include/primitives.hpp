@@ -60,9 +60,6 @@ inline std::ostream& operator<<(std::ostream& os, const ImgProperty& img) {
 }
 
 
-// forward declarations of all potential combinations 
-template class DevicePointer<FLOAT>;
-template class DevicePointer<int>;
 
 
 class Layer
