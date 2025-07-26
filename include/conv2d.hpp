@@ -31,7 +31,15 @@ struct Conv2DParams {
        : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
 };
 
+inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) {
+   os << "Conv2DParams(k1=" << params.k1 << ", k2=" << params.k2 
+      << ", ci=" << params.ci << ", co=" << params.co 
+      << ", s1=" << params.s1 << ", s2=" << params.s2 
+      << ", p1=" << params.p1 << ", p2=" << params.p2 << ")";
+   return os;
+}
 
+template<typename Operation>
 class Conv2D: public Layer
 {
 
@@ -43,12 +51,12 @@ private:
     ImgProperty input_prop, output_prop;
 
     // post operation
-    DeviceOp* post_op=nullptr;
+    Operation post_op;
 
 public:
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_);
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data);
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, DeviceOp* post_op_);
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, Operation post_op_); 
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data): Conv2D(input_prop_, params_, kernel_data, Operation{}) {} // main constructor
+    
     ~Conv2D(); // automatically made virtual by the compiler
     
     virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
@@ -62,10 +70,17 @@ public:
     ImgProperty get_input_spec()  const;
 
     void validate_params();
+
+
 };
+//  FACTORIES
+inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data) 
+{
+    return std::make_unique<Conv2D<Identity>>(input_prop, params, kernel_data);
+}
 
-
-template<typename... Args>
-std::unique_ptr<Layer> make_conv2d(Args&&... args) {
-    return std::make_unique<Conv2D>(std::forward<Args>(args)...);
+template<typename Operation>
+inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data, Operation op) 
+{
+    return std::make_unique<Conv2D<Operation>>(input_prop, params, kernel_data, op);
 }

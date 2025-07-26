@@ -41,28 +41,28 @@ XFeat::XFeat(std::string model_file, int height_, int width_): model(model_file)
 
     std::cout<<"Added fold layer\n";
 
+    const int KP_CHANNEL = 64;
+
     for(int i=0; i<3; i++)
     {
-        auto img_property = ImgProperty(cheight, cwidth);
+        ImgProperty img_property(KP_CHANNEL, cheight, cwidth);
         auto weight = model.getParam("net.keypoint_head." + to_string(i) + ".layer.0.weight");
-        Conv2DParams params(1, 1, 64, 64, 1, 1, 1, 1);
+        Conv2DParams params(1, 1, KP_CHANNEL, KP_CHANNEL, 1, 1, 0, 0);
 
         auto mean = model.getParam("net.keypoint_head." + to_string(i) + ".layer.1.running_mean");
         auto vars = model.getParam("net.keypoint_head." + to_string(i) + ".layer.1.running_var");
-
-        auto op = create_BatchNormRelu(mean, vars);
         
-        kp_layers.emplace_back(make_conv2d(img_property, params, weight, op));
+        kp_layers.emplace_back(conv2d(img_property, params, weight, BNR(mean, vars)));
 
         std::cout<<"Added conv2d layer\n";
 
     }
 
-    auto img_property = ImgProperty(cheight, cwidth);
+    auto img_property = ImgProperty(KP_CHANNEL, cheight, cwidth);
     auto weight = model.getParam("net.keypoint_head.3.weight");
-    Conv2DParams params(1, 1, 64, 65, 1, 1, 1, 1);
+    Conv2DParams params(1, 1, KP_CHANNEL, KP_CHANNEL+1, 1, 1, 0, 0);
 
-    kp_layers.emplace_back(make_conv2d(img_property, params, weight));     std::cout<<"Added conv2d layer\n";
+    kp_layers.emplace_back(conv2d(img_property, params, weight)); std::cout<<"Added conv2d layer\n";
 
     kp_layers.emplace_back(make_unfold(height, width));     std::cout<<"Added unfold layer\n";
 
@@ -76,7 +76,7 @@ DevicePointer<FLOAT>& XFeat::forward(DevicePointer<FLOAT>& input)
     int count = 0;
     for(auto& layer: kp_layers)
     {
-        std::cout<<"Layer "<<count++<<"\n";
+        std::cout<<"Inference: KP: Layer "<<count++<<"\n";
         // although I am taking the const, trust Manoj lol
         auto* output = const_cast<DevicePointer<float>*>( &(layer->forward(*previous_output)) );
         previous_output = output;
@@ -89,8 +89,10 @@ DevicePointer<FLOAT>& XFeat::forward(DevicePointer<FLOAT>& input)
 int main()
 {
     cv::Mat img = cv::imread("../data/TajMahal.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat resized_img; cv::resize(img, resized_img, cv::Size(64, 32));
+
     cv::Mat img_float;
-    img.convertTo(img_float, CV_32F, 1.0/255.0);
+    resized_img.convertTo(img_float, CV_32F, 1.0/255.0);
 
 
     std::vector<float> img_vec(img_float.begin<float>(), img_float.end<float>());
@@ -100,7 +102,9 @@ int main()
 
     XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
 
-    // feat.forward(img_device);
+    feat.forward(img_device);
     
+
+    std::cout<<"Program terminated safely I guess\n";
 
 }

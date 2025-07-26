@@ -1,7 +1,7 @@
 #pragma once
 #include<vector>
 #include <boost/stacktrace.hpp>
-
+#include <iostream>
 
 using FLOAT = float;
 // #define FLOAT float
@@ -15,6 +15,7 @@ struct ImgProperty
     ImgProperty() = default;
     ImgProperty(int height_, int width_): height(height_), width(width_){}
     ImgProperty(int channels_, int height_, int width_): channels(channels_), height(height_), width(width_){}
+
 };
 
 template<typename T>
@@ -48,6 +49,14 @@ class DevicePointer
     DevicePointer& operator=(DevicePointer&&) = delete;
 };
 
+inline std::ostream& operator<<(std::ostream& os, const ImgProperty& img) {
+    os << "ImgProperty(channels=" << img.channels 
+       << ", height=" << img.height 
+       << ", width=" << img.width << ")";
+    return os;
+}
+
+
 // forward declarations of all potential combinations 
 template class DevicePointer<FLOAT>;
 template class DevicePointer<int>;
@@ -60,3 +69,5 @@ class Layer
 
     virtual ~Layer() = default;
 };
+
+

@@ -13,8 +13,10 @@
 #include <string>
 #include "conv2d.hpp"
 #include "device_ops.hpp"
+#include <iostream>
 
-__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, DeviceOp* op)
+template<typename Operation>
+__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
     /* Parameter documentation:
 
@@ -53,56 +55,49 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
 
         int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
 
-        output_device[o_index] = (op)?op->forward(sum, idx_co):sum;
+        // printf("%d %d %d \n", idx_co, out_row, out_col);
+
+        output_device[o_index] = op.forward(sum, idx_co);
     }
 }
 
-Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_)
-    : input_prop(input_prop_), params(params_)
+template<typename Operation>
+Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_): post_op(post_op_)
 {
     validate_params();
+    output_prop.channels = params.co;
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
-    output_prop.width = (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
+    output_prop.width =  (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
 
     std::vector<int> output_Shape = {params.co, output_prop.height, output_prop.width};
     output_device.alloc(output_Shape);
 
     std::vector<int> kernel_Shape = {params.co, params.ci, params.k1, params.k2};
     kernel_device.alloc(kernel_Shape);
-}
 
-Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data) : Conv2D(input_prop_, params_)
-{
+    // set the kernel up
     set_kernel(kernel_data);
 }
 
-Conv2D::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, DeviceOp *post_op_): Conv2D(input_prop_, params_, kernel_data)
+template<typename Operation>
+Conv2D<Operation>::~Conv2D()
 {
-    post_op = post_op_;
+
 }
 
-Conv2D::~Conv2D()
-{
-    if (post_op)
-    {
-        DeviceOp** unified_ptr;
-        cudaMallocManaged(&unified_ptr, sizeof(DeviceOp*));
-        *unified_ptr = post_op;
-        
-        delete_op_kernel<<<1, 1>>>(unified_ptr);
-        cudaDeviceSynchronize();
-        
-        cudaFree(unified_ptr);
-    }
-}
-
-const DevicePointer<FLOAT> &Conv2D::forward(const DevicePointer<FLOAT> &input_device)
+template<typename Operation>
+const DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
+    // TODO fix it
     dim3 blocks((params.co + TC - 1) / TC,
                 (output_prop.height + TC - 1) / TC,
                 (output_prop.width + TC - 1) / TC);
+
+    // dim3 blocks(1, 1, 1);
+
+    std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 
     convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
@@ -110,7 +105,8 @@ const DevicePointer<FLOAT> &Conv2D::forward(const DevicePointer<FLOAT> &input_de
     return output_device;
 }
 
-void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
+template<typename Operation>
+void Conv2D<Operation>::set_kernel(const std::vector<FLOAT> &kernel_data)
 {
     size_t expected_size = params.co * params.ci * params.k1 * params.k2;
     if (kernel_data.size() != expected_size)
@@ -120,30 +116,35 @@ void Conv2D::set_kernel(const std::vector<FLOAT> &kernel_data)
     cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
 
-const DevicePointer<FLOAT> &Conv2D::get_output()
+template<typename Operation>
+const DevicePointer<FLOAT> &Conv2D<Operation>::get_output()
 {
     return output_device;
 }
 
-Conv2DParams Conv2D::get_param() const
+template<typename Operation>
+Conv2DParams Conv2D<Operation>::get_param() const
 {
     return params;
 }
 
-ImgProperty Conv2D::get_output_spec() const
+template<typename Operation>
+ImgProperty Conv2D<Operation>::get_output_spec() const
 {
     return output_prop;
 }
 
-ImgProperty Conv2D::get_input_spec() const
+template<typename Operation>
+ImgProperty Conv2D<Operation>::get_input_spec() const
 {
     return input_prop;
 }
 
-void Conv2D::validate_params()
+template<typename Operation>
+void Conv2D<Operation>::validate_params()
 {
-    if (params.k1 % 2 == 0)
     {
+        if (params.k1 % 2 == 0)
         throw std::invalid_argument("k1 must be odd");
     }
     if (params.k2 % 2 == 0)
@@ -167,6 +168,10 @@ void Conv2D::validate_params()
         throw std::invalid_argument("p2 (padding width) must be non-negative");
     }
 }
+
+template class Conv2D<BatchNormRelu>;
+template class Conv2D<Identity>;
+
 
 #ifdef ACTIVATE_CONV_MAIN
 int main()

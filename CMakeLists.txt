@@ -1,4 +1,5 @@
 # Setup ------------------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.18)
 project(cuda_conv2d LANGUAGES CXX CUDA)
 
@@ -7,6 +8,8 @@ find_package(HDF5 REQUIRED COMPONENTS C)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wfatal-errors")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
 
 set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CXX_STANDARD 20)
@@ -43,7 +46,6 @@ set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_executable(xfeat_main src/xfeat.cpp)  # or wherever your xfeat file is
 target_compile_definitions(xfeat_main PRIVATE ACTIVATE_XFEAT_MAIN)
 target_link_libraries(xfeat_main conv2d_lib)
-
 
 target_link_libraries(xfeat_main ${Boost_LIBRARIES} dl)
 target_compile_definitions(xfeat_main PRIVATE BOOST_STACKTRACE_USE_ADDR2LINE)
