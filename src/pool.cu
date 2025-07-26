@@ -49,21 +49,6 @@ __global__ void avgpool2d_kernel(const FLOAT *input_device, FLOAT *output_device
     }
 }
 
-const DevicePointer<FLOAT> &AvgPool2D::get_output()
-{
-    return output_device;
-}
-
-ImgProperty AvgPool2D::get_output_spec() const
-{
-    return output_prop;
-}
-
-ImgProperty AvgPool2D::get_input_spec() const
-{
-    return input_prop;
-}
-
 AvgPool2D::AvgPool2D(ImgProperty input_prop_, PoolParams params_) : params(params_), input_prop(input_prop_)
 {
     if (params.k1 <= 0 || params.k2 <= 0) throw std::invalid_argument("kernel size must be positive");
@@ -84,8 +69,8 @@ const DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input
     dim3 threadcount(TC, TC, TC);
 
     dim3 blocks((output_prop.channels + TC - 1) / TC,
-                (output_prop.height + TC - 1) / TC,
-                (output_prop.width + TC - 1) / TC);
+                (output_prop.height   + TC - 1) / TC,
+                (output_prop.width    + TC - 1) / TC);
 
     std::cout << "starting pool kernel " << input_prop << " " << output_prop << " "<< blocks.x << " " << blocks.y << " " << blocks.z << " " << std::endl;
 

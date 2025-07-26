@@ -35,3 +35,9 @@ public:
     ImgProperty get_output_spec() const;
     ImgProperty get_input_spec()  const;
 };
+
+// Factory functions
+inline std::unique_ptr<Layer> avgpool2d(ImgProperty input_prop, PoolParams params) 
+{
+   return std::make_unique<AvgPool2D>(input_prop, params);
+}
