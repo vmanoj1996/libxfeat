@@ -29,8 +29,8 @@ net.keypoint_head.0.layer.0.weight: torch.Size([64, 64, 1, 1])
 net.keypoint_head.1.layer.0.weight: torch.Size([64, 64, 1, 1])
 net.keypoint_head.2.layer.0.weight: torch.Size([64, 64, 1, 1])
 net.keypoint_head.3.weight: torch.Size([65, 64, 1, 1])
-
 net.keypoint_head.3.bias: torch.Size([65])
+
 net.fine_matcher.0.weight: torch.Size([512, 128])
 net.fine_matcher.0.bias: torch.Size([512])
 net.fine_matcher.3.weight: torch.Size([512, 512])

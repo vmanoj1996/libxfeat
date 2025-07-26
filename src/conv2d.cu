@@ -172,7 +172,7 @@ void Conv2D<Operation>::validate_params()
 
 template class Conv2D<BatchNormRelu>;
 template class Conv2D<Identity>;
-
+template class Conv2D<BiasOp>;
 
 #ifdef ACTIVATE_CONV_MAIN
 int main()

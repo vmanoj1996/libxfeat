@@ -5,17 +5,25 @@
 #include "device_ops.hpp"
 
 // Common functionality to reuse 
-template<typename T>
-DevicePointer<T>::DevicePointer(int total_dim)
-{
-    alloc(total_dim);
-}
+// template<typename T>
+// DevicePointer<T>::DevicePointer(int total_dim)
+// {
+//     alloc(total_dim);
+// }
 
 template<typename T>
 DevicePointer<T>::DevicePointer(const std::vector<T> &input, std::vector<int> dims_)
 {
     alloc(dims_);
     set_value(input);
+}
+
+template<typename T>
+DevicePointer<T>::DevicePointer(const DevicePointer<T> &input)
+{
+    // copy constructor
+    alloc(input.dims);
+    cudaMemcpy(ptr, input.get(), input.size * sizeof(T), cudaMemcpyDeviceToDevice);
 }
 
 template<typename T>
@@ -82,9 +90,7 @@ std::vector<T> DevicePointer<T>::get_value() const
 {
     std::vector<T> result(size);
     if(ptr && size > 0) {
-        cudaError_t err = cudaMemcpy(result.data(), ptr, 
-                                    size * sizeof(T), 
-                                    cudaMemcpyDeviceToHost);
+        cudaError_t err = cudaMemcpy(result.data(), ptr, size * sizeof(T), cudaMemcpyDeviceToHost);
         if (err != cudaSuccess) {
             throw std::runtime_error("cudaMemcpy failed: " + std::string(cudaGetErrorString(err)));
         }
@@ -98,4 +104,14 @@ std::vector<int> DevicePointer<T>::get_shape() const
     std::vector<int> result = dims;
 
     return result;
+}
+
+template<typename T>
+void DevicePointer<T>::print_shape() const
+{
+    for(auto dim: dims)
+    {
+        std::cout<<dim<<" ";
+    }
+    std::cout<<"\n";
 }

@@ -22,6 +22,7 @@ k1 for row and k2 for column
 
 #include "device_ops.hpp"
 
+// careful while reordering
 struct Conv2DParams {
    int k1, k2, ci, co;
    int s1, s2, p1, p2;

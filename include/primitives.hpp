@@ -25,25 +25,28 @@ class DevicePointer
     T *ptr = nullptr;
     size_t size; // total size
     std::vector<int> dims;
+
+    void alloc(int total_dim);
     
     public:
     DevicePointer() = default;
-    DevicePointer(int total_dim);
+    // DevicePointer(int total_dim);
     DevicePointer(const std::vector<T> &input, std::vector<int> dims_);
+    DevicePointer(const DevicePointer<T> &input);
     ~DevicePointer();
 
     T* get() const;
     
     void alloc(std::vector<int> dims_);
-    void alloc(int total_dim);
 
     void set_value(const std::vector<T> &input);
     std::vector<T> get_value() const;
     std::vector<int> get_shape() const;
+    void print_shape() const;
     // const means it wont modify the class object in any way
 
-    // Disable copy/move operations
-    DevicePointer(const DevicePointer&) = delete;
+    // Disable default operations
+    // DevicePointer(const DevicePointer&) = delete;
     DevicePointer(DevicePointer&&) = delete;
     DevicePointer& operator=(const DevicePointer&) = delete;
     DevicePointer& operator=(DevicePointer&&) = delete;
@@ -71,3 +74,4 @@ class Layer
 };
 
 
+void image_norm_2d(const float* input, float* output, int height, int width, float eps = 1e-5f);

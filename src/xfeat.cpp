@@ -2,6 +2,8 @@
 #include "conv2d.hpp"
 #include "fold.hpp"
 #include <opencv2/opencv.hpp>
+#include <fstream>
+#include "primitives.hpp"
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
@@ -55,24 +57,55 @@ XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file
             conv2d(
                 {KP_CH, cheight, cwidth},
                 {1, 1, KP_CH, KP_CH + 1, 1, 1, 0, 0},
-                model.getParam("net.keypoint_head.3.weight")));
+                model.getParam("net.keypoint_head.3.weight"),
+                Bias(model.getParam("net.keypoint_head.3.bias"))
+            ));
 
         kp_layers.emplace_back(make_unfold(height, width));
     }
 }
 
+void save_layer_data(const DevicePointer<float>& data, const std::string& name) 
+{
+   auto host_data = data.get_value();
+   auto shape = data.get_shape();
+   
+   // Save binary data
+   std::ofstream file(name + "_output.bin", std::ios::binary);
+   file.write(reinterpret_cast<const char*>(host_data.data()), 
+              host_data.size() * sizeof(float));
+   file.close();
+   
+   // Save shape
+   std::ofstream shape_file(name + "_shape.txt");
+   for(int dim : shape) {
+       shape_file << dim << " ";
+   }
+   shape_file.close();
+}
+
 DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
 {
-    auto *previous_output = &input;
+    // normalize the input
+    DevicePointer<FLOAT> norm_output(input);
+    image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
 
+    norm_output.print_shape();
+    save_layer_data(norm_output, "cpp_input");
+
+    auto *previous_output = &norm_output;
     // run through the keypoint layers
     int count = 0;
     for (auto &layer : kp_layers)
     {
-        std::cout << "Inference: KP: Layer " << count++ << "\n";
+        std::cout << "Inference: KP: Layer " << count << "\n";
         // although I am taking the const, trust Manoj lol
         auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*previous_output)));
         previous_output = output;
+
+        save_layer_data(*output, "cpp_layer_" + std::to_string(count));
+
+        count++;
     }
 
     return *previous_output;

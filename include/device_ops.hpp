@@ -34,23 +34,6 @@ public:
         return y;
     }
 
-    // memory managed outside so that copy operations can work without any pain
-    // BatchNormRelu(const std::vector<float>& host_mean, const std::vector<float>& host_var) : N(host_mean.size()) 
-    // {
-    //     cudaMalloc(&mean, N * sizeof(float));
-    //     cudaMalloc(&var,  N * sizeof(float));
-
-    //     cudaMemcpy(mean, host_mean.data(), N * sizeof(float), cudaMemcpyHostToDevice);
-    //     cudaMemcpy(var,  host_var.data(), N * sizeof(float), cudaMemcpyHostToDevice);
-    // }
-
-    // ~BatchNormRelu() 
-    // {
-    //     // wont do anything if moved already :)
-    //     if (mean) { cudaFree(mean); mean = nullptr; }
-    //     if (var)  { cudaFree(var); var = nullptr; }
-    // }
-
     // Factory functions
     static inline BatchNormRelu create(const std::vector<float>& host_mean, const std::vector<float>& host_var) 
     {
@@ -78,6 +61,48 @@ inline BatchNormRelu BNR(const std::vector<float>& mean, const std::vector<float
 {
     // shortform for batch norm relu
     return BatchNormRelu::create(mean, var);
+}
+
+struct BiasOp
+{
+    // all the pointers should be on the device
+public:
+    float *bias;
+    int N;
+    const float eps = 1e-5;
+
+    __device__ float forward(float u, int buffer_index)
+    {
+        float y = 0.0f;
+        if (buffer_index < N)
+        {
+            y = u + bias[buffer_index];
+        }
+
+        return y;
+    }
+
+    // Factory functions
+    static inline BiasOp create(const std::vector<float>& host_data) 
+    {
+        BiasOp op;
+        op.N = host_data.size();
+        
+        cudaMalloc(&op.bias, op.N * sizeof(float));
+        cudaMemcpy(op.bias, host_data.data(), op.N * sizeof(float), cudaMemcpyHostToDevice);
+        
+        return op;
+    }
+    
+    inline void destroy() 
+    {
+        if (bias) { cudaFree(bias); bias = nullptr; }
+    }
+};
+
+inline BiasOp Bias(const std::vector<float>& data) 
+{
+    return BiasOp::create(data);
 }
 
 struct ScaleRelu
