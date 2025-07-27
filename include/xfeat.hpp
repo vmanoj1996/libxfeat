@@ -13,7 +13,7 @@ class XFeat
     XFeat(std::string model_file, int height_, int width_);
     ~XFeat() = default;
     
-    DevicePointer<FLOAT>& forward(DevicePointer<FLOAT>& input);
+    std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> forward(DevicePointer<FLOAT>& input);
     
     // Disable copy operations
     XFeat(const XFeat&) = delete;

@@ -11,6 +11,35 @@
 #include "pool.hpp"
 #include "interp.hpp"
 
+void save_layer_data(const DevicePointer<float> &data, const std::string &name)
+{
+    auto host_data = data.get_value();
+    auto shape = data.get_shape();
+
+    // Save binary data
+    std::ofstream file(name + "_output.bin", std::ios::binary);
+    file.write(reinterpret_cast<const char *>(host_data.data()),
+               host_data.size() * sizeof(float));
+    file.close();
+
+    // Save shape
+    std::ofstream shape_file(name + "_shape.txt");
+    for (int dim : shape)
+    {
+        shape_file << dim << " ";
+    }
+    shape_file.close();
+}
+
+XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
+{
+    setup_descriptor();
+    setup_kp();
+    setup_heatmap();
+    setup_block_fusion();
+    setup_interpolation();
+}
+
 void XFeat::setup_kp()
 {
     using std::to_string;
@@ -178,35 +207,6 @@ void XFeat::setup_block_fusion()
     add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
-XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
-{
-    setup_descriptor();
-    setup_kp();
-    setup_heatmap();
-    setup_block_fusion();
-    setup_interpolation();
-}
-
-void save_layer_data(const DevicePointer<float> &data, const std::string &name)
-{
-    auto host_data = data.get_value();
-    auto shape = data.get_shape();
-
-    // Save binary data
-    std::ofstream file(name + "_output.bin", std::ios::binary);
-    file.write(reinterpret_cast<const char *>(host_data.data()),
-               host_data.size() * sizeof(float));
-    file.close();
-
-    // Save shape
-    std::ofstream shape_file(name + "_shape.txt");
-    for (int dim : shape)
-    {
-        shape_file << dim << " ";
-    }
-    shape_file.close();
-}
-
 void XFeat::setup_interpolation()
 {
     auto [x3_h, x3_w] = std::make_pair(height / 4, width / 4); // After block3
@@ -216,97 +216,49 @@ void XFeat::setup_interpolation()
     add_layer_pyramid = add_layer({64, x3_h, x3_w});
 }
 
-DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
+std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> XFeat::forward(DevicePointer<FLOAT> &input)
 {
+    auto run_backbone = [&](int start, int count, auto& input_ref) -> auto& 
+    {
+        auto* current = &input_ref;
+        for (int i = start; i < start + count; i++) 
+        {
+            current = &backbone_layers[i]->forward(*current);
+        }
+        return *current;
+    };
+    auto run_layers = [](auto& layers, auto& input_ref) -> auto& 
+    {
+        auto* current = &input_ref;
+        for (auto& layer : layers) {
+            current = &layer->forward(*current);
+        }
+        return *current;
+    };
+
     // Normalize the input
     DevicePointer<FLOAT> norm_output(input);
     image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
 
-    auto *curr_out_ptr = &norm_output;
+    // Run backbone in chunks
+    auto& x2_out = run_backbone(0, 6, norm_output);     // Block1 + Block2
+    auto& x3_out = run_backbone(6, 3, x2_out);         // Block3
+    auto& x4_out = run_backbone(9, 3, x3_out);         // Block4  
+    auto& x5_out = run_backbone(12,4, x4_out);        // Block5
 
-    // Storage for intermediate outputs
-    DevicePointer<FLOAT> *x3_output = nullptr;
-    DevicePointer<FLOAT> *x4_output = nullptr;
+    // Pyramid fusion
+    auto& x4_interp = interp_x4_to_x3->forward(x4_out);
+    auto& x5_interp = interp_x5_to_x3->forward(x5_out);
+    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
 
-    // Run through backbone layers with intermediate storage
-    int backbone_idx = 0;
+    auto& pyramid_sum = add_layer_pyramid.get()->forward(pyramid_inputs);
 
-    // Block1 (4 layers) + Block2 (2 layers) = 6 layers
-    for (int i = 0; i < 6; i++)
-    {
-        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-        backbone_idx++;
-    }
+    // Run heads
+    auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
+    auto& heatmap   = run_layers(heatmap_layers, feats);
+    auto& keypoints = run_layers(kp_layers, norm_output);
 
-    // Block3 (3 layers) - store output after first layer (stride=2)
-    auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
-    curr_out_ptr = &output;
-    backbone_idx++;
-
-    // Continue block3
-    for (int i = 1; i < 3; i++)
-    {
-        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-        backbone_idx++;
-    }
-    x3_output = curr_out_ptr; // Store x3 output
-
-    // Block4 (3 layers)
-    for (int i = 0; i < 3; i++)
-    {
-        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-        backbone_idx++;
-    }
-    x4_output = curr_out_ptr; // Store x4 output
-
-    // Block5 (4 layers)
-    for (int i = 0; i < 4; i++)
-    {
-        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-        backbone_idx++;
-    }
-    auto *x5_output = curr_out_ptr; // x5 output
-
-    // Interpolate x4 and x5 to x3 size
-    auto x4_interp = interp_x4_to_x3->forward(*x4_output);
-    auto x5_interp = interp_x5_to_x3->forward(*x5_output);
-
-    // Element-wise addition: x3 + x4_interp + x5_interp
-    std::vector<const DevicePointer<FLOAT> *> pyramid_inputs = {x3_output, &x4_interp, &x5_interp};
-    auto pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
-    curr_out_ptr = &pyramid_sum;
-
-    // Block fusion
-    for (auto &layer : block_fusion_layers)
-    {
-        auto output = layer->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-    }
-    auto *feats = curr_out_ptr;
-
-    // Heatmap head
-    curr_out_ptr = feats;
-    for (auto &layer : heatmap_layers)
-    {
-        auto output = layer->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-    }
-    auto *heatmap = curr_out_ptr;
-
-    // Keypoint head (using original normalized input with fold/unfold)
-    curr_out_ptr = &norm_output;
-    for (auto &layer : kp_layers)
-    {
-        auto output = layer->forward(*curr_out_ptr);
-        curr_out_ptr = &output;
-    }
-    auto *keypoints = curr_out_ptr;
-
-    return *feats;
+    return std::tie(heatmap, keypoints, feats);
 }
 
 int main()
@@ -324,7 +276,7 @@ int main()
 
     XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
 
-    feat.forward(img_device);
+    auto [heatmap, keypoints, feats] = feat.forward(img_device);
 
     std::cout << "Reached the end of main\n";
 }
