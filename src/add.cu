@@ -18,7 +18,7 @@ Add::Add(ImgProperty output_prop_) : output_prop(output_prop_)
     output_device.alloc(shape);
 }
 
-const DevicePointer<FLOAT>& Add::forward(const std::vector<const DevicePointer<FLOAT>*>& inputs)
+DevicePointer<FLOAT>& Add::forward(const std::vector<const DevicePointer<FLOAT>*>& inputs)
 {
     if (inputs.size() != 3) {
         throw std::invalid_argument("Add layer expects exactly 3 inputs");
@@ -36,7 +36,7 @@ const DevicePointer<FLOAT>& Add::forward(const std::vector<const DevicePointer<F
     return output_device;
 }
 
-const DevicePointer<FLOAT>& Add::forward(const DevicePointer<FLOAT>& input)
+DevicePointer<FLOAT>& Add::forward(const DevicePointer<FLOAT>& input)
 {
     throw std::runtime_error("Add layer requires multiple inputs. Use forward(vector<inputs>) instead.");
 }

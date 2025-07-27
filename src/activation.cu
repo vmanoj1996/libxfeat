@@ -21,7 +21,7 @@ __global__ void apply_activation_kernel(const float* input, float* output, int t
 }
 
 template<typename Operation>
-const DevicePointer<FLOAT>& ActivationLayer<Operation>::forward(const DevicePointer<FLOAT>& input)
+DevicePointer<FLOAT>& ActivationLayer<Operation>::forward(const DevicePointer<FLOAT>& input)
 {
     int total_size = input_prop.channels * input_prop.height * input_prop.width;
     

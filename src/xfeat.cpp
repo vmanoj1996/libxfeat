@@ -261,19 +261,19 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     
     // Block1 (4 layers) + Block2 (2 layers) = 6 layers
     for (int i = 0; i < 6; i++) {
-        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        auto *output = &(backbone_layers[backbone_idx]->forward(*current_output));
         current_output = output;
         backbone_idx++;
     }
     
     // Block3 (3 layers) - store output after first layer (stride=2)
-    auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+    auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
     current_output = output;
     backbone_idx++;
     
     // Continue block3
     for (int i = 1; i < 3; i++) {
-        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
         current_output = output;
         backbone_idx++;
     }
@@ -281,7 +281,7 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     
     // Block4 (3 layers)
     for (int i = 0; i < 3; i++) {
-        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
         current_output = output;
         backbone_idx++;
     }
@@ -289,15 +289,15 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     
     // Block5 (4 layers)
     for (int i = 0; i < 4; i++) {
-        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
         current_output = output;
         backbone_idx++;
     }
     auto *x5_output = current_output; // x5 output
     
     // Interpolate x4 and x5 to x3 size
-    auto *x4_interp = const_cast<DevicePointer<float> *>(&(interp_x4_to_x3->forward(*x4_output)));
-    auto *x5_interp = const_cast<DevicePointer<float> *>(&(interp_x5_to_x3->forward(*x5_output)));
+    auto *x4_interp = (&(interp_x4_to_x3->forward(*x4_output)));
+    auto *x5_interp = (&(interp_x5_to_x3->forward(*x5_output)));
     
     // Element-wise addition: x3 + x4_interp + x5_interp
     
@@ -309,7 +309,7 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     current_output = fusion_input;
     for (auto &layer : block_fusion_layers)
     {
-        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        auto *output = (&(layer->forward(*current_output)));
         current_output = output;
     }
     auto *feats = current_output;
@@ -318,7 +318,7 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     current_output = feats;
     for (auto &layer : heatmap_layers)
     {
-        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        auto *output = (&(layer->forward(*current_output)));
         current_output = output;
     }
     auto *heatmap = current_output;
@@ -327,7 +327,7 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     current_output = &norm_output;
     for (auto &layer : kp_layers)
     {
-        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        auto *output = (&(layer->forward(*current_output)));
         current_output = output;
     }
     auto *keypoints = current_output;

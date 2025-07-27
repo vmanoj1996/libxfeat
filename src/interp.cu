@@ -45,7 +45,7 @@ __global__ void bilinear_interp_kernel(const FLOAT* input, FLOAT* output, int in
    }
 }
 
-const DevicePointer<FLOAT>& BilinearInterp2D::forward(const DevicePointer<FLOAT>& input_device)
+DevicePointer<FLOAT>& BilinearInterp2D::forward(const DevicePointer<FLOAT>& input_device)
 {
    const int TC = 8;
    dim3 threadcount(TC, TC, TC);
@@ -62,7 +62,7 @@ const DevicePointer<FLOAT>& BilinearInterp2D::forward(const DevicePointer<FLOAT>
    return output_device;
 }
 
-const DevicePointer<FLOAT>& BilinearInterp2D::get_output()
+DevicePointer<FLOAT>& BilinearInterp2D::get_output()
 {
     return output_device;
 }

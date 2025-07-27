@@ -19,8 +19,8 @@ public:
    BilinearInterp2D(ImgProperty input_prop_, int target_height_, int target_width_); 
    ~BilinearInterp2D() = default;
    
-   virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
-   const DevicePointer<FLOAT>& get_output();
+   virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+   DevicePointer<FLOAT>& get_output();
 
    ImgProperty get_output_spec() const;
    ImgProperty get_input_spec() const;

@@ -28,7 +28,7 @@ private:
 public:
     Fold2D(int height_, int width_);
 
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
 };
 
@@ -40,7 +40,7 @@ private:
 public:
     UnFold2D(int height_, int width_);
     
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 };
 
 

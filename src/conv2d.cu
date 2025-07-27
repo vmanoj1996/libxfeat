@@ -87,7 +87,7 @@ Conv2D<Operation>::~Conv2D()
 }
 
 template<typename Operation>
-const DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &input_device)
+DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
@@ -118,7 +118,7 @@ void Conv2D<Operation>::set_kernel(const std::vector<FLOAT> &kernel_data)
 }
 
 template<typename Operation>
-const DevicePointer<FLOAT> &Conv2D<Operation>::get_output()
+DevicePointer<FLOAT> &Conv2D<Operation>::get_output()
 {
     return output_device;
 }

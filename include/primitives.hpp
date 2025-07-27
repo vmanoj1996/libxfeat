@@ -60,14 +60,17 @@ inline std::ostream& operator<<(std::ostream& os, const ImgProperty& img) {
 }
 
 
-
-
 class Layer
 {
     public:
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
+    virtual DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs) 
+    {
+        DevicePointer<FLOAT> dummy;
 
-    virtual const DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs) {return *inputs[0];}
+        throw std::runtime_error("Base class forward() should not be called");
+        return dummy;
+    }
 
     virtual ~Layer() = default;
 };

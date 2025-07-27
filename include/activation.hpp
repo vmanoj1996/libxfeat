@@ -20,7 +20,7 @@ public:
 
     ~ActivationLayer() = default;
 
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
 
 };
 

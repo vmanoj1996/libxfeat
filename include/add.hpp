@@ -15,9 +15,9 @@ public:
     ~Add() = default;
     
     // Forward for multiple inputs
-    virtual const DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs);
+    virtual DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs);
     
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
     
     ImgProperty get_output_spec() const;
 };

@@ -60,9 +60,9 @@ public:
     
     ~Conv2D(); // automatically made virtual by the compiler
     
-    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
-    const DevicePointer<FLOAT>& get_output();
+    DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);

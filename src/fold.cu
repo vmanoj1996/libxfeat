@@ -83,7 +83,7 @@ Fold2D::Fold2D(int height_, int width_): Fold2D_common(height_, width_)
 }
 
 
-const DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
+DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
     {
         if (input_device.get() == output_device.get())
         {
@@ -126,7 +126,7 @@ UnFold2D::UnFold2D(int height_, int width_): Fold2D_common(height_, width_)
 
 }
 
-const DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device)
+DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device)
 {
     if (input_device.get() == output_device.get())
     {

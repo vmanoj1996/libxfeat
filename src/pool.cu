@@ -63,7 +63,7 @@ AvgPool2D::AvgPool2D(ImgProperty input_prop_, PoolParams params_) : params(param
     output_device.alloc(output_Shape);
 }
 
-const DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_device)
+DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_device)
 {
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
