@@ -73,6 +73,10 @@ class Layer
     }
 
     virtual ~Layer() = default;
+
+    virtual ImgProperty get_output_spec() const = 0;
+    virtual ImgProperty get_input_spec()  const = 0;
+
 };
 
 

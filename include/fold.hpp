@@ -18,6 +18,9 @@ protected:
     Fold2D_common(int height_, int width_): height(height_), width(width_) {}
     ~Fold2D_common() = default; // this will destroy the output_device
 
+    virtual ImgProperty get_output_spec() const {return output_prop;}
+    virtual ImgProperty get_input_spec()  const {return input_prop;}
+
 };
 
 

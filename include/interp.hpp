@@ -22,8 +22,8 @@ public:
    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
    DevicePointer<FLOAT>& get_output();
 
-   ImgProperty get_output_spec() const;
-   ImgProperty get_input_spec() const;
+   virtual ImgProperty get_output_spec() const {return output_prop;}
+   virtual ImgProperty get_input_spec()  const {return input_prop;}
 };
 
 // Factory functions

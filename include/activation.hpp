@@ -22,6 +22,9 @@ public:
 
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
 
+    virtual ImgProperty get_output_spec() const {return output_prop;}
+    virtual ImgProperty get_input_spec()  const {return input_prop;}
+
 };
 
 template<typename Operation>

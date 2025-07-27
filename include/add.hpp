@@ -8,7 +8,7 @@ class Add : public Layer
 {
 private:
     DevicePointer<FLOAT> output_device;
-    ImgProperty output_prop;
+    ImgProperty output_prop, input_prop;
 
 public:
     Add(ImgProperty output_prop_);
@@ -19,7 +19,8 @@ public:
     
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
     
-    ImgProperty get_output_spec() const;
+    virtual ImgProperty get_output_spec() const {return output_prop;}
+    virtual ImgProperty get_input_spec()  const {return input_prop;}
 };
 
 // Factory function

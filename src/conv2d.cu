@@ -130,18 +130,6 @@ Conv2DParams Conv2D<Operation>::get_param() const
 }
 
 template<typename Operation>
-ImgProperty Conv2D<Operation>::get_output_spec() const
-{
-    return output_prop;
-}
-
-template<typename Operation>
-ImgProperty Conv2D<Operation>::get_input_spec() const
-{
-    return input_prop;
-}
-
-template<typename Operation>
 void Conv2D<Operation>::validate_params()
 {
     {

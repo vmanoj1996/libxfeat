@@ -48,7 +48,6 @@ void XFeat::setup_kp()
 
     kp_layers.emplace_back(make_unfold(height, width));
 }
-
 void XFeat::setup_descriptor()
 {
    using std::to_string;
@@ -59,84 +58,61 @@ void XFeat::setup_descriptor()
        return;
    }
 
-   // Block1: 1->4->8->8->24
-   std::vector<int> block1_channels = {1, 4, 8, 8, 24};
-   std::vector<int> block1_strides = {1, 2, 1, 2};
-   int h = height, w = width;
-
-   for (int i = 0; i < 4; i++)
+//  helper to make layers with less pain
+   auto add_conv_layer = [&](const std::string& block, int layer_idx, int in_ch, int out_ch, int k, int stride, int padding) 
    {
-       auto layername = "net.block1." + to_string(i) + ".layer.";
+       auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
+       
+       // Get current dimensions
+       int h, w;
+       if (backbone_layers.empty()) {
+           h = height;
+           w = width;
+       } else {
+           // Calculate dimensions based on previous layer
+           // For now, we'll track manually - you can implement get_output_spec() later
+           static int current_h = height, current_w = width;
+           h = current_h;
+           w = current_w;
+           
+           // Update for next iteration
+           if (stride == 2) {
+               current_h /= 2;
+               current_w /= 2;
+           }
+       }
+
        backbone_layers.emplace_back(conv2d(
-           {block1_channels[i], h, w},
-           {3, 3, block1_channels[i], block1_channels[i + 1], block1_strides[i], block1_strides[i], 1, 1},
+           {in_ch, h, w}, {k, k, in_ch, out_ch, stride, stride, padding, padding},
            model.getParam(layername + "0.weight"),
            BNR(model, layername + "1")));
+   };
 
-       if (block1_strides[i] == 2) { h /= 2; w /= 2; }
-   }
+   // Block1: 1->4->8->8->24
+   add_conv_layer("block1", 0, 1, 4, 3, 1, 1);
+   add_conv_layer("block1", 1, 4, 8, 3, 2, 1);
+   add_conv_layer("block1", 2, 8, 8, 3, 1, 1);
+   add_conv_layer("block1", 3, 8, 24, 3, 2, 1);
 
    // Block2: 24->24 (2 layers)
-   for (int i = 0; i < 2; i++)
-   {
-       auto layername = "net.block2." + to_string(i) + ".layer.";
-       backbone_layers.emplace_back(conv2d(
-           {24, h, w}, {3, 3, 24, 24, 1, 1, 1, 1},
-           model.getParam(layername + "0.weight"),
-           BNR(model, layername + "1")));
-   }
+   add_conv_layer("block2", 0, 24, 24, 3, 1, 1);
+   add_conv_layer("block2", 1, 24, 24, 3, 1, 1);
 
    // Block3: 24->64->64->64
-   std::vector<int> block3_channels = {24, 64, 64, 64};
-   std::vector<int> block3_kernels = {3, 3, 1};
-   std::vector<int> block3_strides = {2, 1, 1};
-
-   for (int i = 0; i < 3; i++)
-   {
-       auto layername = "net.block3." + to_string(i) + ".layer.";
-       backbone_layers.emplace_back(conv2d(
-           {block3_channels[i], h, w},
-           {block3_kernels[i], block3_kernels[i], block3_channels[i], block3_channels[i + 1],
-            block3_strides[i], block3_strides[i], block3_kernels[i] / 2, block3_kernels[i] / 2},
-           model.getParam(layername + "0.weight"),
-           BNR(model, layername + "1")));
-
-       if (block3_strides[i] == 2) { h /= 2; w /= 2; }
-   }
-
+   add_conv_layer("block3", 0, 24, 64, 3, 2, 1);
+   add_conv_layer("block3", 1, 64, 64, 3, 1, 1);
+   add_conv_layer("block3", 2, 64, 64, 1, 1, 0);
+   
    // Block4: 64->64->64->64 (3 layers)
-   for (int i = 0; i < 3; i++)
-   {
-       auto layername = "net.block4." + to_string(i) + ".layer.";
-       int stride = (i == 0) ? 2 : 1;
-       backbone_layers.emplace_back(conv2d(
-           {64, h, w}, {3, 3, 64, 64, stride, stride, 1, 1},
-           model.getParam(layername + "0.weight"),
-           BNR(model, layername + "1")));
-
-       if (stride == 2) { h /= 2; w /= 2; }
-   }
+   add_conv_layer("block4", 0, 64, 64, 3, 2, 1);
+   add_conv_layer("block4", 1, 64, 64, 3, 1, 1);
+   add_conv_layer("block4", 2, 64, 64, 3, 1, 1);
 
    // Block5: 64->128->128->128->64
-   std::vector<int> block5_channels = {64, 128, 128, 128, 64};
-   std::vector<int> block5_kernels = {3, 3, 3, 1};
-   std::vector<int> block5_strides = {2, 1, 1, 1};
-
-   for (int i = 0; i < 4; i++)
-   {
-       auto layername = "net.block5." + to_string(i) + ".layer.";
-       backbone_layers.emplace_back(conv2d(
-           {block5_channels[i], h, w},
-           {block5_kernels[i], block5_kernels[i], block5_channels[i], block5_channels[i + 1],
-            block5_strides[i], block5_strides[i], block5_kernels[i] / 2, block5_kernels[i] / 2},
-           model.getParam(layername + "0.weight"),
-           BNR(model, layername + "1")));
-
-       if (block5_strides[i] == 2) { h /= 2; w /= 2; }
-   }
-
-   // TODO: AvgPool2d for skip1
-   // TODO: F.interpolate + element-wise add for pyramid fusion
+   add_conv_layer("block5", 0, 64, 128, 3, 2, 1);
+   add_conv_layer("block5", 1, 128, 128, 3, 1, 1);
+   add_conv_layer("block5", 2, 128, 128, 3, 1, 1);
+   add_conv_layer("block5", 3, 128, 64, 1, 1, 0);
 }
 
 void XFeat::setup_heatmap()

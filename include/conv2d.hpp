@@ -67,8 +67,8 @@ public:
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);
 
-    ImgProperty get_output_spec() const;
-    ImgProperty get_input_spec()  const;
+    virtual ImgProperty get_output_spec() const {return output_prop;}
+    virtual ImgProperty get_input_spec()  const {return input_prop;}
 
     void validate_params();
 

@@ -67,15 +67,6 @@ DevicePointer<FLOAT>& BilinearInterp2D::get_output()
     return output_device;
 }
 
-ImgProperty BilinearInterp2D::get_output_spec() const
-{
-    return output_prop;
-}
-
-ImgProperty BilinearInterp2D::get_input_spec() const
-{
-    return input_prop;
-}
 
 BilinearInterp2D::BilinearInterp2D(ImgProperty input_prop_, int target_height_, int target_width_) : input_prop(input_prop_), target_height(target_height_), target_width(target_width_)
 {
