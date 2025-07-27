@@ -66,7 +66,7 @@ class Layer
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
     virtual DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs) 
     {
-        DevicePointer<FLOAT> dummy;
+        static DevicePointer<FLOAT> dummy;
 
         throw std::runtime_error("Base class forward() should not be called");
         return dummy;

@@ -244,13 +244,12 @@ void XFeat::setup_interpolation() {
     add_layer_pyramid = add_layer({64, x3_h, x3_w});
 }
 
-DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
-{
+DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input) {
     // Normalize the input
     DevicePointer<FLOAT> norm_output(input);
     image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
-
-    auto *current_output = &norm_output;
+    
+    auto *curr_out_ptr = &norm_output;
     
     // Storage for intermediate outputs
     DevicePointer<FLOAT> *x3_output = nullptr;
@@ -261,76 +260,71 @@ DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
     
     // Block1 (4 layers) + Block2 (2 layers) = 6 layers
     for (int i = 0; i < 6; i++) {
-        auto *output = &(backbone_layers[backbone_idx]->forward(*current_output));
-        current_output = output;
+        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
         backbone_idx++;
     }
     
     // Block3 (3 layers) - store output after first layer (stride=2)
-    auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
-    current_output = output;
+    auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
+    curr_out_ptr = &output;
     backbone_idx++;
     
     // Continue block3
     for (int i = 1; i < 3; i++) {
-        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
-        current_output = output;
+        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
         backbone_idx++;
     }
-    x3_output = current_output; // Store x3 output
+    x3_output = curr_out_ptr; // Store x3 output
     
     // Block4 (3 layers)
     for (int i = 0; i < 3; i++) {
-        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
-        current_output = output;
+        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
         backbone_idx++;
     }
-    x4_output = current_output; // Store x4 output
+    x4_output = curr_out_ptr; // Store x4 output
     
     // Block5 (4 layers)
     for (int i = 0; i < 4; i++) {
-        auto *output = (&(backbone_layers[backbone_idx]->forward(*current_output)));
-        current_output = output;
+        auto output = backbone_layers[backbone_idx]->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
         backbone_idx++;
     }
-    auto *x5_output = current_output; // x5 output
+    auto *x5_output = curr_out_ptr; // x5 output
     
     // Interpolate x4 and x5 to x3 size
-    auto *x4_interp = (&(interp_x4_to_x3->forward(*x4_output)));
-    auto *x5_interp = (&(interp_x5_to_x3->forward(*x5_output)));
+    auto x4_interp = interp_x4_to_x3->forward(*x4_output);
+    auto x5_interp = interp_x5_to_x3->forward(*x5_output);
     
     // Element-wise addition: x3 + x4_interp + x5_interp
-    
-    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {x3_output, x4_interp, x5_interp};
-    auto *pyramid_sum = const_cast<DevicePointer<float>*>(&(add_layer_pyramid->forward(pyramid_inputs)));
-    auto *fusion_input = pyramid_sum;   
+    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {x3_output, &x4_interp, &x5_interp};
+    auto pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
+    curr_out_ptr = &pyramid_sum;
 
     // Block fusion
-    current_output = fusion_input;
-    for (auto &layer : block_fusion_layers)
-    {
-        auto *output = (&(layer->forward(*current_output)));
-        current_output = output;
+    for (auto &layer : block_fusion_layers) {
+        auto output = layer->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
     }
-    auto *feats = current_output;
+    auto *feats = curr_out_ptr;
     
     // Heatmap head
-    current_output = feats;
-    for (auto &layer : heatmap_layers)
-    {
-        auto *output = (&(layer->forward(*current_output)));
-        current_output = output;
+    curr_out_ptr = feats;
+    for (auto &layer : heatmap_layers) {
+        auto output = layer->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
     }
-    auto *heatmap = current_output;
+    auto *heatmap = curr_out_ptr;
     
     // Keypoint head (using original normalized input with fold/unfold)
-    current_output = &norm_output;
-    for (auto &layer : kp_layers)
-    {
-        auto *output = (&(layer->forward(*current_output)));
-        current_output = output;
+    curr_out_ptr = &norm_output;
+    for (auto &layer : kp_layers) {
+        auto output = layer->forward(*curr_out_ptr);
+        curr_out_ptr = &output;
     }
-    auto *keypoints = current_output;
+    auto *keypoints = curr_out_ptr;
     
     return *feats;
 }
