@@ -241,10 +241,10 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
 
     // Run backbone in chunks
-    auto& x2_out = run_backbone(0, 6, norm_output);     // Block1 + Block2
+    auto& x2_out = run_backbone(0, 6, norm_output);    // Block1 + Block2
     auto& x3_out = run_backbone(6, 3, x2_out);         // Block3
     auto& x4_out = run_backbone(9, 3, x3_out);         // Block4  
-    auto& x5_out = run_backbone(12,4, x4_out);        // Block5
+    auto& x5_out = run_backbone(12,4, x4_out);         // Block5
 
     // Pyramid fusion
     auto& x4_interp = interp_x4_to_x3->forward(x4_out);
