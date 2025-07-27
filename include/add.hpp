@@ -1,0 +1,29 @@
+#pragma once
+
+#include "primitives.hpp"
+#include <memory>
+#include <vector>
+
+class Add : public Layer
+{
+private:
+    DevicePointer<FLOAT> output_device;
+    ImgProperty output_prop;
+
+public:
+    Add(ImgProperty output_prop_);
+    ~Add() = default;
+    
+    // Forward for multiple inputs
+    virtual const DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs);
+    
+    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
+    
+    ImgProperty get_output_spec() const;
+};
+
+// Factory function
+inline std::unique_ptr<Layer> add_layer(ImgProperty output_prop) 
+{
+    return std::make_unique<Add>(output_prop);
+}

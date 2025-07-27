@@ -1,6 +1,7 @@
 #include<primitives.hpp>
 #include<memory>
 #include <cuda_runtime.h>
+#include "device_ops.hpp"
 
 template<typename Operation>
 class ActivationLayer : public Layer
@@ -17,12 +18,10 @@ public:
         output_device.alloc(shape);
     }
 
-    const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override
-    {
-        // Apply activation element-wise
-        apply_activation_kernel<<<grid, block>>>(input.get(), output_device.get(), input_prop.total_size(), op);
-        return output_device;
-    }
+    ~ActivationLayer() = default;
+
+    virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
+
 };
 
 template<typename Operation>
@@ -30,3 +29,5 @@ inline std::unique_ptr<Layer> activation(ImgProperty input_prop, Operation op)
 {
    return std::make_unique<ActivationLayer<Operation>>(input_prop, op);
 }
+
+template class ActivationLayer<Sigmoid>;

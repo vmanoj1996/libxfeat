@@ -6,34 +6,13 @@
 #include <opencv2/opencv.hpp>
 #include <fstream>
 #include "primitives.hpp"
+#include "add.hpp" 
+#include "activation.hpp" 
+#include "pool.hpp" 
+#include "interp.hpp" 
 
 void XFeat::setup_kp()
 {
-    /* Keypoint head - separate branch using fold/unfold
-        (keypoint_head): Sequential(
-        (0): BasicLayer(
-            (layer): Sequential(
-            (0): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
-            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=True)
-            (2): ReLU(inplace=True)
-            )
-        )
-        (1): BasicLayer(
-            (layer): Sequential(
-            (0): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
-            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=True)
-            (2): ReLU(inplace=True)
-            )
-        )
-        (2): BasicLayer(
-            (layer): Sequential(
-            (0): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
-            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=True)
-            (2): ReLU(inplace=True)
-            )
-        )
-            (3): Conv2d(64, 65, kernel_size=(1, 1), stride=(1, 1))
-    */
     using std::to_string;
 
     if (kp_layers.size() != 0)
@@ -192,7 +171,7 @@ void XFeat::setup_heatmap()
        Bias(model.getParam("net.heatmap_head.2.bias"))));
 
    // Sigmoid activation
-   heatmap_layers.emplace_back(sigmoid({1, cheight, cwidth}));
+   heatmap_layers.emplace_back(activation({1, cheight, cwidth}, Sigmoid{}));
 }
 
 void XFeat::setup_block_fusion()
@@ -230,8 +209,11 @@ void XFeat::setup_block_fusion()
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
-    setup_kp();
     setup_descriptor();
+    setup_kp();
+    setup_heatmap();
+    setup_block_fusion();
+    setup_interpolation();
 }
 
 void save_layer_data(const DevicePointer<float> &data, const std::string &name)
@@ -254,31 +236,103 @@ void save_layer_data(const DevicePointer<float> &data, const std::string &name)
     shape_file.close();
 }
 
+void XFeat::setup_interpolation() {
+    auto [x3_h, x3_w] = std::make_pair(height / 4, width / 4);  // After block3
+    
+    interp_x4_to_x3 = interp2d({64, height/8, width/8}, x3_h, x3_w);
+    interp_x5_to_x3 = interp2d({64, height/16, width/16}, x3_h, x3_w);
+    add_layer_pyramid = add_layer({64, x3_h, x3_w});
+}
+
 DevicePointer<FLOAT> &XFeat::forward(DevicePointer<FLOAT> &input)
 {
-    // normalize the input
+    // Normalize the input
     DevicePointer<FLOAT> norm_output(input);
     image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
 
-    norm_output.print_shape();
-    save_layer_data(norm_output, "cpp_input");
+    auto *current_output = &norm_output;
+    
+    // Storage for intermediate outputs
+    DevicePointer<FLOAT> *x3_output = nullptr;
+    DevicePointer<FLOAT> *x4_output = nullptr;
+    
+    // Run through backbone layers with intermediate storage
+    int backbone_idx = 0;
+    
+    // Block1 (4 layers) + Block2 (2 layers) = 6 layers
+    for (int i = 0; i < 6; i++) {
+        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        current_output = output;
+        backbone_idx++;
+    }
+    
+    // Block3 (3 layers) - store output after first layer (stride=2)
+    auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+    current_output = output;
+    backbone_idx++;
+    
+    // Continue block3
+    for (int i = 1; i < 3; i++) {
+        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        current_output = output;
+        backbone_idx++;
+    }
+    x3_output = current_output; // Store x3 output
+    
+    // Block4 (3 layers)
+    for (int i = 0; i < 3; i++) {
+        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        current_output = output;
+        backbone_idx++;
+    }
+    x4_output = current_output; // Store x4 output
+    
+    // Block5 (4 layers)
+    for (int i = 0; i < 4; i++) {
+        auto *output = const_cast<DevicePointer<float> *>(&(backbone_layers[backbone_idx]->forward(*current_output)));
+        current_output = output;
+        backbone_idx++;
+    }
+    auto *x5_output = current_output; // x5 output
+    
+    // Interpolate x4 and x5 to x3 size
+    auto *x4_interp = const_cast<DevicePointer<float> *>(&(interp_x4_to_x3->forward(*x4_output)));
+    auto *x5_interp = const_cast<DevicePointer<float> *>(&(interp_x5_to_x3->forward(*x5_output)));
+    
+    // Element-wise addition: x3 + x4_interp + x5_interp
+    
+    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {x3_output, x4_interp, x5_interp};
+    auto *pyramid_sum = const_cast<DevicePointer<float>*>(&(add_layer_pyramid->forward(pyramid_inputs)));
+    auto *fusion_input = pyramid_sum;   
 
-    auto *previous_output = &norm_output;
-    // run through the keypoint layers
-    int count = 0;
+    // Block fusion
+    current_output = fusion_input;
+    for (auto &layer : block_fusion_layers)
+    {
+        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        current_output = output;
+    }
+    auto *feats = current_output;
+    
+    // Heatmap head
+    current_output = feats;
+    for (auto &layer : heatmap_layers)
+    {
+        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        current_output = output;
+    }
+    auto *heatmap = current_output;
+    
+    // Keypoint head (using original normalized input with fold/unfold)
+    current_output = &norm_output;
     for (auto &layer : kp_layers)
     {
-        std::cout << "Inference: KP: Layer " << count << "\n";
-        // although I am taking the const, trust Manoj lol
-        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*previous_output)));
-        previous_output = output;
-
-        save_layer_data(*output, "cpp_layer_" + std::to_string(count));
-
-        count++;
+        auto *output = const_cast<DevicePointer<float> *>(&(layer->forward(*current_output)));
+        current_output = output;
     }
-
-    return *previous_output;
+    auto *keypoints = current_output;
+    
+    return *feats;
 }
 
 int main()

@@ -67,6 +67,8 @@ class Layer
     public:
     virtual const DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
 
+    virtual const DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs) {return *inputs[0];}
+
     virtual ~Layer() = default;
 };
 
