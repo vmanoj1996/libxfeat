@@ -1,5 +1,5 @@
 # libxfeat
-XFeat implmentation in CUDA and C++
+XFeat implmentation in CUDA and C++ (UNDER CONSTRUCTION)
 
 ```
 mkdir build 
