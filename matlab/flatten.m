@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 function flatarray = flatten(input_matrix)
 % FLATTEN convert matlab column major to c-major and flatten. return a clib array that maps to c++ vector
 

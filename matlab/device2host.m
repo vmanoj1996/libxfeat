@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 function host_matrix = device2host(device_pointer)
 
 % input_clib = flatten(host_matrix);

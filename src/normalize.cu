@@ -1,3 +1,7 @@
+
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 #include <thrust/reduce.h>
 #include <thrust/transform_reduce.h>
 #include <thrust/device_ptr.h>

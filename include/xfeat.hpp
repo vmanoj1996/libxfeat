@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include "xfeat_params.hpp"
 

@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 // how to increase the stack size if needed
 // g++ -Wl,--stack,16777216 program.cpp -o program
 // g++ -fsanitize=address -g program.cpp -o program

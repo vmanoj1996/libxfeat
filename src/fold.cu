@@ -8,6 +8,9 @@ and vice versa
 nvcc -std=c++20 -arch=sm_89 fold.cu && ./a.out
 */
 
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 #include <cuda_runtime.h>
 #include <cassert>
 #include <cstdio>

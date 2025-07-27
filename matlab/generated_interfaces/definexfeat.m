@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 %% About definexfeat.m
 % This file defines the MATLAB interface to the library |xfeat|.
 %

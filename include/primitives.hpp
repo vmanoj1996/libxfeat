@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 #pragma once
 #include<vector>
 #include <boost/stacktrace.hpp>

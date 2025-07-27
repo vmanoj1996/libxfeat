@@ -1,3 +1,6 @@
+# Copyright 2025 Manoj Velmurugan
+# SPDX-License-Identifier: MIT
+
 # Setup ------------------------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.18)

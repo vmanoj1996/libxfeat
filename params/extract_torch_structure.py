@@ -1,3 +1,6 @@
+# Copyright 2025 Manoj Velmurugan
+# SPDX-License-Identifier: MIT
+
 import torch
 
 # Load XFeat model

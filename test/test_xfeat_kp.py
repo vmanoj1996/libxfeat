@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2025 Manoj Velmurugan
+# SPDX-License-Identifier: MIT
+
 
 import torch
 import cv2

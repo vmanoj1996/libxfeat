@@ -1,5 +1,10 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
+// C++ and CUDA only XFEAT Feature Extractor Implementation
 
 // https://github.com/verlab/accelerated_features/blob/main/modules/model.py
+
 #include "xfeat.hpp"
 #include "conv2d.hpp"
 #include "fold.hpp"

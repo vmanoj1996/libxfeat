@@ -1,0 +1,1 @@
+addlicense -c "Manoj Velmurugan" -l mit -s=only .

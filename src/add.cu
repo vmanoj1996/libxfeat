@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 #include "add.hpp"
 #include <stdexcept>
 #include <cuda_runtime.h>

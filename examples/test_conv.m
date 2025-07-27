@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 clear mex
 
 % Tiny test - 1 channel, 4x4 image, 1x1 kernel

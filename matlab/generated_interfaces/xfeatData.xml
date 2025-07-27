@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2025 Manoj Velmurugan
+ SPDX-License-Identifier: MIT
+-->
+
 <MF0 version="1.1" packageUris="http://schema.mathworks.com/mf0/cxxfe_ast/R2024b http://schema.mathworks.com/mf0/cxxfe_ast_annotations/20180710">
   <mwAnnotation.FundamentalArray type="mwAnnotation.FundamentalArray" uuid="e87df2cc-4fd0-4092-a874-018e91512d9b">
     <cppElemType>int</cppElemType>

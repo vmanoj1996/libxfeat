@@ -1,3 +1,6 @@
+# Copyright 2025 Manoj Velmurugan
+# SPDX-License-Identifier: MIT
+
 import torch
 import numpy as np
 import h5py

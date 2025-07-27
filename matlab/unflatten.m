@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 function output_matrix = unflatten(flat_array, target_shape)
    % UNFLATTEN Convert 1D clib array back to MATLAB matrix with proper shape
    % Handles C row-major to MATLAB column-major conversion

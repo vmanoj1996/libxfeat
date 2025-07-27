@@ -1,3 +1,6 @@
+// Copyright 2025 Manoj Velmurugan
+// SPDX-License-Identifier: MIT
+
 function output = conv2d(input, kernel, k1, k2, s1, s2, p1, p2)
 %CONV2D CUDA-accelerated 2D convolution
 %   output = conv2d(input, kernel, k1, k2, s1, s2, p1, p2)
