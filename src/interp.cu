@@ -22,7 +22,7 @@ __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in
 
     // printf("bilinear: %d %d %d\n", idx_c, out_y, out_x);
 
-    // Map output coordinates to input coordinates. recheck this calculations
+    // Map output coordinates to input coordinates. recheck this calculations. can be optimized more. I am being too careful I guess.
     float src_y = out_y_norm * in_h + in_h / 2;
     float src_x = out_x_norm * in_w + in_w / 2;
 
@@ -53,27 +53,16 @@ __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in
 
     int poffset = idx_c * in_h * in_w;
 
-    // float tl = input[poffset + y1 * in_w + x1];
-    // float tr = input[poffset + y1 * in_w + x2];
-    // float bl = input[poffset + y2 * in_w + x1];
-    // float br = input[poffset + y2 * in_w + x2];
-
-    float tl = input[0];
-    float tr = input[0];
-    float bl = input[0];
-    float br = input[0];
+    float tl = input[poffset + y1 * in_w + x1];
+    float tr = input[poffset + y1 * in_w + x2];
+    float bl = input[poffset + y2 * in_w + x1];
+    float br = input[poffset + y2 * in_w + x2];
 
     float top = tl * (1.0f - dx) + tr * dx;
     float bottom = bl * (1.0f - dx) + br * dx;
     float result = top * (1.0f - dy) + bottom * dy;
 
-    // printf("bilinear: %f %f %f\n", top, bottom, result);
-
-    // Write to output
     int out_idx = idx_c * (out_h * out_w) + out_y * out_w + out_x;
-
-    // printf("bilinear: %d \n", out_idx);
-
     output[out_idx] = result;
 }
 
