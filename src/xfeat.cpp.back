@@ -223,8 +223,6 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
         for (int i = start; i < start + count; i++) 
         {
             current = &backbone_layers[i]->forward(*current);
-            // Save backbone layer outputs
-            save_layer_data(*current, "backbone_layer_" + std::to_string(i));
         }
         return *current;
     };
@@ -232,10 +230,8 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     auto run_layers = [](auto& layers, auto& input_ref) -> auto& 
     {
         auto* current = &input_ref;
-        for (size_t i = 0; i < layers.size(); i++) {
-            current = &layers[i]->forward(*current);
-            // Save layer outputs with meaningful names
-            save_layer_data(*current, "layer_" + std::to_string(i));
+        for (auto& layer : layers) {
+            current = &layer->forward(*current);
         }
         return *current;
     };
@@ -243,20 +239,12 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     // Normalize the input
     DevicePointer<FLOAT> norm_output(input);
     image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
-    save_layer_data(norm_output, "normalized_input");
 
     // Run backbone in chunks
     auto& x2_out = run_backbone(0, 6, norm_output);    // Block1 + Block2
-    save_layer_data(x2_out, "x2_backbone_output");
-    
     auto& x3_out = run_backbone(6, 3, x2_out);         // Block3
-    save_layer_data(x3_out, "x3_backbone_output");
-    
     auto& x4_out = run_backbone(9, 3, x3_out);         // Block4  
-    save_layer_data(x4_out, "x4_backbone_output");
-    
     auto& x5_out = run_backbone(12, 4, x4_out);        // Block5
-    save_layer_data(x5_out, "x5_backbone_output");
 
     // Create interpolation layers dynamically with actual dimensions
     auto x3_shape = x3_out.get_shape();
@@ -267,36 +255,18 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     auto interp_x5_to_x3 = interp2d({x5_shape[0], x5_shape[1], x5_shape[2]}, x3_shape[1], x3_shape[2]);
     
     auto& x4_interp = interp_x4_to_x3->forward(x4_out);
-    save_layer_data(x4_interp, "x4_interpolated");
-    
     auto& x5_interp = interp_x5_to_x3->forward(x5_out);
-    save_layer_data(x5_interp, "x5_interpolated");
     
     // Pyramid fusion: x3 + x4_interp + x5_interp
+    // this is inefficient no. fix it
     auto add_layer_pyramid = add_layer({x3_shape[0], x3_shape[1], x3_shape[2]});
     std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
     auto& pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
-    save_layer_data(pyramid_sum, "pyramid_fusion");
 
-    // Run heads with specific naming
-    auto run_named_layers = [&](auto& layers, auto& input_ref, const std::string& prefix) -> auto& 
-    {
-        auto* current = &input_ref;
-        for (size_t i = 0; i < layers.size(); i++) {
-            current = &layers[i]->forward(*current);
-            save_layer_data(*current, prefix + "_layer_" + std::to_string(i));
-        }
-        return *current;
-    };
-
-    auto& feats     = run_named_layers(block_fusion_layers, pyramid_sum, "block_fusion");
-    save_layer_data(feats, "final_features");
-    
-    auto& heatmap   = run_named_layers(heatmap_layers, feats, "heatmap");
-    save_layer_data(heatmap, "final_heatmap");
-    
-    auto& keypoints = run_named_layers(kp_layers, norm_output, "keypoint");
-    save_layer_data(keypoints, "final_keypoints");
+    // Run heads
+    auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
+    auto& heatmap   = run_layers(heatmap_layers, feats);
+    auto& keypoints = run_layers(kp_layers, norm_output);
 
     return std::tie(heatmap, keypoints, feats);
 }
