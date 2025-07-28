@@ -252,18 +252,27 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     auto& x5_out = run_backbone(12,4, x4_out);         // Block5
 
     // Pyramid fusion
-    auto& x4_interp = interp_x4_to_x3->forward(x4_out);
-    auto& x5_interp = interp_x5_to_x3->forward(x5_out);
-    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
+    auto x4_shape = x4_out.get_shape();
+    printf("x4_out shape: [%d, %d, %d]\n", x4_shape[0], x4_shape[1], x4_shape[2]);
 
-    auto& pyramid_sum = add_layer_pyramid.get()->forward(pyramid_inputs);
+    printf("Expected input_prop: channels=%d, height=%d, width=%d\n", 
+       interp_x4_to_x3->get_input_spec().channels,
+       interp_x4_to_x3->get_input_spec().height, 
+       interp_x4_to_x3->get_input_spec().width);
+    
+    auto& x4_interp = interp_x4_to_x3->forward(x4_out);
+    // auto& x5_interp = interp_x5_to_x3->forward(x5_out);
+    // std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
+
+    // auto& pyramid_sum = add_layer_pyramid.get()->forward(pyramid_inputs);
 
     // Run heads
-    auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
-    auto& heatmap   = run_layers(heatmap_layers, feats);
+    // auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
+    // auto& heatmap   = run_layers(heatmap_layers, feats);
     auto& keypoints = run_layers(kp_layers, norm_output);
 
-    return std::tie(heatmap, keypoints, feats);
+    // return std::tie(heatmap, keypoints, feats);
+    return std::tie(keypoints, keypoints, keypoints);
 }
 
 int main()
@@ -283,12 +292,12 @@ int main()
 
     auto [heatmap, keypoints, feats] = feat.forward(img_device);
 
-    std::vector<float> heatmap_vec = heatmap.get_value();
-    std::vector<int> heatmap_shape = heatmap.get_shape();
+    // std::vector<float> heatmap_vec = heatmap.get_value();
+    // std::vector<int> heatmap_shape = heatmap.get_shape();
 
-    cv::Mat heatmap_mat(heatmap_shape[0], heatmap_shape[1], CV_32F, heatmap_vec.data());
-    cv::imshow("Heatmap", heatmap_mat);
-    cv::waitKey(0);
+    // cv::Mat heatmap_mat(heatmap_shape[0], heatmap_shape[1], CV_32F, heatmap_vec.data());
+    // cv::imshow("Heatmap", heatmap_mat);
+    // cv::waitKey(0);
 
     std::cout << "Reached the end of main\n";
 }

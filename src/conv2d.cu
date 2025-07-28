@@ -92,6 +92,11 @@ Conv2D<Operation>::~Conv2D()
 template<typename Operation>
 DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &input_device)
 {
+    std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
+    auto actual_shape = input_device.get_shape();
+
+    if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
+
     const int TC = 8;
     dim3 threadcount(TC, TC, TC);
     // TODO fix it
