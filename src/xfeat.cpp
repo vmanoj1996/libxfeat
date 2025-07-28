@@ -283,5 +283,12 @@ int main()
 
     auto [heatmap, keypoints, feats] = feat.forward(img_device);
 
+    std::vector<float> heatmap_vec = heatmap.get_value();
+    std::vector<int> heatmap_shape = heatmap.get_shape();
+
+    cv::Mat heatmap_mat(heatmap_shape[0], heatmap_shape[1], CV_32F, heatmap_vec.data());
+    cv::imshow("Heatmap", heatmap_mat);
+    cv::waitKey(0);
+
     std::cout << "Reached the end of main\n";
 }
