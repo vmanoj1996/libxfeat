@@ -42,7 +42,6 @@ XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
-    setup_interpolation();
 }
 
 void XFeat::setup_kp()
@@ -201,6 +200,11 @@ void XFeat::setup_block_fusion()
         {
             auto output_spec = block_fusion_layers.back()->get_output_spec();
             input_spec = {in_ch, output_spec.height, output_spec.width};
+
+            block_fusion_layers.emplace_back(conv2d(
+                input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
+                model.getParam(layer_name + ".weight"),
+                operation));
         }
     };
 
@@ -210,15 +214,6 @@ void XFeat::setup_block_fusion()
 
     // Final conv: 64 -> 64, 1x1 kernel (no BatchNorm/ReLU)
     add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
-}
-
-void XFeat::setup_interpolation()
-{
-    auto [x3_h, x3_w] = std::make_pair(height / 4, width / 4); // After block3
-
-    interp_x4_to_x3 = interp2d({64, height / 8, width / 8}, x3_h, x3_w);
-    interp_x5_to_x3 = interp2d({64, height / 16, width / 16}, x3_h, x3_w);
-    add_layer_pyramid = add_layer({64, x3_h, x3_w});
 }
 
 std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> XFeat::forward(DevicePointer<FLOAT> &input)
@@ -232,6 +227,7 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
         }
         return *current;
     };
+    
     auto run_layers = [](auto& layers, auto& input_ref) -> auto& 
     {
         auto* current = &input_ref;
@@ -249,30 +245,31 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     auto& x2_out = run_backbone(0, 6, norm_output);    // Block1 + Block2
     auto& x3_out = run_backbone(6, 3, x2_out);         // Block3
     auto& x4_out = run_backbone(9, 3, x3_out);         // Block4  
-    auto& x5_out = run_backbone(12,4, x4_out);         // Block5
+    auto& x5_out = run_backbone(12, 4, x4_out);        // Block5
 
-    // Pyramid fusion
+    // Create interpolation layers dynamically with actual dimensions
+    auto x3_shape = x3_out.get_shape();
     auto x4_shape = x4_out.get_shape();
-    printf("x4_out shape: [%d, %d, %d]\n", x4_shape[0], x4_shape[1], x4_shape[2]);
-
-    printf("Expected input_prop: channels=%d, height=%d, width=%d\n", 
-       interp_x4_to_x3->get_input_spec().channels,
-       interp_x4_to_x3->get_input_spec().height, 
-       interp_x4_to_x3->get_input_spec().width);
+    auto x5_shape = x5_out.get_shape();
+    
+    auto interp_x4_to_x3 = interp2d({x4_shape[0], x4_shape[1], x4_shape[2]}, x3_shape[1], x3_shape[2]);
+    auto interp_x5_to_x3 = interp2d({x5_shape[0], x5_shape[1], x5_shape[2]}, x3_shape[1], x3_shape[2]);
     
     auto& x4_interp = interp_x4_to_x3->forward(x4_out);
-    // auto& x5_interp = interp_x5_to_x3->forward(x5_out);
-    // std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
-
-    // auto& pyramid_sum = add_layer_pyramid.get()->forward(pyramid_inputs);
+    auto& x5_interp = interp_x5_to_x3->forward(x5_out);
+    
+    // Pyramid fusion: x3 + x4_interp + x5_interp
+    // this is inefficient no. fix it
+    auto add_layer_pyramid = add_layer({x3_shape[0], x3_shape[1], x3_shape[2]});
+    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
+    auto& pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
 
     // Run heads
-    // auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
-    // auto& heatmap   = run_layers(heatmap_layers, feats);
+    auto& feats     = run_layers(block_fusion_layers, pyramid_sum);
+    auto& heatmap   = run_layers(heatmap_layers, feats);
     auto& keypoints = run_layers(kp_layers, norm_output);
 
-    // return std::tie(heatmap, keypoints, feats);
-    return std::tie(keypoints, keypoints, keypoints);
+    return std::tie(heatmap, keypoints, feats);
 }
 
 int main()

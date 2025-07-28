@@ -27,13 +27,10 @@ private:
     const int height, width;
 
     std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers, block_fusion_layers, heatmap_layers ;
-    std::unique_ptr<Layer> interp_x4_to_x3, interp_x5_to_x3;
-    std::unique_ptr<Layer> add_layer_pyramid;
 
     void setup_kp();
     void setup_descriptor();
     void setup_heatmap();
     void setup_block_fusion();
-    void setup_interpolation();
 
 };
