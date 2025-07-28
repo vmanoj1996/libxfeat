@@ -200,12 +200,11 @@ void XFeat::setup_block_fusion()
         {
             auto output_spec = block_fusion_layers.back()->get_output_spec();
             input_spec = {in_ch, output_spec.height, output_spec.width};
-
-            block_fusion_layers.emplace_back(conv2d(
+        }
+        block_fusion_layers.emplace_back(conv2d(
                 input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
                 model.getParam(layer_name + ".weight"),
                 operation));
-        }
     };
 
     // 2 BasicLayers with 3x3 conv + BatchNorm + ReLU, stride=1
@@ -281,7 +280,7 @@ int main()
     img.convertTo(img_float, CV_32F, 1.0 / 255.0);
 
     std::vector<float> img_vec(img_float.begin<float>(), img_float.end<float>());
-    std::vector<int> dims = {img.rows, img.cols};
+    std::vector<int> dims = {1, img.rows, img.cols};
 
     DevicePointer<float> img_device(img_vec, dims);
 
