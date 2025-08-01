@@ -1,5 +1,5 @@
 # libxfeat
-XFeat implmentation in CUDA and C++ (UNDER CONSTRUCTION)
+XFeat Feature Extractor implementation in CUDA and C++ (UNDER CONSTRUCTION)
 
 ```
 mkdir build 
