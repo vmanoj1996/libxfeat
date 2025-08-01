@@ -45,10 +45,50 @@ target_link_libraries(conv2d_lib PUBLIC
 target_compile_definitions(conv2d_lib PUBLIC ${HDF5_DEFINITIONS})
 set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# Add executable for XFeat main
-add_executable(xfeat_main src/xfeat.cpp)  # or wherever your xfeat file is
-target_compile_definitions(xfeat_main PRIVATE ACTIVATE_XFEAT_MAIN)
-target_link_libraries(xfeat_main conv2d_lib)
 
-target_link_libraries(xfeat_main ${Boost_LIBRARIES} dl)
-target_compile_definitions(xfeat_main PRIVATE BOOST_STACKTRACE_USE_ADDR2LINE)
+# Enable testing ------------------------------------------------------------------------------------
+enable_testing()
+
+# Create a common test library
+add_library(test_lib INTERFACE)
+target_include_directories(test_lib INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${HDF5_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+)
+target_link_libraries(test_lib INTERFACE conv2d_lib)
+
+# C++ tests
+set(cpp_tests
+    test_sigmoid
+    test_xfeat_run
+)
+
+# Python tests  
+set(python_tests
+    test_sigmoid.py
+)
+
+# Build and add C++ tests
+foreach(test ${cpp_tests})
+    add_executable(${test} test/${test}.cpp)
+    target_link_libraries(${test} test_lib)
+    add_test(NAME ${test} COMMAND ${test})
+    set_tests_properties(${test} PROPERTIES LABELS "cpp_tests")
+endforeach()
+
+# Add Python tests with conda environment
+foreach(test ${python_tests})
+    add_test(NAME ${test} 
+             COMMAND bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate cusfm && python3 ${CMAKE_CURRENT_SOURCE_DIR}/test/${test}"
+    )
+    set_tests_properties(${test} PROPERTIES LABELS "python_tests")
+endforeach()
+
+# Custom target to run tests in order
+add_custom_target(unit_tests
+    COMMAND ${CMAKE_CTEST_COMMAND} -L cpp_tests --output-on-failure
+    COMMAND ${CMAKE_CTEST_COMMAND} -L python_tests --output-on-failure
+    COMMENT "Running all tests (C++ first, then Python)"
+    VERBATIM
+)

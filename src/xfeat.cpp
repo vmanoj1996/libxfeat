@@ -8,7 +8,6 @@
 #include "xfeat.hpp"
 #include "conv2d.hpp"
 #include "fold.hpp"
-#include <opencv2/opencv.hpp>
 #include <fstream>
 #include "primitives.hpp"
 #include "add.hpp"
@@ -139,10 +138,10 @@ void XFeat::setup_descriptor()
     add_conv_layer("block4", 2, 64, 64, 3, 1, 1);
 
     // Block5: 64->128->128->128->64
-    add_conv_layer("block5", 0, 64, 128, 3, 2, 1);
+    add_conv_layer("block5", 0, 64,  128, 3, 2, 1);
     add_conv_layer("block5", 1, 128, 128, 3, 1, 1);
     add_conv_layer("block5", 2, 128, 128, 3, 1, 1);
-    add_conv_layer("block5", 3, 128, 64, 1, 1, 0);
+    add_conv_layer("block5", 3, 128, 64,  1, 1, 0);
 }
 
 void XFeat::setup_heatmap()
@@ -299,31 +298,4 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     save_layer_data(keypoints, "final_keypoints");
 
     return std::tie(heatmap, keypoints, feats);
-}
-
-int main()
-{
-    cv::Mat img = cv::imread("../data/TajMahal.png", cv::IMREAD_GRAYSCALE);
-    // cv::Mat resized_img; cv::resize(img, resized_img, cv::Size(64, 32));
-
-    cv::Mat img_float;
-    img.convertTo(img_float, CV_32F, 1.0 / 255.0);
-
-    std::vector<float> img_vec(img_float.begin<float>(), img_float.end<float>());
-    std::vector<int> dims = {1, img.rows, img.cols};
-
-    DevicePointer<float> img_device(img_vec, dims);
-
-    XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
-
-    auto [heatmap, keypoints, feats] = feat.forward(img_device);
-
-    std::vector<float> heatmap_vec = heatmap.get_value();
-    std::vector<int> heatmap_shape = heatmap.get_shape();
-
-    cv::Mat heatmap_mat(heatmap_shape[1], heatmap_shape[2], CV_32F, heatmap_vec.data());
-    cv::imshow("Heatmap", heatmap_mat);
-    cv::waitKey(0);
-
-    std::cout << "Reached the end of main\n";
 }
