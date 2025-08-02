@@ -62,11 +62,13 @@ target_link_libraries(test_lib INTERFACE conv2d_lib)
 set(cpp_tests
     test_sigmoid
     test_xfeat_run
+    test_interp
 )
 
 # Python tests  
 set(python_tests
     test_sigmoid.py
+    test_interp.py
 )
 
 # Build and add C++ tests
