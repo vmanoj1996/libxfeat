@@ -64,6 +64,7 @@ set(cpp_tests
     test_xfeat_run
     test_interp
     test_pool
+    test_fold
 )
 
 # Python tests  
