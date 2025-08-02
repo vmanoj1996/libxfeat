@@ -63,12 +63,14 @@ set(cpp_tests
     test_sigmoid
     test_xfeat_run
     test_interp
+    test_pool
 )
 
 # Python tests  
 set(python_tests
     test_sigmoid.py
     test_interp.py
+    test_pool.py
 )
 
 # Build and add C++ tests
