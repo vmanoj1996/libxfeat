@@ -7,9 +7,10 @@
 
 __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in_h, int in_w, int out_h, int out_w, int channels)
 {
-    int idx_c = threadIdx.x + blockIdx.x * blockDim.x; // channel
-    int out_y = threadIdx.y + blockIdx.y * blockDim.y; // output row
-    int out_x = threadIdx.z + blockIdx.z * blockDim.z; // output col
+    // marked constants to accidentally avoid modifying them
+    const int idx_c = threadIdx.x + blockIdx.x * blockDim.x; // channel
+    const int out_y = threadIdx.y + blockIdx.y * blockDim.y; // output row
+    const int out_x = threadIdx.z + blockIdx.z * blockDim.z; // output col
 
     if (out_y >= out_h || out_x >= out_w || idx_c >= channels)
     {
@@ -21,38 +22,38 @@ __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in
     const float scale_x = static_cast<float>(in_w) / static_cast<float>(out_w);
 
     // Map output coordinates to input coordinates using the "align centers" method
-    float src_y = (static_cast<float>(out_y) + 0.5f) * scale_y - 0.5f;
-    float src_x = (static_cast<float>(out_x) + 0.5f) * scale_x - 0.5f;
+    const float src_y = (static_cast<float>(out_y) + 0.5f) * scale_y - 0.5f;
+    const float src_x = (static_cast<float>(out_x) + 0.5f) * scale_x - 0.5f;
 
     // Get the top-left corner for interpolation
-    int y1 = floorf(src_y);
-    int x1 = floorf(src_x);
+    const int y1 = floorf(src_y);
+    const int x1 = floorf(src_x);
 
     // This dx and dy will be the fractional part, between 0 and 1
-    float dy = src_y - y1;
-    float dx = src_x - x1;
+    const float dy = src_y - y1;
+    const float dx = src_x - x1;
 
     // Get the four neighboring pixel coordinates, clamping to image boundaries
-    int y1_c = fmaxf(0, fminf(in_h - 1, y1));
-    int x1_c = fmaxf(0, fminf(in_w - 1, x1));
-    int y2_c = fmaxf(0, fminf(in_h - 1, y1 + 1));
-    int x2_c = fmaxf(0, fminf(in_w - 1, x1 + 1));
+    const int y1_c = fmaxf(0, fminf(in_h - 1, y1));
+    const int x1_c = fmaxf(0, fminf(in_w - 1, x1));
+    const int y2_c = fmaxf(0, fminf(in_h - 1, y1 + 1));
+    const int x2_c = fmaxf(0, fminf(in_w - 1, x1 + 1));
     
     // Get the channel offset for the input tensor
-    int poffset = idx_c * in_h * in_w;
+    const int poffset = idx_c * in_h * in_w;
 
     // Fetch the four corner pixel values
-    float tl = input[poffset + y1_c * in_w + x1_c];
-    float tr = input[poffset + y1_c * in_w + x2_c];
-    float bl = input[poffset + y2_c * in_w + x1_c];
-    float br = input[poffset + y2_c * in_w + x2_c];
+    const float tl = input[poffset + y1_c * in_w + x1_c];
+    const float tr = input[poffset + y1_c * in_w + x2_c];
+    const float bl = input[poffset + y2_c * in_w + x1_c];
+    const float br = input[poffset + y2_c * in_w + x2_c];
 
     // Perform bilinear interpolation
-    float top = tl * (1.0f - dx) + tr * dx;
-    float bottom = bl * (1.0f - dx) + br * dx;
-    float result = top * (1.0f - dy) + bottom * dy;
-
-    int out_idx = idx_c * (out_h * out_w) + out_y * out_w + out_x;
+    const float top = tl * (1.0f - dx) + tr * dx;
+    const float bottom = bl * (1.0f - dx) + br * dx;
+    const float result = top * (1.0f - dy) + bottom * dy;
+ 
+    const int out_idx = idx_c * (out_h * out_w) + out_y * out_w + out_x;
     output[out_idx] = result;
 }
 
