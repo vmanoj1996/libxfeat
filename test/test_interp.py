@@ -22,11 +22,11 @@ def compare_outputs():
         dims = list(map(int, f.read().split()))
     c_from_cpp, h_from_cpp, w_from_cpp, target_h, target_w = dims
     
-    # --- MODIFICATION: Load original image instead of C++ binary input ---
+    # Load original image instead of C++ binary input
     image_path = "../data/TajMahal.png"
     if not os.path.exists(image_path):
         print(f"Error: Original image not found at {image_path}")
-        print("Please ensure the 'data' directory is at the project root.")
+        print("Please ensure the 'data' directory is at the project root relative to the build directory.")
         sys.exit(1)
         
     img_bgr = cv2.imread(image_path)
@@ -40,24 +40,22 @@ def compare_outputs():
         sys.exit(1)
         
     # Preprocess the image similarly to the C++ code
-    # 1. Convert BGR (OpenCV default) to RGB
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-    # 2. Convert to float and normalize to [0, 1]
     py_input_hwc = img_rgb.astype(np.float32) / 255.0
-    # 3. Convert HWC to CHW for processing
     py_input = hwc_to_chw(py_input_hwc)
-    # --- END MODIFICATION ---
 
     # Load C++ output data
     cpp_output = load_cpp_tensor("./interp/output.bin").reshape(c, target_h, target_w)
     
     # Verify Python's input by saving it as an image
+    # Note: save path is relative to where the script is run (e.g., build directory)
+    os.makedirs("./interp", exist_ok=True)
     cv2.imwrite("./interp/input_check.png", (py_input_hwc * 255).astype(np.uint8)[:,:,::-1])
     print(f"Saved input visualization to ./interp/input_check.png")
     
     # Compute using scipy with bilinear interpolation
     zoom_factors = (1, target_h/h, target_w/w)
-    py_output = zoom(py_input, zoom_factors, order=1)
+    py_output = zoom(py_input, zoom_factors, order=1, mode='nearest')
     
     # Compare
     output_diff = np.max(np.abs(py_output - cpp_output))
@@ -73,18 +71,35 @@ def compare_outputs():
     print(f"C++ output range: [{cpp_output.min():.4f}, {cpp_output.max():.4f}]")
     print(f"Scipy output range: [{py_output.min():.4f}, {py_output.max():.4f}]")
     
-    # Save visual outputs
+    # Convert outputs to HWC for visualization
     cpp_hwc = chw_to_hwc(cpp_output)
     py_hwc = chw_to_hwc(py_output)
     
-    # Convert to BGR for OpenCV
+    # --- ADDITION: Create and save the difference image ---
+    # Calculate absolute difference
+    diff_hwc = np.abs(cpp_hwc - py_hwc)
+    
+    # Enhance contrast for visualization: scale so the max difference is white (255)
+    if output_diff > 1e-9: # Avoid division by zero if images are identical
+        # The enhancement factor makes the differences visible
+        enhancement_factor = 255 / output_diff
+        diff_enhanced = diff_hwc * enhancement_factor
+    else:
+        diff_enhanced = np.zeros_like(diff_hwc)
+        
+    # Clip values to be safe and convert to uint8
+    diff_img_rgb = np.clip(diff_enhanced, 0, 255).astype(np.uint8)
+    
+    # Save the visual outputs
+    # Convert RGB to BGR for OpenCV
     cv2.imwrite("./interp/cpp_output.png", (cpp_hwc * 255).astype(np.uint8)[:,:,::-1])
     cv2.imwrite("./interp/scipy_output.png", (py_hwc * 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./interp/difference.png", diff_img_rgb[:,:,::-1])
     
-    # Create comparison
-    comparison = np.hstack([cpp_hwc, py_hwc])
-    cv2.imwrite("./interp/comparison.png", (comparison * 255).astype(np.uint8)[:,:,::-1])
-    print("Saved outputs to ./interp/")
+    # Create side-by-side comparison
+    comparison = np.hstack([(cpp_hwc * 255).astype(np.uint8), (py_hwc * 255).astype(np.uint8)])
+    cv2.imwrite("./interp/comparison.png", comparison[:,:,::-1])
+    print("\nSaved outputs (cpp_output.png, scipy_output.png, difference.png, comparison.png) to ./interp/")
     
     # Check if test passed
     if output_diff > 1e-3:

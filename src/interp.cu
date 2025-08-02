@@ -16,48 +16,38 @@ __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in
         return;
     }
 
-    // -0.5 to 0.5
-    float out_y_norm = ((float)out_y / (float)out_h) - 0.5;
-    float out_x_norm = ((float)out_x / (float)out_w) - 0.5;
+    // Calculate scaling factors
+    const float scale_y = static_cast<float>(in_h) / static_cast<float>(out_h);
+    const float scale_x = static_cast<float>(in_w) / static_cast<float>(out_w);
 
-    // printf("bilinear: %d %d %d\n", idx_c, out_y, out_x);
+    // Map output coordinates to input coordinates using the "align centers" method
+    float src_y = (static_cast<float>(out_y) + 0.5f) * scale_y - 0.5f;
+    float src_x = (static_cast<float>(out_x) + 0.5f) * scale_x - 0.5f;
 
-    // Map output coordinates to input coordinates. recheck this calculations. can be optimized more. I am being too careful I guess.
-    float src_y = out_y_norm * in_h + in_h / 2;
-    float src_x = out_x_norm * in_w + in_w / 2;
-
-    src_y = (src_y >= 0) ? src_y : 1e-5;
-    src_x = (src_x >= 0) ? src_x : 1e-5;
-
-    // get the left top corner
+    // Get the top-left corner for interpolation
     int y1 = floorf(src_y);
     int x1 = floorf(src_x);
 
-    // limit within the valid image region
-    y1 = (y1 >= 0) ? y1 : 0;
-    x1 = (x1 >= 0) ? x1 : 0;
-
-    y1 = (y1 < in_h) ? y1 : in_h - 1;
-    x1 = (x1 < in_w) ? x1 : in_w - 1;
-
-    int y2 = y1 + 1;
-    int x2 = x1 + 1;
-
-    // limit the second index
-    y2 = (y2 < in_h) ? y2 : in_h - 1;
-    x2 = (x2 < in_w) ? x2 : in_w - 1;
-
-    // This dx and dy will be under 1
+    // This dx and dy will be the fractional part, between 0 and 1
     float dy = src_y - y1;
     float dx = src_x - x1;
 
+    // Get the four neighboring pixel coordinates, clamping to image boundaries
+    int y1_c = fmaxf(0, fminf(in_h - 1, y1));
+    int x1_c = fmaxf(0, fminf(in_w - 1, x1));
+    int y2_c = fmaxf(0, fminf(in_h - 1, y1 + 1));
+    int x2_c = fmaxf(0, fminf(in_w - 1, x1 + 1));
+    
+    // Get the channel offset for the input tensor
     int poffset = idx_c * in_h * in_w;
 
-    float tl = input[poffset + y1 * in_w + x1];
-    float tr = input[poffset + y1 * in_w + x2];
-    float bl = input[poffset + y2 * in_w + x1];
-    float br = input[poffset + y2 * in_w + x2];
+    // Fetch the four corner pixel values
+    float tl = input[poffset + y1_c * in_w + x1_c];
+    float tr = input[poffset + y1_c * in_w + x2_c];
+    float bl = input[poffset + y2_c * in_w + x1_c];
+    float br = input[poffset + y2_c * in_w + x2_c];
 
+    // Perform bilinear interpolation
     float top = tl * (1.0f - dx) + tr * dx;
     float bottom = bl * (1.0f - dx) + br * dx;
     float result = top * (1.0f - dy) + bottom * dy;
