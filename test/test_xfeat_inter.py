@@ -14,20 +14,23 @@ import ipdb
 
 debug = False
 
+
 def load_h5_tensor(filepath, dataset_name):
     """Load tensor from HDF5 file"""
     with h5py.File(filepath, 'r') as f:
         data = f[dataset_name][()]
     return torch.from_numpy(data.astype(np.float32))
 
+
 def print_tensor_stats(name, tensor):
     """Print tensor statistics"""
     if isinstance(tensor, torch.Tensor):
         tensor = tensor.detach().cpu()
-    
+
     print(f"  {name:<15} | Shape: {str(list(tensor.shape)):<20} | "
           f"Range: [{tensor.min().item():>8.4f}, {tensor.max().item():>8.4f}] | "
           f"Mean: {tensor.mean().item():>8.4f}")
+
 
 def compare_tensors(cpp_tensor, py_tensor, name, tolerance=1e-3):
     """Compare two tensors and return comparison results"""
@@ -35,26 +38,28 @@ def compare_tensors(cpp_tensor, py_tensor, name, tolerance=1e-3):
         py_tensor = py_tensor.detach().cpu()
     if isinstance(cpp_tensor, torch.Tensor):
         cpp_tensor = cpp_tensor.detach().cpu()
-    
+
     # Handle shape differences
     if cpp_tensor.shape != py_tensor.shape:
-        print(f"  ❌ {name}: Shape mismatch! C++: {cpp_tensor.shape}, PyTorch: {py_tensor.shape}")
+        print(
+            f"  ❌ {name}: Shape mismatch! C++: {cpp_tensor.shape}, PyTorch: {py_tensor.shape}")
         return False
-    
+
     # Calculate differences
     abs_diff = torch.abs(cpp_tensor - py_tensor)
     max_diff = abs_diff.max().item()
     mean_diff = abs_diff.mean().item()
     rel_diff = (abs_diff / (torch.abs(py_tensor) + 1e-8)).mean().item()
-    
+
     # Check if within tolerance
     passed = max_diff < tolerance
     status = "✅ PASS" if passed else "❌ FAIL"
-    
+
     print(f"  {status} {name:<15} | Max diff: {max_diff:>8.5f} | "
           f"Mean diff: {mean_diff:>8.5f} | Rel diff: {rel_diff:>8.5f}")
-    
+
     return passed
+
 
 def load_debug_tensor(name):
     """Load tensor from debug_outputs folder"""
@@ -63,12 +68,14 @@ def load_debug_tensor(name):
         return load_h5_tensor(filepath, "data")
     return None
 
+
 print("Testing XFeat C++/CUDA vs PyTorch Hub...")
 
 # Load XFeat
 print("Loading XFeat from PyTorch Hub...")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-xfeat = torch.hub.load('verlab/accelerated_features', 'XFeat', pretrained=True, top_k=1000)
+xfeat = torch.hub.load('verlab/accelerated_features',
+                       'XFeat', pretrained=True, top_k=1000)
 xfeat = xfeat.to(device).eval()
 
 print(f"XFeat loaded on {device}")
@@ -77,7 +84,7 @@ if debug:
     # Show network structure like in your original
     for name, param in xfeat.named_parameters():
         print(f"{name}: {param.shape}")
-    
+
     for name, buffer in xfeat.named_buffers():
         print(f"{name}: {buffer.shape}")
 
@@ -108,10 +115,10 @@ img_tensor = torch.from_numpy(img_float).unsqueeze(0).unsqueeze(0).to(device)
 # Load C++ outputs
 print("Loading C++ outputs...")
 try:
-    cpp_input     = load_h5_tensor(output_dir / "input.h5", "input")
-    cpp_heatmap   = load_h5_tensor(output_dir / "heatmap.h5", "heatmap")
+    cpp_input = load_h5_tensor(output_dir / "input.h5", "input")
+    cpp_heatmap = load_h5_tensor(output_dir / "heatmap.h5", "heatmap")
     cpp_keypoints = load_h5_tensor(output_dir / "keypoints.h5", "keypoints")
-    cpp_features  = load_h5_tensor(output_dir / "features.h5", "features")
+    cpp_features = load_h5_tensor(output_dir / "features.h5", "features")
     print("✓ C++ outputs loaded")
 except Exception as e:
     print(f"✗ Failed to load C++ outputs: {e}")
@@ -119,7 +126,7 @@ except Exception as e:
 
 # Load debug intermediate outputs
 debug_files = [
-    "normalized_input", "x2_backbone_output", "x3_backbone_output", 
+    "normalized_input", "x2_backbone_output", "x3_backbone_output",
     "x4_backbone_output", "x5_backbone_output", "pyramid_fusion"
 ]
 
@@ -134,20 +141,20 @@ try:
         # Normalize input like XFeat does
         x = img_tensor.mean(dim=1, keepdim=True)
         x_norm = xfeat.net.norm(x)
-        
+
         # Compare normalized input
         if debug_outputs["normalized_input"] is not None:
             print("\n--- Intermediate Comparisons ---")
-            compare_tensors(debug_outputs["normalized_input"].squeeze(), 
+            compare_tensors(debug_outputs["normalized_input"].squeeze(),
                           x_norm.squeeze(), "Normalized Input", tolerance=1e-5)
-        
+
         # Run backbone blocks step by step
         x1 = xfeat.net.block1(x_norm)
         x2 = xfeat.net.block2(x1 + xfeat.net.skip1(x_norm))
-        
-        if debug_outputs["x2_backbone_output"] is not None:
-            compare_tensors(debug_outputs["x2_backbone_output"].squeeze(), 
-                          x2.squeeze(), "X2 Backbone", tolerance=1e-3)
+
+      #   import ipdb
+      #   ipdb.set_trace()
+        compare_tensors(debug_outputs["x2_backbone_output"].squeeze(), x2.squeeze(), "X2 Backbone", tolerance=1e-3)
         
         x3 = xfeat.net.block3(x2)
         if debug_outputs["x3_backbone_output"] is not None:

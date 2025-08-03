@@ -39,6 +39,9 @@ XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
+
+    // debug todo
+    // model.printParams(); 
 }
 
 void XFeat::setup_kp()
@@ -142,7 +145,8 @@ void XFeat::setup_descriptor()
     add_conv_layer("block5", 3, 128, 64,  1, 1, 0);
 
     skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0));
-    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"));
+    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")));
+
 }
 
 void XFeat::setup_heatmap()
@@ -251,7 +255,7 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, 
 
     // Compute skip connection
     auto& skip_pooled = skip_pool->forward(norm_output);
-    auto& skip_out = skip_conv->forward(skip_pooled);
+    auto& skip_out    = skip_conv->forward(skip_pooled);
 
     // Add skip to x1
     auto add_skip = add_layer({24, height/4, width/4});
@@ -277,6 +281,10 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, 
     auto& x4_interp = interp_x4_to_x3->forward(x4_out);
     auto& x5_interp = interp_x5_to_x3->forward(x5_out);
 
+    save_layer_data(skip_pooled, "skip_pooled");
+    save_layer_data(skip_out, "skip_conv_out");
+    save_layer_data(x1_plus_skip, "x1_plus_skip");
+    save_layer_data(x1_out, "x1_backbone_output"); 
     save_layer_data(x2_out, "x2_backbone_output");
     save_layer_data(x3_out, "x3_backbone_output");
     save_layer_data(x4_out, "x4_backbone_output");

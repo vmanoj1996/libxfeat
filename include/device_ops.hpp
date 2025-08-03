@@ -30,7 +30,7 @@ public:
         float y = 0.0f;
         if (buffer_index < N)
         {
-            y = (u - mean[buffer_index]) / (sqrtf(var[buffer_index]) + eps);
+            y = (u - mean[buffer_index]) / sqrtf(var[buffer_index] + eps);
             y = (y > 0) ? y : 0.0f;
         }
 
