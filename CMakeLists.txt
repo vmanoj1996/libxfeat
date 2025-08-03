@@ -13,16 +13,30 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(PkgConfig REQUIRED) 
 pkg_check_modules(MATIO REQUIRED matio)
 
-
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wfatal-errors -Wreturn-local-addr")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
-
 set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CXX_STANDARD 23)
 
+# Set common flags that apply to all build types
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wfatal-errors -Wreturn-local-addr")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
+
+# --- Default Build Type and Optimization Flags ---
+
+# Set Release as the default build type if the user doesn't specify one
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the build type" FORCE)
 endif()
+
+# For Release builds (e.g., cmake .. OR cmake -DCMAKE_BUILD_TYPE=Release ..)
+# -O3 is for high optimization. -DNDEBUG disables asserts.
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "Flags used for Release build")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "Flags used for Release build")
+
+# For Debug builds (e.g., cmake -DCMAKE_BUILD_TYPE=Debug ..)
+# -O0 disables optimization. -g adds debug symbols for GDB.
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g" CACHE STRING "Flags used for Debug build")
+set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g" CACHE STRING "Flags used for Debug build")
+
 
 # Source --------------------------------------------------------------------------------------------
 
@@ -85,7 +99,7 @@ set(cu_tests
     test_conv2d
 )
 
-# MODIFIED: Separate the python tests into "core" and "intermediate"
+# Separate the python tests into "core" and "intermediate"
 set(python_core_tests
     test_sigmoid.py
     test_interp.py
