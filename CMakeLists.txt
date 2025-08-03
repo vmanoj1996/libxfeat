@@ -88,6 +88,7 @@ set(python_tests
     test_pool.py
     test_conv2d.py
     test_xfeat_output.py
+    test_xfeat_inter.py
 )
 
 # Build and add C++ tests

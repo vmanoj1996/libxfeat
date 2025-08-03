@@ -14,25 +14,23 @@
 #include "activation.hpp"
 #include "pool.hpp"
 #include "interp.hpp"
+#include <tensorio.hpp>
+
 
 void save_layer_data(const DevicePointer<float> &data, const std::string &name)
 {
     auto host_data = data.get_value();
     auto shape = data.get_shape();
 
-    // Save binary data
-    std::ofstream file(name + "_output.bin", std::ios::binary);
-    file.write(reinterpret_cast<const char *>(host_data.data()),
-               host_data.size() * sizeof(float));
-    file.close();
-
-    // Save shape
-    std::ofstream shape_file(name + "_shape.txt");
-    for (int dim : shape)
-    {
-        shape_file << dim << " ";
-    }
-    shape_file.close();
+    // Create debug directory if it doesn't exist
+    system("mkdir -p ./debug_outputs");
+    
+    // Convert shape to vector<int> for H5 saving
+    std::vector<int> h5_shape(shape.begin(), shape.end());
+    
+    // Save to H5 format in debug subfolder
+    std::string filename = "./debug_outputs/" + name + ".h5";
+    tio::save_hdf5(host_data, h5_shape, filename, "data");
 }
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
