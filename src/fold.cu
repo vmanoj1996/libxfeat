@@ -39,29 +39,6 @@ __global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int
     }
 }
 
-__global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
-{
-    // output idx
-    int idx1 = threadIdx.x + blockIdx.x * blockDim.x;
-    int idx2 = threadIdx.y + blockIdx.y * blockDim.y;
-
-    if (idx1 < height && idx2 < width)
-    {
-        // compute the input dimension and index corresponding to idx1, idx2 inputs
-        int idx0_in = (idx1 % ratio) * ratio + (idx2 % ratio);
-        int idx1_in = idx1 / ratio;
-        int idx2_in = idx2 / ratio;
-
-        // int idx0_dim = ratio*ratio;
-        int idx1_dim = height / ratio;
-        int idx2_dim = width / ratio;
-
-        // each page is 65 sized but it is automatically discarded by this operation. skip page size of 65 
-        // Double check this TODO
-        output_device[idx1 * width + idx2] = input_device[idx0_in * (idx1_dim * idx2_dim + 1) + idx1_in * idx2_dim + idx2_in];
-    }
-}
-
 
 Fold2D::Fold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
 {
@@ -105,6 +82,35 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
 
         return output_device;
     }
+
+__global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
+{
+    // OUTPUT INDEX
+    int idx1 = threadIdx.x + blockIdx.x * blockDim.x;
+    int idx2 = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (idx1 < height && idx2 < width)
+    {
+        // INPUT INDEX
+        int subIndex1 = (idx1 % ratio);
+        int subIndex2 = (idx2 % ratio);
+
+        int idx0_in =  subIndex1 * ratio + subIndex2;
+        int idx1_in = idx1 / ratio;
+        int idx2_in = idx2 / ratio;
+
+        // INPUT DIMENSIONS
+        int idx0_dim = ratio*ratio + 1;
+        int idx1_dim = height / ratio;
+        int idx2_dim = width / ratio;
+
+        // each page is 65 sized but it is automatically discarded by this operation. skip page size of 65 
+        // Double check this TODO
+        int input_idx = idx0_in * (idx1_dim * idx2_dim) + idx1_in * idx2_dim + idx2_in;
+        output_device[idx1 * width + idx2] = input_device[input_idx];
+    }
+}
+
 
 UnFold2D::UnFold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
 {
