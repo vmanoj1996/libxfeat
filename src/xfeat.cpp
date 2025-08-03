@@ -19,6 +19,7 @@
 
 void save_layer_data(const DevicePointer<float> &data, const std::string &name)
 {
+#ifdef ENABLE_XFEAT_DEBUG
     auto host_data = data.get_value();
     auto shape = data.get_shape();
 
@@ -31,6 +32,8 @@ void save_layer_data(const DevicePointer<float> &data, const std::string &name)
     // Save to H5 format in debug subfolder
     std::string filename = "./debug_outputs/" + name + ".h5";
     tio::save_hdf5(host_data, h5_shape, filename, "data");
+#endif
+
 }
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)

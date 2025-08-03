@@ -20,8 +20,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
 set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CXX_STANDARD 23)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the build type" FORCE)
+endif()
 
 # Source --------------------------------------------------------------------------------------------
 
@@ -45,9 +46,13 @@ target_link_libraries(conv2d_lib PUBLIC
     ${OpenCV_LIBS}
 )
 
-target_compile_definitions(conv2d_lib PUBLIC ${HDF5_DEFINITIONS})
-set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# This uses a "generator expression" to add the flag only for the Debug config.
+target_compile_definitions(conv2d_lib PUBLIC 
+    ${HDF5_DEFINITIONS}
+    $<$<CONFIG:Debug>:ENABLE_XFEAT_DEBUG>
+)
 
+set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Enable testing ------------------------------------------------------------------------------------
 enable_testing()
@@ -72,7 +77,6 @@ set(cpp_tests
     test_interp
     test_pool
     test_xfeat_output
-    # test_fold
 )
 
 # CUDA tests (files ending in .cu)
@@ -81,16 +85,17 @@ set(cu_tests
     test_conv2d
 )
 
-# Python tests  
-set(python_tests
+# MODIFIED: Separate the python tests into "core" and "intermediate"
+set(python_core_tests
     test_sigmoid.py
     test_interp.py
     test_pool.py
     test_conv2d.py
     test_xfeat_output.py
-    test_xfeat_inter.py
 )
+set(python_inter_test test_xfeat_inter.py)
 
+# --------------------------------------------------------------------------------------------------------------------------
 # Build and add C++ tests
 foreach(test ${cpp_tests})
     add_executable(${test} test/${test}.cpp)
@@ -107,13 +112,31 @@ foreach(test ${cu_tests})
     set_tests_properties(${test} PROPERTIES LABELS "cpp_tests") # Label as a C++ test for grouping
 endforeach()
 
-# Add Python tests with conda environment
-foreach(test ${python_tests})
+# Add core Python tests (unconditionally)
+foreach(test ${python_core_tests})
     add_test(NAME ${test} 
              COMMAND bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate cusfm && python3 ${CMAKE_CURRENT_SOURCE_DIR}/test/${test}"
     )
     set_tests_properties(${test} PROPERTIES LABELS "python_tests")
 endforeach()
+
+# CMAKE_BUILD_TYPE is case-insensitive, so we check for "Debug".
+if(CMAKE_BUILD_TYPE MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+    message(STATUS "Debug build: 'test_xfeat_inter.py' will be included in the test suite.")
+    add_test(NAME ${python_inter_test} 
+             COMMAND bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate cusfm && python3 ${CMAKE_CURRENT_SOURCE_DIR}/test/${python_inter_test}"
+    )
+    set_tests_properties(${python_inter_test} PROPERTIES LABELS "python_tests")
+else()
+    message(STATUS "Release build: 'test_xfeat_inter.py' will be skipped.")
+    # Add a dummy test that just prints a message and passes.
+    add_test(NAME skip_${python_inter_test}
+             COMMAND ${CMAKE_COMMAND} -E echo "INFO: Skipping test_xfeat_inter.py because this is a Release build."
+    )
+    set_tests_properties(skip_${python_inter_test} PROPERTIES LABELS "python_tests")
+endif()
+
+# --------------------------------------------------------------------------------------------------------------------------
 
 # Custom target to run tests in order
 add_custom_target(unit_tests

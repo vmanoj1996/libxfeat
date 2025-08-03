@@ -152,9 +152,8 @@ try:
         x1 = xfeat.net.block1(x_norm)
         x2 = xfeat.net.block2(x1 + xfeat.net.skip1(x_norm))
 
-      #   import ipdb
-      #   ipdb.set_trace()
-        compare_tensors(debug_outputs["x2_backbone_output"].squeeze(), x2.squeeze(), "X2 Backbone", tolerance=1e-3)
+        if debug_outputs["x2_backbone_output"] is not None:
+            compare_tensors(debug_outputs["x2_backbone_output"].squeeze(), x2.squeeze(), "X2 Backbone", tolerance=1e-3)
         
         x3 = xfeat.net.block3(x2)
         if debug_outputs["x3_backbone_output"] is not None:

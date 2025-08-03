@@ -106,8 +106,9 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
 
     // dim3 blocks(1, 1, 1);
 
+#ifdef ENABLE_XFEAT_DEBUG
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
-
+#endif
     convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
 
