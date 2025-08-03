@@ -7,6 +7,15 @@
 
 namespace tio
 {
+    inline void mkdir(const std::string& path) 
+    {
+        std::string command = "mkdir -p " + path;
+        int result = system(command.c_str());
+
+        if (result != 0) {
+            throw std::runtime_error("Failed to create directory '" + path + "'. System command '" + command + "' returned " + std::to_string(result));
+        }
+    }
 
     inline void save_hdf5(const std::vector<float>& data, const std::vector<int>& shape, const std::string& filename, const std::string& dataset_name) 
     {

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#include "tensorio.hpp"
 
 void save_tensor(const std::vector<FLOAT>& data, const std::string& filename) 
 {
@@ -34,7 +35,7 @@ int main()
     std::vector<FLOAT> host_output = output.get_value();
     
     // Save results
-    system("mkdir -p ./sigmoid");
+    tio::mkdir("./sigmoid");
     save_tensor(host_input, "./sigmoid/input.bin");
     save_tensor(host_output, "./sigmoid/output.bin");
     

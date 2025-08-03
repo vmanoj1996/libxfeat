@@ -6,6 +6,8 @@
 #include <opencv2/opencv.hpp>
 #include <cstdlib>
 
+#include "tensorio.hpp"
+
 // Helper to save tensor data to a binary file
 void save_tensor(const std::vector<FLOAT>& data, const std::string& filename) {
     std::ofstream file(filename, std::ios::binary);
@@ -59,7 +61,7 @@ int main() {
     std::vector<FLOAT> host_output = output.get_value();
 
     // Save results
-    system("mkdir -p ./pool");
+    tio::mkdir("./pool");
     save_tensor(host_input, "./pool/input.bin");
     save_tensor(host_output, "./pool/output.bin");
 

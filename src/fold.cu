@@ -97,7 +97,7 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
         int idx2_in = idx2 / ratio;
 
         // INPUT DIMENSIONS
-        int idx0_dim = ratio*ratio + 1;
+        // int idx0_dim = ratio*ratio + 1;
         int idx1_dim = height / ratio;
         int idx2_dim = width / ratio;
 

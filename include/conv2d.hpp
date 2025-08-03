@@ -63,6 +63,7 @@ public:
     
     ~Conv2D(); // automatically made virtual by the compiler
     
+    using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
     DevicePointer<FLOAT>& get_output();

@@ -62,7 +62,7 @@ int main() {
     std::vector<FLOAT> host_output = output_d.get_value();
     const auto& output_shape = output_d.get_shape();
 
-    system("mkdir -p ./conv_test");
+    tio::mkdir("./conv_test");
     const std::string test_dir = "./conv_test/";
 
     // Save Input

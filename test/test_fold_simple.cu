@@ -117,7 +117,7 @@ int main() {
 
     // --- 4. Save using tensorio ---
 
-    system("mkdir -p ./fold_test");
+    tio::mkdir("./fold_test");
     
     tio::save_hdf5(host_input, {height, width}, "./fold_test/input.h5", "input");
     

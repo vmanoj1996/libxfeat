@@ -23,7 +23,6 @@ protected:
 
     virtual ImgProperty get_output_spec() const {return output_prop;}
     virtual ImgProperty get_input_spec()  const {return input_prop;}
-
 };
 
 
@@ -34,6 +33,7 @@ private:
 public:
     Fold2D(int height_, int width_, int ratio_=8);
 
+    using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
 };
@@ -46,6 +46,7 @@ private:
 public:
     UnFold2D(int height_, int width_, int ratio_=8);
     
+    using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 };
 

@@ -113,7 +113,7 @@ int main() {
 
     // --- 4. Save Artifacts for Debugging ---
 
-    system("mkdir -p ./fold_test");
+    tio::mkdir("./fold_test");
 
     // Save binary tensors (for numerical verification)
     save_tensor(host_input, "./fold_test/input.bin");

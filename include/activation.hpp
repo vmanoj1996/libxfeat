@@ -23,6 +23,7 @@ public:
 
     ~ActivationLayer() = default;
 
+    using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input) override;
 
     virtual ImgProperty get_output_spec() const {return output_prop;}

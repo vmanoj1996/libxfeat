@@ -5,6 +5,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <cstdlib>
+#include "tensorio.hpp"
 
 void save_tensor(const std::vector<FLOAT>& data, const std::string& filename) 
 {
@@ -61,7 +62,8 @@ int main()
     std::vector<FLOAT> host_output = output.get_value();
     
     // Save results
-    system("mkdir -p ./interp");
+    tio::mkdir("./interp");
+    
     save_tensor(host_input, "./interp/input.bin");
     save_tensor(host_output, "./interp/output.bin");
     

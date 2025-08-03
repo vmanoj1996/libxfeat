@@ -24,7 +24,7 @@ void save_layer_data(const DevicePointer<float> &data, const std::string &name)
     auto shape = data.get_shape();
 
     // Create debug directory if it doesn't exist
-    system("mkdir -p ./debug_outputs");
+    tio::mkdir("./debug_outputs");
     
     // Convert shape to vector<int> for H5 saving
     std::vector<int> h5_shape(shape.begin(), shape.end());

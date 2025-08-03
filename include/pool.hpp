@@ -32,6 +32,7 @@ public:
     AvgPool2D(ImgProperty input_prop_, PoolParams params_); 
     ~AvgPool2D() = default; // automatically made virtual by the compiler
     
+    using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
     DevicePointer<FLOAT>& get_output();
 

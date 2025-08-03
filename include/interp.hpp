@@ -22,6 +22,7 @@ public:
    BilinearInterp2D(ImgProperty input_prop_, int target_height_, int target_width_); 
    ~BilinearInterp2D() = default;
    
+   using Layer::forward;
    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
    DevicePointer<FLOAT>& get_output();
 
