@@ -70,7 +70,9 @@ DevicePointer<FLOAT> &BilinearInterp2D::forward(const DevicePointer<FLOAT> &inpu
                 (output_prop.height + TC - 1) / TC,
                 (output_prop.width + TC - 1) / TC);
 
+#ifdef ENABLE_XFEAT_DEBUG
     std::cout << "starting bilinear interp kernel " << input_prop << " -> " << output_prop<< " blocks: " << blocks.x << " " << blocks.y << " " << blocks.z << std::endl;
+#endif
 
     bilinear_interp_kernel<<<blocks, threadcount>>>(input_device.get(), output_device.get(), input_prop.height, input_prop.width, output_prop.height, output_prop.width, input_prop.channels);
 

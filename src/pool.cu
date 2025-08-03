@@ -76,8 +76,9 @@ DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_devic
                 (output_prop.height   + TC - 1) / TC,
                 (output_prop.width    + TC - 1) / TC);
 
+#ifdef ENABLE_XFEAT_DEBUG
     std::cout << "starting pool kernel " << input_prop << " " << output_prop << " "<< blocks.x << " " << blocks.y << " " << blocks.z << " " << std::endl;
-
+#endif
     avgpool2d_kernel<<<blocks, threadcount>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
     cudaDeviceSynchronize();
 

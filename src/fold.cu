@@ -57,9 +57,6 @@ Fold2D::Fold2D(int height_, int width_, int ratio_): Fold2D_common(height_, widt
     output_prop.width  = width/reduction_ratio;
 
     output_device.alloc({output_prop.channels, output_prop.height, output_prop.width}); // alloc the storage. automagically checked and cleared by the destructor
-
-    std::cout<<"alloc complete\n";
-    if(output_device.get()) std::cout<<"not null\n";
 }
 
 
@@ -126,11 +123,7 @@ UnFold2D::UnFold2D(int height_, int width_, int ratio_): Fold2D_common(height_, 
     output_prop.height = height;
     output_prop.width  = width;
 
-    // std::cout<<"height: "<<height<<" width: "<<width<<" "<<height*width<<std::endl;
-    std::cout<<"Allocating storage for unfold operation\n";
-
     output_device.alloc({output_prop.channels, output_prop.height, output_prop.width}); // alloc the storage. automagically checked and cleared by the destructor
-
 }
 
 DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device)

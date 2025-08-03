@@ -74,7 +74,9 @@ public:
         }
         else
         {   
+#ifdef ENABLE_XFEAT_DEBUG
             std::cout<<"Model Parameter Load Success\n";
+#endif
         }
     }
 
