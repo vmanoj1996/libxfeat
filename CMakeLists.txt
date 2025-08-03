@@ -71,6 +71,7 @@ set(cpp_tests
     test_xfeat_run
     test_interp
     test_pool
+    test_xfeat_output
     # test_fold
 )
 
@@ -86,6 +87,7 @@ set(python_tests
     test_interp.py
     test_pool.py
     test_conv2d.py
+    test_xfeat_output.py
 )
 
 # Build and add C++ tests

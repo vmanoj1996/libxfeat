@@ -16,7 +16,7 @@ int main()
 
     XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
 
-    auto [heatmap, keypoints, feats] = feat.forward(img_device);
+    auto [heatmap, keypoints_folded, keypoints, feats] = feat.forward(img_device);
 
     std::vector<float> vec = keypoints.get_value();
     std::vector<int> shape = keypoints.get_shape();

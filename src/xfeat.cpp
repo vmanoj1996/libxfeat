@@ -78,7 +78,7 @@ void XFeat::setup_kp()
             model.getParam("net.keypoint_head.3.weight"),
             Bias(model.getParam("net.keypoint_head.3.bias"))));
 
-    kp_layers.emplace_back(make_unfold(height, width));
+    unfold_layer.emplace_back(make_unfold(height, width));
 }
 void XFeat::setup_descriptor()
 {
@@ -142,6 +142,9 @@ void XFeat::setup_descriptor()
     add_conv_layer("block5", 1, 128, 128, 3, 1, 1);
     add_conv_layer("block5", 2, 128, 128, 3, 1, 1);
     add_conv_layer("block5", 3, 128, 64,  1, 1, 0);
+
+    skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0));
+    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"));
 }
 
 void XFeat::setup_heatmap()
@@ -214,7 +217,8 @@ void XFeat::setup_block_fusion()
     add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
-std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> XFeat::forward(DevicePointer<FLOAT> &input)
+std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
+    XFeat::forward(DevicePointer<FLOAT> &input)
 {
     auto run_backbone = [&](int start, int count, auto& input_ref) -> auto& 
     {
@@ -245,17 +249,24 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     save_layer_data(norm_output, "normalized_input");
 
     // Run backbone in chunks
-    auto& x2_out = run_backbone(0, 6, norm_output);    // Block1 + Block2
-    save_layer_data(x2_out, "x2_backbone_output");
-    
-    auto& x3_out = run_backbone(6, 3, x2_out);         // Block3
-    save_layer_data(x3_out, "x3_backbone_output");
-    
-    auto& x4_out = run_backbone(9, 3, x3_out);         // Block4  
-    save_layer_data(x4_out, "x4_backbone_output");
-    
-    auto& x5_out = run_backbone(12, 4, x4_out);        // Block5
-    save_layer_data(x5_out, "x5_backbone_output");
+    auto& x1_out = run_backbone(0, 4, norm_output);
+
+    // Compute skip connection
+    auto& skip_pooled = skip_pool->forward(norm_output);
+    auto& skip_out = skip_conv->forward(skip_pooled);
+
+    // Add skip to x1
+    auto add_skip = add_layer({24, height/4, width/4});
+    std::vector<const DevicePointer<FLOAT>*> skip_inputs = {&x1_out, &skip_out};
+    auto& x1_plus_skip = add_skip->forward(skip_inputs);
+
+    // Run Block2 (next 2 layers)  
+    auto& x2_out = run_backbone(4, 2, x1_plus_skip);
+
+    // Continue with remaining blocks
+    auto& x3_out = run_backbone(6, 3, x2_out);
+    auto& x4_out = run_backbone(9, 3, x3_out);
+    auto& x5_out = run_backbone(12, 4, x4_out);
 
     // Create interpolation layers dynamically with actual dimensions
     auto x3_shape = x3_out.get_shape();
@@ -266,15 +277,19 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     auto interp_x5_to_x3 = interp2d({x5_shape[0], x5_shape[1], x5_shape[2]}, x3_shape[1], x3_shape[2]);
     
     auto& x4_interp = interp_x4_to_x3->forward(x4_out);
-    save_layer_data(x4_interp, "x4_interpolated");
-    
     auto& x5_interp = interp_x5_to_x3->forward(x5_out);
+
+    save_layer_data(x2_out, "x2_backbone_output");
+    save_layer_data(x3_out, "x3_backbone_output");
+    save_layer_data(x4_out, "x4_backbone_output");
+    save_layer_data(x5_out, "x5_backbone_output");
     save_layer_data(x5_interp, "x5_interpolated");
     
     // Pyramid fusion: x3 + x4_interp + x5_interp
     auto add_layer_pyramid = add_layer({x3_shape[0], x3_shape[1], x3_shape[2]});
     std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
     auto& pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
+
     save_layer_data(pyramid_sum, "pyramid_fusion");
 
     // Run heads with specific naming
@@ -289,13 +304,13 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
     };
 
     auto& feats     = run_named_layers(block_fusion_layers, pyramid_sum, "block_fusion");
-    save_layer_data(feats, "final_features");
-    
     auto& heatmap   = run_named_layers(heatmap_layers, feats, "heatmap");
+    auto& keypoints_folded = run_named_layers(kp_layers, norm_output, "keypoint");
+    auto& keypoints = (unfold_layer[0])->forward(keypoints_folded);
+
+    save_layer_data(feats, "final_features");
     save_layer_data(heatmap, "final_heatmap");
-    
-    auto& keypoints = run_named_layers(kp_layers, norm_output, "keypoint");
     save_layer_data(keypoints, "final_keypoints");
 
-    return std::tie(heatmap, keypoints, feats);
+    return std::tie(heatmap, keypoints_folded, keypoints, feats);
 }

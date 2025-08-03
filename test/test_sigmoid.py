@@ -1,6 +1,6 @@
-
 import numpy as np
 import os
+import sys
 
 def load_cpp_tensor(filename):
     return np.fromfile(filename, dtype=np.float32)
@@ -31,15 +31,21 @@ def compare_outputs():
     
     print(f"Input difference: {input_diff:.2e}")
     print(f"Output difference: {output_diff:.2e}")
-    print(f"Test {'PASSED' if output_diff < 1e-6 else 'FAILED'}")
+    
+    passed = output_diff < 1e-6
+    print(f"Test {'PASSED' if passed else 'FAILED'}")
     
     # Show some values
     print(f"\nFirst 5 values comparison:")
     print(f"C++ output: {cpp_output[:5]}")
     print(f"Py output:  {py_output[:5]}")
+    
+    return passed
 
 if __name__ == "__main__":
     if not os.path.exists("./sigmoid/output.bin"):
         print("Run the C++ program first!")
+        sys.exit(1)
     else:
-        compare_outputs()
+        passed = compare_outputs()
+        sys.exit(0 if passed else 1)
