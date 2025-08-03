@@ -104,8 +104,6 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
         int idx1_dim = height / ratio;
         int idx2_dim = width / ratio;
 
-        // each page is 65 sized but it is automatically discarded by this operation. skip page size of 65 
-        // Double check this TODO
         int input_idx = idx0_in * (idx1_dim * idx2_dim) + idx1_in * idx2_dim + idx2_in;
         output_device[idx1 * width + idx2] = input_device[input_idx];
     }
