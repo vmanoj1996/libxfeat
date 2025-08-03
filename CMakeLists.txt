@@ -77,13 +77,15 @@ set(cpp_tests
 # CUDA tests (files ending in .cu)
 set(cu_tests
     test_fold_simple
+    test_conv2d
 )
 
 # Python tests  
 set(python_tests
     test_sigmoid.py
-    # test_interp.py
-    # test_pool.py
+    test_interp.py
+    test_pool.py
+    test_conv2d.py
 )
 
 # Build and add C++ tests
