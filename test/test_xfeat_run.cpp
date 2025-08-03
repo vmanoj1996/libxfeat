@@ -1,4 +1,5 @@
-#include "xfeat.hpp"
+// simple vanilla run. does not check the outputs for accuracy
+#include "xfeat.hpp
 #include <opencv2/opencv.hpp>
 
 int main()
