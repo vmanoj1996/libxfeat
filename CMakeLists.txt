@@ -72,6 +72,10 @@ set(cpp_tests
     test_interp
     test_pool
     # test_fold
+)
+
+# CUDA tests (files ending in .cu)
+set(cu_tests
     test_fold_simple
 )
 
@@ -88,6 +92,14 @@ foreach(test ${cpp_tests})
     target_link_libraries(${test} test_lib)
     add_test(NAME ${test} COMMAND ${test})
     set_tests_properties(${test} PROPERTIES LABELS "cpp_tests")
+endforeach()
+
+# Build and add CUDA tests
+foreach(test ${cu_tests})
+    add_executable(${test} test/${test}.cu)
+    target_link_libraries(${test} test_lib)
+    add_test(NAME ${test} COMMAND ${test})
+    set_tests_properties(${test} PROPERTIES LABELS "cpp_tests") # Label as a C++ test for grouping
 endforeach()
 
 # Add Python tests with conda environment
