@@ -12,13 +12,13 @@ class Fold2D_common: public Layer
 {
 protected:
     DevicePointer<FLOAT> output_device;
-    const int reduction_ratio = 8;
+    const int reduction_ratio;
 
     int height, width;
     ImgProperty input_prop, output_prop; 
 
     public:
-    Fold2D_common(int height_, int width_): height(height_), width(width_) {}
+    Fold2D_common(int height_, int width_,  int ratio_): height(height_), width(width_), reduction_ratio(ratio_){}
     ~Fold2D_common() = default; // this will destroy the output_device
 
     virtual ImgProperty get_output_spec() const {return output_prop;}
@@ -32,7 +32,7 @@ class Fold2D: public Fold2D_common
 private:
 
 public:
-    Fold2D(int height_, int width_);
+    Fold2D(int height_, int width_, int ratio_=8);
 
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 
@@ -44,7 +44,7 @@ class UnFold2D: public Fold2D_common
 private:
 
 public:
-    UnFold2D(int height_, int width_);
+    UnFold2D(int height_, int width_, int ratio_=8);
     
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
 };

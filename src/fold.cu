@@ -63,7 +63,7 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
 }
 
 
-Fold2D::Fold2D(int height_, int width_): Fold2D_common(height_, width_)
+Fold2D::Fold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
 {
     
     if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
@@ -106,7 +106,7 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
         return output_device;
     }
 
-UnFold2D::UnFold2D(int height_, int width_): Fold2D_common(height_, width_)
+UnFold2D::UnFold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
 {
     
     if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
@@ -146,61 +146,3 @@ DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device
 
     return output_device;
 }
-
-#ifdef ACTIVATE_MAIN
-int main()
-{
-    const int H = 16, W = 16;
-    const int size = H * W;
-
-    // Managed memory
-    FLOAT *data, *data_output;
-    cudaMallocManaged(&data, size * sizeof(FLOAT));
-    cudaMallocManaged(&data_output, size * sizeof(FLOAT));
-
-    // Initialize with numbers 1-256
-    for (int i = 0; i < size; i++)
-    {
-        data[i] = i + 1;
-    }
-
-    // Test fold/unfold
-    Fold2D folder(H, W);
-    Fold2D unfolder(H, W);
-
-    FLOAT *out_folded = folder.fold(data);
-    FLOAT *out_unfolded = unfolder.unfold(out_folded);
-
-    // Verify
-    cudaDeviceSynchronize();
-    bool success = true;
-    for (int i = 0; i < size; i++)
-    {
-        printf("%d ", (int)data[i]);
-    }
-
-    printf("\n\n");
-    for (int i = 0; i < 64; i++)
-    {
-        for (int j = 1; j < 2; j++)
-        {
-            for (int k = 0; k < 1; k++)
-            {
-                printf("%d ", (int)out_folded[i * 4 + j * 2 + k]);
-            }
-        }
-    }
-    printf("\n\n");
-    for (int i = 0; i < size; i++)
-    {
-        printf("%d ", (int)out_unfolded[i]);
-    }
-
-    printf("\n");
-
-    printf("Test %s\n", success ? "PASSED" : "FAILED");
-
-    cudaFree(data);
-    return 0;
-}
-#endif

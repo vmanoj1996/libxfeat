@@ -35,7 +35,6 @@ int main() {
     cv::cvtColor(img_bgr, img_gray, cv::COLOR_BGR2GRAY);
 
     // The fold/unfold kernels require dimensions to be a multiple of reduction_ratio (8).
-    // We also use a CUDA block size of 16, so let's pick a size divisible by 16.
     const int height = 256;
     const int width = 256;
     cv::Mat img_resized;
@@ -56,9 +55,9 @@ int main() {
 
     // --- 2. Instantiate Layers and Execute ---
 
-    // Create the layer instances. They automatically calculate their own I/O properties.
-    auto fold_layer = std::make_unique<Fold2D>(height, width);
-    auto unfold_layer = std::make_unique<UnFold2D>(height, width);
+    // Create the layer instances using the helper factory functions from fold.hpp
+    auto fold_layer = make_fold(height, width);
+    auto unfold_layer = make_unfold(height, width);
 
     // Upload the input data to the device
     DevicePointer<FLOAT> input_d(host_input, {1, height, width});
@@ -67,22 +66,16 @@ int main() {
     std::cout << "Performing Fold operation..." << std::endl;
     auto& folded_output_d = fold_layer->forward(input_d);
 
-    // The Unfold layer expects 65 channels (64 + dustbin), but the Fold layer produces 64.
-    // We must create a new buffer and copy the data to match the expected input shape.
+    // The Unfold layer expects 65 channels, but the Fold layer produces 64.
     auto folded_shape = folded_output_d.get_shape();
     DevicePointer<FLOAT> unfold_input_d;
-    unfold_input_d.alloc({folded_shape[0] + 1, folded_shape[1], folded_shape[2]}); // Allocate for 65 channels
+    unfold_input_d.alloc({folded_shape[0] + 1, folded_shape[1], folded_shape[2]});
 
-    // --- FIX IS HERE ---
-    // Calculate the size in bytes from the shape provided by the public API.
-    // We use std::accumulate to multiply all dimensions together.
     size_t num_elements = std::accumulate(folded_shape.begin(), folded_shape.end(), 1, std::multiplies<size_t>());
     size_t size_in_bytes = num_elements * sizeof(FLOAT);
 
-    // Copy the 64 channels of data from the fold output to the unfold input.
     cudaError_t err = cudaMemcpy(unfold_input_d.get(), folded_output_d.get(),
                                  size_in_bytes, cudaMemcpyDeviceToDevice);
-    // -------------------
 
     if (err != cudaSuccess) {
         std::cerr << "CUDA memcpy failed: " << cudaGetErrorString(err) << std::endl;
@@ -121,11 +114,31 @@ int main() {
     // --- 4. Save Artifacts for Debugging ---
 
     system("mkdir -p ./fold_test");
+
+    // Save binary tensors (for numerical verification)
     save_tensor(host_input, "./fold_test/input.bin");
     std::vector<FLOAT> host_folded_output = folded_output_d.get_value();
     save_tensor(host_folded_output, "./fold_test/folded_output.bin");
     save_tensor(host_output, "./fold_test/final_output.bin");
 
+    // --- NEW CODE: SAVE IMAGES FOR VISUAL VERIFICATION ---
+    
+    // Convert the original preprocessed float image (range 0.0-1.0)
+    // to a savable 8-bit image (range 0-255).
+    cv::Mat input_img_to_save;
+    img_float.convertTo(input_img_to_save, CV_8U, 255.0);
+    cv::imwrite("./fold_test/input_image.png", input_img_to_save);
+
+    // Wrap the final host_output vector in a cv::Mat header
+    cv::Mat output_mat(height, width, CV_32F, host_output.data());
+    // Convert the reconstructed float image to a savable 8-bit image
+    cv::Mat output_img_to_save;
+    output_mat.convertTo(output_img_to_save, CV_8U, 255.0);
+    cv::imwrite("./fold_test/final_output_image.png", output_img_to_save);
+
+    // --------------------------------------------------------
+
+    // Save dimensions for Python verifier
     auto final_shape = final_output_d.get_shape();
     std::ofstream dims_file("./fold_test/dims.txt");
     dims_file << "input: " << input_d.get_shape()[0] << " " << input_d.get_shape()[1] << " " << input_d.get_shape()[2] << "\n";
@@ -134,7 +147,7 @@ int main() {
     dims_file << "final_output: " << final_shape[0] << " " << final_shape[1] << " " << final_shape[2] << "\n";
     dims_file.close();
 
-    std::cout << "Saved fold/unfold test data to ./fold_test/" << std::endl;
+    std::cout << "Saved fold/unfold test data and images to ./fold_test/" << std::endl;
 
     return (mean_error < tolerance) ? 0 : 1;
 }

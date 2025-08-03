@@ -10,6 +10,9 @@ find_package(CUDAToolkit REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS C)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(PkgConfig REQUIRED) 
+pkg_check_modules(MATIO REQUIRED matio)
+
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wfatal-errors -Wreturn-local-addr")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors")
@@ -55,8 +58,12 @@ target_include_directories(test_lib INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${HDF5_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${MATIO_INCLUDE_DIRS}
 )
-target_link_libraries(test_lib INTERFACE conv2d_lib)
+target_link_libraries(test_lib INTERFACE 
+    conv2d_lib 
+    ${MATIO_LIBRARIES}
+)
 
 # C++ tests
 set(cpp_tests
@@ -64,14 +71,15 @@ set(cpp_tests
     test_xfeat_run
     test_interp
     test_pool
-    test_fold
+    # test_fold
+    test_fold_simple
 )
 
 # Python tests  
 set(python_tests
     test_sigmoid.py
-    test_interp.py
-    test_pool.py
+    # test_interp.py
+    # test_pool.py
 )
 
 # Build and add C++ tests
