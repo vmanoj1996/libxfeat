@@ -43,7 +43,7 @@ int main() {
     size_t kernel_elements = out_channels * in_channels * kernel_size * kernel_size;
     std::vector<FLOAT> host_kernel(kernel_elements);
     for (size_t i = 0; i < kernel_elements; ++i) {
-        host_kernel[i] = static_cast<FLOAT>((i + 1) % 50 - 25) / 50.0f; // Small-ish weights
+        host_kernel[i] = ((i + 1) % 50 - 25.0f )/ 50.0f; // Small-ish weights
     }
     std::cout << "Generated input tensor of size " << in_channels << "x" << height << "x" << width << std::endl;
     std::cout << "Generated kernel tensor of size " << out_channels << "x" << in_channels << "x" << kernel_size << "x" << kernel_size << std::endl;
