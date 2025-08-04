@@ -47,4 +47,5 @@ void image_norm_2d(const float* input, float* output, int height, int width, flo
     dim3 block(256);
     dim3 grid((size + block.x - 1) / block.x);
     instance_norm_kernel<<<grid, block>>>(input, output, mean, variance, size, eps);
+    cudaDeviceSynchronize();
 }

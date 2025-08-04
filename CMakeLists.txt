@@ -109,6 +109,15 @@ set(python_core_tests
 )
 set(python_inter_test test_xfeat_inter.py)
 
+
+# C++ perf tests
+set(cpp_perf_tests
+    perf_xfeat
+)
+
+set(python_perf_tests
+    perf_xfeat.py
+)
 # --------------------------------------------------------------------------------------------------------------------------
 # Build and add C++ tests
 foreach(test ${cpp_tests})
@@ -124,6 +133,22 @@ foreach(test ${cu_tests})
     target_link_libraries(${test} test_lib)
     add_test(NAME ${test} COMMAND ${test})
     set_tests_properties(${test} PROPERTIES LABELS "cpp_tests") # Label as a C++ test for grouping
+endforeach()
+
+# Loop to build and add each C++ performance test
+foreach(test ${cpp_perf_tests})
+    add_executable(${test} test/${test}.cpp)
+    target_link_libraries(${test} test_lib)
+    add_test(NAME ${test} COMMAND ${test})
+    set_tests_properties(${test} PROPERTIES LABELS "perf")
+endforeach()
+
+# Loop to add each Python performance test
+foreach(test ${python_perf_tests})
+    add_test(NAME ${test}
+             COMMAND bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate cusfm && python3 ${CMAKE_CURRENT_SOURCE_DIR}/test/${test}"
+    )
+    set_tests_properties(${test} PROPERTIES LABELS "perf")
 endforeach()
 
 # Add core Python tests (unconditionally)
@@ -157,5 +182,11 @@ add_custom_target(unit_tests
     COMMAND ${CMAKE_CTEST_COMMAND} -L cpp_tests --output-on-failure
     COMMAND ${CMAKE_CTEST_COMMAND} -L python_tests --output-on-failure
     COMMENT "Running all tests (C++ first, then Python)"
+    VERBATIM
+)
+
+add_custom_target(perf_tests
+    COMMAND ${CMAKE_CTEST_COMMAND} -L perf --output-on-failure
+    COMMENT "Running performance comparison tests (C++ then Python)"
     VERBATIM
 )
