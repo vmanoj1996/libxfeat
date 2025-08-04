@@ -77,16 +77,13 @@ def main():
                 # We time the core network pass, same as the C++ test
                 _ = xfeat.net(input_tensor)
 
-            # CRITICAL: Synchronize the CPU with the GPU.
-            # This blocks the CPU until all previously issued GPU commands are complete.
-            # Without this, you only time the kernel launch, not its execution.
             torch.cuda.synchronize()
 
             end_time = time.perf_counter()
             
             elapsed_ms = (end_time - start_time) * 1000.0
             timings_ms.append(elapsed_ms)
-            print(f"  Run {i+1:2d}/{num_runs}: {elapsed_ms:8.3f} ms")
+            # print(f"  Run {i+1:2d}/{num_runs}: {elapsed_ms:8.3f} ms")
     except Exception as e:
         print(f"An error occurred during timed runs: {e}")
         return
