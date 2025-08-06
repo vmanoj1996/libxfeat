@@ -1,3 +1,10 @@
+/*
+nsys profile --trace=nvtx ./perf_xfeat
+nsight-sys report.nsys-rep 
+
+
+*/
+
 #include "xfeat.hpp"
 #include "primitives.hpp" // Ensure this is included for DevicePointer
 
@@ -9,6 +16,8 @@
 #include <algorithm>
 #include <iomanip> // For std::fixed and std::setprecision
 
+#include <nvtx3/nvToolsExt.h>
+
 // Include the CUDA runtime header for synchronization
 #include <cuda_runtime.h>
 
@@ -19,7 +28,7 @@ int main() {
     const int height = 480;
     const int width = 640;
     const int channels = 1;
-    const int num_runs = 50;
+    const int num_runs = 1;
     const std::string model_path = "../params/xfeat_weights.h5";
 
     std::cout << "----------------------------------" << std::endl;
@@ -73,27 +82,22 @@ int main() {
     std::vector<double> timings_ms;
     timings_ms.reserve(num_runs);
 
-    try {
-        for (int i = 0; i < num_runs; ++i) {
-            auto start_time = std::chrono::high_resolution_clock::now();
+    nvtxRangePush("XFEAT forward");
+    for (int i = 0; i < num_runs; ++i)
+    {
+        auto start_time = std::chrono::high_resolution_clock::now();
 
-            model.forward(input);
+        model.forward(input);
+        cudaDeviceSynchronize();
 
-            // CRITICAL: Synchronize the CPU thread with the GPU device.
-            // This blocks the CPU until all previously issued GPU commands are complete.
-            // Without this, you would only time the kernel launch, not the execution.
-            cudaDeviceSynchronize();
-
-            auto end_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed_time = end_time - start_time;
-            
-            timings_ms.push_back(elapsed_time.count());
-            // std::cout << "  Run " << std::setw(2) << i + 1 << "/" << num_runs << ": " << std::fixed << std::setprecision(3) << elapsed_time.count() << " ms" << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "An error occurred during timed runs: " << e.what() << std::endl;
-        return 1;
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed_time = end_time - start_time;
+        
+        timings_ms.push_back(elapsed_time.count());
+        // std::cout << "  Run " << std::setw(2) << i + 1 << "/" << num_runs << ": " << std::fixed << std::setprecision(3) << elapsed_time.count() << " ms" << std::endl;
     }
+    nvtxRangePop();
+
 
     std::cout << "All runs complete." << std::endl;
 
