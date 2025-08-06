@@ -21,13 +21,28 @@
 template<typename Operation>
 __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
-    /* Parameter documentation:
+    extern __shared__ FLOAT kernel_per_ch[];
 
-
-    */
-    int idx_co = threadIdx.x + blockIdx.x * blockDim.x; // channel output
+    int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
     int out_row = threadIdx.y + blockIdx.y * blockDim.y;
     int out_col = threadIdx.z + blockIdx.z * blockDim.z;
+    
+    // cooperative copy to copy the kernel to shared memory
+    int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
+    int total_threads = blockDim.y * blockDim.z; 
+    int kernel_size = p.ci * p.k1 * p.k2;
+
+    // copy from idx_co * kernel_size to idx_co * kernel_size + kernel_size (last excluded)
+    // first thread works on 0, 256, 512 ... till the end of kernel_size
+    // second thread works on 1, 257, 513, ... till the end
+    // last thread works on total_thread-1, total_thread-1-256 and so on. so no elements are skipped in this copy pattern.
+    // plus all threads in the block get to do some work to copy our giant kernel.
+    // plus all threads would work on closeby memory regions (which is cache friendly)
+    for(int i = tid; i < kernel_size; i += total_threads) 
+    {
+        kernel_per_ch[i] = kernel_device[idx_co * kernel_size + i];
+    }
+    __syncthreads();
 
     if (out_row < output_prop.height && out_col < output_prop.width && idx_co < p.co)
     {
@@ -42,13 +57,17 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
             for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
             {
                 for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
-                {
-                    // co x ci x k1 x k2
-                    FLOAT kernel_value = kernel_device[idx_co * (p.ci * p.k1 * p.k2) + idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
+                {                    
+                    // global access logic
+                    // FLOAT kernel_value = kernel_device[idx_co * (p.ci * p.k1 * p.k2) + idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
 
-                    FLOAT input_value = ((in_row_start + kernel_row) >= 0 && (in_row_start + kernel_row) < input_prop.height &&
-                                         (in_col_start + kernel_col) >= 0 && (in_col_start + kernel_col) < input_prop.width)
-                                            ? input_device[idx_ci * input_prop.height * input_prop.width + (in_row_start + kernel_row) * input_prop.width + (in_col_start + kernel_col)]
+                    // load kernel from shared memory for faster access
+                    FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
+
+                    int input_row_index = (in_row_start + kernel_row);
+                    int input_col_index = (in_col_start + kernel_col);
+                    FLOAT input_value = (input_row_index >= 0 && input_row_index < input_prop.height && input_col_index >= 0 && input_col_index < input_prop.width)
+                                            ? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]
                                             : 0.0f;
 
                     sum += input_value * kernel_value;
@@ -97,19 +116,18 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    const int TC = 8;
-    dim3 threadcount(TC, TC, TC);
-    // TODO fix it
-    dim3 blocks((params.co + TC - 1) / TC,
-                (output_prop.height + TC - 1) / TC,
-                (output_prop.width + TC - 1) / TC);
+    // spawn just 1 thread per output channel. but it is still effective. the 3d indexing is just for convenience. 
+    // each exec block would correspond to 16x16 output tile for a single output channel
+    const int TC = 16;
+    dim3 threadcount(1, TC, TC);
+    dim3 blocks(params.co, (output_prop.height + TC - 1) / TC, (output_prop.width + TC - 1) / TC);
 
-    // dim3 blocks(1, 1, 1);
+    const int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
 
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
-    convolve2d_kernel<<<blocks, threadcount>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
 
     return output_device;

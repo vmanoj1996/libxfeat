@@ -79,14 +79,16 @@ def main():
     print(f"Mean Absolute Error: {mae.item():.8f}")
     print(f"Tolerance:           {tolerance}")
 
+    import sys
     if mae.item() < tolerance:
         print("\n✅ Test PASSED!")
+        sys.exit(0)  # Success
     else:
         print("\n❌ Test FAILED!")
-        # Also print the difference tensor stats for debugging
         diff = torch.abs(torch_output - cpp_output)
         print("\n--- Difference Stats (Abs) ---")
         print_tensor_stats("Difference", diff)
+        sys.exit(1)  # Failure
 
 
 if __name__ == "__main__":
