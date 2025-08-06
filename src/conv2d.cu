@@ -56,6 +56,9 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
         {
             for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
             {
+                int input_row_index = (in_row_start + kernel_row);
+                bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
+
                 for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
                 {                    
                     // global access logic
@@ -64,11 +67,10 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
                     // load kernel from shared memory for faster access
                     FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
 
-                    int input_row_index = (in_row_start + kernel_row);
                     int input_col_index = (in_col_start + kernel_col);
-                    FLOAT input_value = (input_row_index >= 0 && input_row_index < input_prop.height && input_col_index >= 0 && input_col_index < input_prop.width)
-                                            ? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]
-                                            : 0.0f;
+                    bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+
+                    FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
 
                     sum += input_value * kernel_value;
                 }

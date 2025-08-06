@@ -31,7 +31,7 @@ public:
         if (buffer_index < N)
         {
             y = (u - mean[buffer_index]) / sqrtf(var[buffer_index] + eps);
-            y = (y > 0) ? y : 0.0f;
+            y = fmaxf(y, 0.0f);
         }
 
         return y;
