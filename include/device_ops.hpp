@@ -25,7 +25,7 @@ public:
     int N;
     const float eps = 1e-5;
 
-    __device__ float forward(float u, int buffer_index)
+    __device__ inline float forward(float u, int buffer_index)
     {
         float y = 0.0f;
         if (buffer_index < N)
@@ -80,7 +80,7 @@ public:
     int N;
     const float eps = 1e-5;
 
-    __device__ float forward(float u, int buffer_index)
+    __device__ inline float forward(float u, int buffer_index)
     {
         float y = 0.0f;
         if (buffer_index < N)

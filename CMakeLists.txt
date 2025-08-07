@@ -28,8 +28,12 @@ set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # For Debug builds (e.g., cmake -DCMAKE_BUILD_TYPE=Debug ..)
 # -O0 disables optimization. -g adds debug symbols for GDB. -G adds debug information for gpu along with line info
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G")
+
+# set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+# set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G")
+
+set(CMAKE_CXX_FLAGS_DEBUG "-O3")
+set(CMAKE_CUDA_FLAGS_DEBUG "-lineinfo")
 
 # Set common flags that apply to all build types
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wreturn-local-addr")
@@ -60,11 +64,12 @@ target_link_libraries(conv2d_lib PUBLIC
     ${OpenCV_LIBS}
 )
 
-# This uses a "generator expression" to add the flag only for the Debug config.
-target_compile_definitions(conv2d_lib PUBLIC 
-    ${HDF5_DEFINITIONS}
-    $<$<CONFIG:Debug>:ENABLE_XFEAT_DEBUG>
-)
+# This uses a "generator expression" to add the flag only for the Debug config. 
+# ENABLE_XFEAT_DEBUG - outputs debug information to console and files
+# target_compile_definitions(conv2d_lib PUBLIC 
+#     ${HDF5_DEFINITIONS}
+#     $<$<CONFIG:Debug>:ENABLE_XFEAT_DEBUG>
+# )
 
 set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
