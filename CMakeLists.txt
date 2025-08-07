@@ -33,7 +33,7 @@ set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
 # set(CMAKE_CUDA_FLAGS_DEBUG "-O0 -g -G")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O3")
-set(CMAKE_CUDA_FLAGS_DEBUG "-lineinfo")
+set(CMAKE_CUDA_FLAGS_DEBUG "-O3 -lineinfo")
 
 # Set common flags that apply to all build types
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -Wreturn-local-addr")
