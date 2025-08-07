@@ -30,17 +30,17 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
     // cooperative copy to copy the kernel to shared memory
     int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
     int total_threads = blockDim.y * blockDim.z; 
-    int kernel_size = p.ci * p.k1 * p.k2;
+    int kernel_net_size = p.ci * p.k1 * p.k2;
 
-    // copy from idx_co * kernel_size to idx_co * kernel_size + kernel_size (last excluded)
-    // first thread works on 0, 256, 512 ... till the end of kernel_size
+    // copy from idx_co * kernel_net_size to idx_co * kernel_net_size + kernel_net_size (last excluded)
+    // first thread works on 0, 256, 512 ... till the end of kernel_net_size
     // second thread works on 1, 257, 513, ... till the end
     // last thread works on total_thread-1, total_thread-1-256 and so on. so no elements are skipped in this copy pattern.
     // plus all threads in the block get to do some work to copy our giant kernel.
     // plus all threads would work on closeby memory regions (which is cache friendly)
-    for(int i = tid; i < kernel_size; i += total_threads) 
+    for(int i = tid; i < kernel_net_size; i += total_threads) 
     {
-        kernel_per_ch[i] = kernel_device[idx_co * kernel_size + i];
+        kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];
     }
     __syncthreads();
 
