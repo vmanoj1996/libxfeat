@@ -115,15 +115,15 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
 
     // spawn just 1 thread per output channel. but it is still effective. the 3d indexing is just for convenience. 
     // each exec block would correspond to 16x16 output tile for a single output channel
-    const int TC = 16;
-    dim3 threadcount(1, TC, TC);
-    dim3 blocks(params.co, (output_prop.height + TC - 1) / TC, (output_prop.width + TC - 1) / TC);
+    dim3 threadcount(1, 4, 32);
+    dim3 blocks(params.co, (output_prop.height + threadcount.y - 1) / threadcount.y, (output_prop.width + threadcount.z - 1) / threadcount.z);
 
     const int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
 
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
+
     convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
 
