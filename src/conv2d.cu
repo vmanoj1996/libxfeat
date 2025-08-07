@@ -32,20 +32,21 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     int total_threads = blockDim.y * blockDim.z; 
     int kernel_net_size = p.ci * p.k1 * p.k2;
 
+    // copy from idx_co * kernel_net_size to idx_co * kernel_net_size + kernel_net_size (last excluded)
+    // first thread works on 0, 256, 512 ... till the end of kernel_net_size
+    // second thread works on 1, 257, 513, ... till the end
+    // last thread works on total_thread-1, total_thread-1-256 and so on. so no elements are skipped in this copy pattern.
+    // plus all threads in the block get to do some work to copy our giant kernel.
+    // plus all threads would work on closeby memory regions (which is cache friendly)
+    for(int i = tid; i < kernel_net_size; i += total_threads) 
+    {
+        kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];
+    }
+    __syncthreads();
+
     if (out_row < output_prop.height && out_col < output_prop.width && idx_co < p.co)
     {
-        // copy from idx_co * kernel_net_size to idx_co * kernel_net_size + kernel_net_size (last excluded)
-        // first thread works on 0, 256, 512 ... till the end of kernel_net_size
-        // second thread works on 1, 257, 513, ... till the end
-        // last thread works on total_thread-1, total_thread-1-256 and so on. so no elements are skipped in this copy pattern.
-        // plus all threads in the block get to do some work to copy our giant kernel.
-        // plus all threads would work on closeby memory regions (which is cache friendly)
-        for(int i = tid; i < kernel_net_size; i += total_threads) 
-        {
-            kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];
-        }
-        __syncthreads();
-
+        
         FLOAT sum = 0.0f;
         // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
         int in_row_start = out_row * p.s1 - p.p1;
