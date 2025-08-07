@@ -19,7 +19,7 @@
 #include <iostream>
 
 template<typename Operation>
-__global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel_device, FLOAT *output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
+__global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
     extern __shared__ FLOAT kernel_per_ch[];
 
@@ -61,9 +61,6 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
 
                 for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
                 {                    
-                    // global access logic
-                    // FLOAT kernel_value = kernel_device[idx_co * (p.ci * p.k1 * p.k2) + idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
-
                     // load kernel from shared memory for faster access
                     FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
 
@@ -78,8 +75,6 @@ __global__ void convolve2d_kernel(const FLOAT *input_device, const FLOAT *kernel
         }
 
         int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
-
-        // printf("%d %d %d \n", idx_co, out_row, out_col);
 
         output_device[o_index] = op.forward(sum, idx_co);
     }

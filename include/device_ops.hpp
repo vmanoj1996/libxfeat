@@ -7,14 +7,6 @@
 #include <cmath>
 
 
-// struct DeviceOp
-// {
-// public:
-//     virtual __device__ float forward(float u) { return u; }
-//     virtual __device__ float forward(float u, int index) { return u; }
-
-//     virtual __device__ void deleter() {}
-// };
 
 struct BatchNormRelu
 {
@@ -28,11 +20,8 @@ public:
     __device__ inline float forward(float u, int buffer_index)
     {
         float y = 0.0f;
-        if (buffer_index < N)
-        {
-            y = (u - mean[buffer_index]) / sqrtf(var[buffer_index] + eps);
-            y = fmaxf(y, 0.0f);
-        }
+        y = (buffer_index < N)? (u - mean[buffer_index]) / sqrtf(var[buffer_index] + eps):0.0f;
+        y = fmaxf(y, 0.0f);
 
         return y;
     }
@@ -82,13 +71,7 @@ public:
 
     __device__ inline float forward(float u, int buffer_index)
     {
-        float y = 0.0f;
-        if (buffer_index < N)
-        {
-            y = u + bias[buffer_index];
-        }
-
-        return y;
+        return (buffer_index < N)? u + bias[buffer_index]:0.0f;;
     }
 
     // Factory functions
