@@ -76,7 +76,6 @@ public:
 
     void validate_params();
 
-
 };
 //  FACTORIES
 inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data) 

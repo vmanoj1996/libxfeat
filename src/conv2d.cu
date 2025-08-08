@@ -17,6 +17,8 @@
 #include "conv2d.hpp"
 #include "device_ops.hpp"
 #include <iostream>
+#include <cuda/barrier>
+#include <cooperative_groups.h>
 
 template<typename Operation>
 __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
@@ -38,6 +40,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // last thread works on total_thread-1, total_thread-1-256 and so on. so no elements are skipped in this copy pattern.
     // plus all threads in the block get to do some work to copy our giant kernel.
     // plus all threads would work on closeby memory regions (which is cache friendly)
+
     for(int i = tid; i < kernel_net_size; i += total_threads) 
     {
         kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];

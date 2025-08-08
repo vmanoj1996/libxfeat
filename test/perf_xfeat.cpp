@@ -28,7 +28,7 @@ int main() {
     const int height = 480;
     const int width = 640;
     const int channels = 1;
-    const int num_runs = 1;
+    const int num_runs = 100;
     const std::string model_path = "../params/xfeat_weights.h5";
 
     std::cout << "----------------------------------" << std::endl;
@@ -82,7 +82,7 @@ int main() {
     std::vector<double> timings_ms;
     timings_ms.reserve(num_runs);
 
-    nvtxRangePush("XFEAT forward");
+    nvtxRangePush("XFEAT_forward");
     for (int i = 0; i < num_runs; ++i)
     {
         auto start_time = std::chrono::high_resolution_clock::now();

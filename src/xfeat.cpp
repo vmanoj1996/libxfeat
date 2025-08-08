@@ -17,7 +17,7 @@
 #include <tensorio.hpp>
 
 
-void save_layer_data(const DevicePointer<float> &data, const std::string &name)
+inline void save_layer_data(const DevicePointer<float> &data, const std::string &name)
 {
 #ifdef ENABLE_XFEAT_DEBUG
     auto host_data = data.get_value();
@@ -38,13 +38,12 @@ void save_layer_data(const DevicePointer<float> &data, const std::string &name)
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
+    norm_output.alloc({1, height, width});
     setup_descriptor();
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
 
-    // debug todo
-    // model.printParams(); 
 }
 
 void XFeat::setup_kp()
@@ -150,6 +149,11 @@ void XFeat::setup_descriptor()
     skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0));
     skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")));
 
+    interp_x4_to_x3 = interp2d(backbone_layers[12-1]->get_output_spec(), height/8, width/8);
+    interp_x5_to_x3 = interp2d(backbone_layers[16-1]->get_output_spec(), height/8, width/8);
+
+    add_skip = add_layer({24, height/4, width/4});
+    add_layer_pyramid = add_layer(backbone_layers[9-1]->get_output_spec());
 }
 
 void XFeat::setup_heatmap()
@@ -222,8 +226,7 @@ void XFeat::setup_block_fusion()
     add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
-std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> 
-    XFeat::forward(DevicePointer<FLOAT> &input)
+std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> XFeat::forward(DevicePointer<FLOAT> &input)
 {
     auto run_backbone = [&](int start, int count, auto& input_ref) -> auto& 
     {
@@ -248,59 +251,6 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, 
         return *current;
     };
 
-    // Normalize the input
-    DevicePointer<FLOAT> norm_output(input);
-    image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
-    save_layer_data(norm_output, "normalized_input");
-
-    // Run backbone in chunks
-    auto& x1_out = run_backbone(0, 4, norm_output);
-
-    // Compute skip connection
-    auto& skip_pooled = skip_pool->forward(norm_output);
-    auto& skip_out    = skip_conv->forward(skip_pooled);
-
-    // Add skip to x1
-    auto add_skip = add_layer({24, height/4, width/4});
-    std::vector<const DevicePointer<FLOAT>*> skip_inputs = {&x1_out, &skip_out};
-    auto& x1_plus_skip = add_skip->forward(skip_inputs);
-
-    // Run Block2 (next 2 layers)  
-    auto& x2_out = run_backbone(4, 2, x1_plus_skip);
-
-    // Continue with remaining blocks
-    auto& x3_out = run_backbone(6, 3, x2_out);
-    auto& x4_out = run_backbone(9, 3, x3_out);
-    auto& x5_out = run_backbone(12, 4, x4_out);
-
-    // Create interpolation layers dynamically with actual dimensions
-    auto x3_shape = x3_out.get_shape();
-    auto x4_shape = x4_out.get_shape();
-    auto x5_shape = x5_out.get_shape();
-    
-    auto interp_x4_to_x3 = interp2d({x4_shape[0], x4_shape[1], x4_shape[2]}, x3_shape[1], x3_shape[2]);
-    auto interp_x5_to_x3 = interp2d({x5_shape[0], x5_shape[1], x5_shape[2]}, x3_shape[1], x3_shape[2]);
-    
-    auto& x4_interp = interp_x4_to_x3->forward(x4_out);
-    auto& x5_interp = interp_x5_to_x3->forward(x5_out);
-
-    save_layer_data(skip_pooled, "skip_pooled");
-    save_layer_data(skip_out, "skip_conv_out");
-    save_layer_data(x1_plus_skip, "x1_plus_skip");
-    save_layer_data(x1_out, "x1_backbone_output"); 
-    save_layer_data(x2_out, "x2_backbone_output");
-    save_layer_data(x3_out, "x3_backbone_output");
-    save_layer_data(x4_out, "x4_backbone_output");
-    save_layer_data(x5_out, "x5_backbone_output");
-    save_layer_data(x5_interp, "x5_interpolated");
-    
-    // Pyramid fusion: x3 + x4_interp + x5_interp
-    auto add_layer_pyramid = add_layer({x3_shape[0], x3_shape[1], x3_shape[2]});
-    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
-    auto& pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
-
-    save_layer_data(pyramid_sum, "pyramid_fusion");
-
     // Run heads with specific naming
     auto run_named_layers = [&](auto& layers, auto& input_ref, const std::string& prefix) -> auto& 
     {
@@ -312,11 +262,52 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, 
         return *current;
     };
 
+    // Normalize the input
+    image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
+
+    // Run backbone in chunks
+    auto& x1_out = run_backbone(0, 4, norm_output);
+
+    // Compute skip connection
+    auto& skip_pooled = skip_pool->forward(norm_output);
+    auto& skip_out    = skip_conv->forward(skip_pooled);
+
+    // Add skip to x1
+    std::vector<const DevicePointer<FLOAT>*> skip_inputs = {&x1_out, &skip_out};
+    auto& x1_plus_skip = add_skip->forward(skip_inputs);
+
+    // Run Block2 (next 2 layers)  
+    auto& x2_out = run_backbone(4, 2, x1_plus_skip);
+
+    // Continue with remaining blocks
+    auto& x3_out = run_backbone(6, 3, x2_out);
+    auto& x4_out = run_backbone(9, 3, x3_out);
+    auto& x5_out = run_backbone(12, 4, x4_out);
+    
+    auto& x4_interp = interp_x4_to_x3->forward(x4_out);
+    auto& x5_interp = interp_x5_to_x3->forward(x5_out);
+    
+    // Pyramid fusion: x3 + x4_interp + x5_interp
+    std::vector<const DevicePointer<FLOAT>*> pyramid_inputs = {&x3_out, &x4_interp, &x5_interp};
+    auto& pyramid_sum = add_layer_pyramid->forward(pyramid_inputs);
+
     auto& feats     = run_named_layers(block_fusion_layers, pyramid_sum, "block_fusion");
     auto& heatmap   = run_named_layers(heatmap_layers, feats, "heatmap");
     auto& keypoints_folded = run_named_layers(kp_layers, norm_output, "keypoint");
     auto& keypoints = (unfold_layer[0])->forward(keypoints_folded);
 
+    // these are no op
+    save_layer_data(norm_output, "normalized_input");
+    save_layer_data(skip_pooled, "skip_pooled");
+    save_layer_data(skip_out, "skip_conv_out");
+    save_layer_data(x1_plus_skip, "x1_plus_skip");
+    save_layer_data(x1_out, "x1_backbone_output"); 
+    save_layer_data(x2_out, "x2_backbone_output");
+    save_layer_data(x3_out, "x3_backbone_output");
+    save_layer_data(x4_out, "x4_backbone_output");
+    save_layer_data(x5_out, "x5_backbone_output");
+    save_layer_data(x5_interp, "x5_interpolated");
+    save_layer_data(pyramid_sum, "pyramid_fusion");
     save_layer_data(feats, "final_features");
     save_layer_data(heatmap, "final_heatmap");
     save_layer_data(keypoints, "final_keypoints");
