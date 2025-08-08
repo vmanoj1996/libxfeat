@@ -83,6 +83,66 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     }
 }
 
+template<int K, typename Operation>
+__global__ void convolve2d_optim_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, Conv2DParams p, ImgProperty input_prop, ImgProperty output_prop, Operation op)
+{
+    extern __shared__ FLOAT kernel_per_ch[];
+
+    const int K1 = K;
+    const int K2 = K;
+    int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
+    int out_row = threadIdx.y + blockIdx.y * blockDim.y;
+    int out_col = threadIdx.z + blockIdx.z * blockDim.z;
+    
+    // cooperative copy to copy the kernel to shared memory
+    int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
+    int total_threads = blockDim.y * blockDim.z; 
+    int kernel_net_size = p.ci * K1 * K2;
+
+    for(int i = tid; i < kernel_net_size; i += total_threads) 
+    {
+        kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];
+    }
+    __syncthreads();
+
+    if (out_row < output_prop.height && out_col < output_prop.width && idx_co < p.co)
+    {
+        
+        FLOAT sum = 0.0f;
+        // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
+        int in_row_start = out_row * p.s1 - p.p1;
+        int in_col_start = out_col * p.s2 - p.p2;
+
+        for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
+        {
+            #pragma unroll
+            for (int kernel_row = 0; kernel_row < K1; kernel_row++)
+            {
+                int input_row_index = (in_row_start + kernel_row);
+                bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
+
+                #pragma unroll
+                for (int kernel_col = 0; kernel_col < K2; kernel_col++)
+                {                    
+                    // load kernel from shared memory for faster access
+                    FLOAT kernel_value = kernel_per_ch[idx_ci * (K1 * K2) + kernel_row * (K2) + kernel_col];
+
+                    int input_col_index = (in_col_start + kernel_col);
+                    bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+
+                    FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
+
+                    sum += input_value * kernel_value;
+                }
+            }
+        }
+
+        int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
+
+        output_device[o_index] = op.forward(sum, idx_co);
+    }
+}
+
 template<typename Operation>
 Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_): 
     params(params_), input_prop(input_prop_), post_op(post_op_)
@@ -128,7 +188,9 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    if(params.k1 == 3 && params.k2 == 3) convolve2d_optim_kernel<3><<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    else convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+
     CUDA_SYNC_IF_NEEDED();
 
     return output_device;
