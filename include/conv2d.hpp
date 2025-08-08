@@ -19,23 +19,19 @@ k1 for row and k2 for column
 
 #pragma once
 
-#include <vector>
 #include "primitives.hpp"
-#include <memory>
 #include "layer.hpp"
 #include "device_ops.hpp"
+#include "conv2d.hpp"
 
 #include <cuda_runtime.h>
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
-#include <vector>
 #include <string>
-#include "conv2d.hpp"
-#include "device_ops.hpp"
+#include <memory>
 #include <iostream>
-#include <cuda/barrier>
-#include <cooperative_groups.h>
+#include <vector>
 
 // careful while reordering
 struct Conv2DParams {

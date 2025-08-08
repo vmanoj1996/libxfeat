@@ -6,8 +6,6 @@
 #include <cuda_runtime.h>
 #include <cmath>
 
-
-
 struct BatchNormRelu
 {
     // all the pointers should be on the device
@@ -17,14 +15,7 @@ public:
     int N;
     const float eps = 1e-5;
 
-    __device__ inline float forward(float u, int buffer_index)
-    {
-        float y = 0.0f;
-        y = (buffer_index < N)? (u - mean[buffer_index]) / sqrtf(var[buffer_index] + eps):0.0f;
-        y = fmaxf(y, 0.0f);
-
-        return y;
-    }
+    __device__ inline float forward(float u, int buffer_index);
 
     // Factory functions
     static inline BatchNormRelu create(const std::vector<float>& host_mean, const std::vector<float>& host_var) 
@@ -48,6 +39,17 @@ public:
     }
 
 };
+
+#ifdef __CUDACC__
+__device__ inline float BatchNormRelu::forward(float u, int buffer_index)
+{
+    float y = 0.0f;
+    y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
+    y = fmaxf(y, 0.0f);
+
+    return y;
+}
+#endif
 
 inline BatchNormRelu BNR(const std::vector<float>& mean, const std::vector<float>& var) 
 {
