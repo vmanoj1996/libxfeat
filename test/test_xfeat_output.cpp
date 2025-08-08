@@ -122,7 +122,7 @@ int main() {
             cv::Mat heatmap_vis;
             cv::normalize(heatmap_img, heatmap_vis, 0, 255, cv::NORM_MINMAX, CV_8U);
             cv::applyColorMap(heatmap_vis, heatmap_vis, cv::COLORMAP_JET);
-            cv::imwrite("./xfeat_output/heatmap_visualization.png", heatmap_vis);
+            cv::imwrite("./test/xfeat_output/heatmap_visualization.png", heatmap_vis);
             std::cout << "✓ Saved heatmap visualization" << std::endl;
         }
         

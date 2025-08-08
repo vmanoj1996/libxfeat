@@ -52,7 +52,7 @@ def compare_outputs():
     print(f"PyTorch output range: [{py_output.min():.4f}, {py_output.max():.4f}]")
     
     # --- Save visual outputs ---
-    os.makedirs("./pool", exist_ok=True)
+    os.makedirs("./test/pool", exist_ok=True)
     cpp_hwc = chw_to_hwc(cpp_output)
     py_hwc = chw_to_hwc(py_output)
     
