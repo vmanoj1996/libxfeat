@@ -184,6 +184,7 @@ endif()
 
 # Custom target to run tests in order
 add_custom_target(unit_tests
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/test
     COMMAND ${CMAKE_CTEST_COMMAND} -L cpp_tests --output-on-failure
     COMMAND ${CMAKE_CTEST_COMMAND} -L python_tests --output-on-failure
     COMMENT "Running all tests (C++ first, then Python)"

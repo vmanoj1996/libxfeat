@@ -18,7 +18,7 @@ class XFeat
     XFeat(std::string model_file, int height_, int width_);
     ~XFeat() = default;
     
-    XFeatOut forward_impl(DevicePointer<FLOAT>& input);
+    
     XFeatOut forward(DevicePointer<FLOAT>& input);
 
     // Disable copy operations
@@ -54,4 +54,5 @@ private:
     DevicePointer<FLOAT>* keypoints_ref;
     DevicePointer<FLOAT>* feats_ref;
     void create_cuda_graph(DevicePointer<FLOAT>& sample_input);
+    XFeatOut forward_impl(DevicePointer<FLOAT>& input);
 };
