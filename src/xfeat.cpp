@@ -14,6 +14,7 @@
 #include "activation.hpp"
 #include "pool.hpp"
 #include "interp.hpp"
+#include "normalize.hpp"
 #include <tensorio.hpp>
 
 
@@ -38,7 +39,8 @@ inline void save_layer_data(const DevicePointer<float> &data, const std::string 
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
-    norm_output.alloc({1, height, width});
+    norm_layer = image_norm_2d({1, height, width}, 1e-5f);
+
     setup_descriptor();
     setup_kp();
     setup_heatmap();
@@ -263,7 +265,7 @@ std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, 
     };
 
     // Normalize the input
-    image_norm_2d(input.get(), norm_output.get(), height, width, 1e-5f);
+    auto& norm_output = norm_layer->forward(input);
 
     // Run backbone in chunks
     auto& x1_out = run_backbone(0, 4, norm_output);

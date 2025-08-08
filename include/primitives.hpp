@@ -81,6 +81,8 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
 
 class Layer
 {
+    
+
     public:
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device) = 0;
     virtual DevicePointer<FLOAT>& forward(const std::vector<const DevicePointer<FLOAT>*>& inputs) 
@@ -90,13 +92,18 @@ class Layer
         throw std::runtime_error("Base class forward() should not be called");
         return dummy;
     }
-
+    Layer() = default;
     virtual ~Layer() = default;
 
     virtual ImgProperty get_output_spec() const = 0;
     virtual ImgProperty get_input_spec()  const = 0;
 
+
+    // Disable copy and move for all layers
+    Layer(const Layer&) = delete;
+    Layer& operator=(const Layer&) = delete;
+    Layer(Layer&&) = delete;
+    Layer& operator=(Layer&&) = delete;
+
 };
 
-
-void image_norm_2d(const float* input, float* output, int height, int width, float eps = 1e-5f);

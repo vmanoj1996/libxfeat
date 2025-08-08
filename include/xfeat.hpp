@@ -31,8 +31,7 @@ private:
     std::unique_ptr<Layer> skip_pool, skip_conv;
     std::unique_ptr<Layer> interp_x4_to_x3, interp_x5_to_x3;
     std::unique_ptr<Layer> add_skip, add_layer_pyramid;
-
-    DevicePointer<FLOAT> norm_output;
+    std::unique_ptr<Layer> norm_layer;
 
     void setup_kp();
     void setup_descriptor();
