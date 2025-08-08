@@ -132,13 +132,16 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
         int in_row_start = out_row * p.s1 - p.p1;
         int in_col_start = out_col * p.s2 - p.p2;
 
+        #pragma unroll
         for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
         {
+            #pragma unroll
             for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
             {
                 int input_row_index = (in_row_start + kernel_row);
                 bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
 
+                #pragma unroll
                 for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
                 {                    
                     // load kernel from shared memory for faster access
