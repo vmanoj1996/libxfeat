@@ -51,7 +51,7 @@ int main()
     }
     
     // Create layer
-    auto layer = interp2d(input_prop, target_height, target_width);
+    auto layer = interp2d(input_prop, target_height, target_width, 0);
     
     DevicePointer<FLOAT> input(host_input, {channels, height, width});
     

@@ -6,6 +6,7 @@
 #include "primitives.hpp"
 #include <iostream>
 #include <memory>
+#include "layer.hpp"
 
 
 class Fold2D_common: public Layer
@@ -31,7 +32,7 @@ class Fold2D: public Fold2D_common
 private:
 
 public:
-    Fold2D(int height_, int width_, int ratio_=8, cudaStream_t stream_);
+    Fold2D(int height_, int width_, int ratio_, cudaStream_t stream_);
 
     using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
@@ -44,7 +45,7 @@ class UnFold2D: public Fold2D_common
 private:
 
 public:
-    UnFold2D(int height_, int width_, int ratio_=8, cudaStream_t stream_);
+    UnFold2D(int height_, int width_, int ratio_, cudaStream_t stream_);
     
     using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);

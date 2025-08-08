@@ -90,7 +90,7 @@ void XFeat::setup_kp()
         return; // already done
     }
 
-    kp_layers.emplace_back(make_fold(height, width, stream));
+    kp_layers.emplace_back(make_fold(height, width, 8, stream));
 
     auto [cheight, cwidth] = std::make_pair(height / 8, width / 8);
     const int KP_CH = 64;
@@ -118,7 +118,7 @@ void XFeat::setup_kp()
             stream
         ));
 
-    unfold_layer.emplace_back(make_unfold(height, width, stream));
+    unfold_layer.emplace_back(make_unfold(height, width, 8, stream));
 }
 void XFeat::setup_descriptor()
 {

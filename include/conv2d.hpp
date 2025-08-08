@@ -22,7 +22,7 @@ k1 for row and k2 for column
 #include <vector>
 #include "primitives.hpp"
 #include <memory>
-
+#include "layer.hpp"
 #include "device_ops.hpp"
 
 // careful while reordering

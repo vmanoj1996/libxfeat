@@ -1,5 +1,6 @@
 #pragma once
 #include "primitives.hpp"
+#include "layer.hpp"
 
 class ImageNorm2D : public Layer 
 {

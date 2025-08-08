@@ -18,7 +18,7 @@ int main()
     int total_size = prop.channels * prop.height * prop.width;
     
     // Create layer
-    auto layer = activation(prop, Sigmoid());
+    auto layer = activation(prop, Sigmoid(), 0);
     
     // Create and initialize input
     std::vector<FLOAT> host_input(total_size);

@@ -5,6 +5,8 @@
 #include<memory>
 #include <cuda_runtime.h>
 #include "device_ops.hpp"
+#include "layer.hpp"
+
 
 template<typename Operation>
 class ActivationLayer : public Layer

@@ -7,7 +7,7 @@
 #include <vector>
 #include "primitives.hpp"
 #include <memory>
-
+#include "layer.hpp"
 #include "device_ops.hpp"
 
 class BilinearInterp2D: public Layer

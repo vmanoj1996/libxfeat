@@ -50,8 +50,8 @@ int main() {
 
     // --- 2. Instantiate Layers and Execute ---
 
-    auto fold_layer   = make_fold(height, width, 2);
-    auto unfold_layer = make_unfold(height, width, 2);
+    auto fold_layer   = make_fold(height, width,   2, (cudaStream_t) 0);
+    auto unfold_layer = make_unfold(height, width, 2, (cudaStream_t) 0);
 
     DevicePointer<FLOAT> input_d(host_input, {1, height, width});
 

@@ -51,7 +51,7 @@ int main() {
 
     // --- 3. Instantiate Layer and Run Forward Pass ---
     std::cout << "\n--- Performing forward pass ---" << std::endl;
-    auto conv_layer = conv2d(input_prop, params, host_kernel);
+    auto conv_layer = conv2d(input_prop, params, host_kernel, 0);
     
     DevicePointer<FLOAT> input_d(host_input, {in_channels, height, width});
     auto& output_d = conv_layer->forward(input_d);

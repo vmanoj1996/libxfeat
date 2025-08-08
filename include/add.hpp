@@ -6,6 +6,8 @@
 #include "primitives.hpp"
 #include <memory>
 #include <vector>
+#include "layer.hpp"
+
 
 class Add : public Layer
 {

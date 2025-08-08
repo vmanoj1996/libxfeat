@@ -52,7 +52,7 @@ int main() {
     PoolParams pool_params(pool_factor, pool_factor, pool_factor, pool_factor);
 
     // 2. Pass the pool_params object to the factory function.
-    auto layer = avgpool2d(input_prop, pool_params);
+    auto layer = avgpool2d(input_prop, pool_params, 0);
     // -------------------
 
     DevicePointer<FLOAT> input(host_input, {channels, height, width});
