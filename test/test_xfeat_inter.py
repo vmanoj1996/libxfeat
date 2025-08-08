@@ -89,7 +89,7 @@ if debug:
         print(f"{name}: {buffer.shape}")
 
 # Check if C++ outputs exist
-output_dir = Path("./xfeat_output")
+output_dir = Path("./test/xfeat_output")
 required_files = ["input.h5", "heatmap.h5", "keypoints.h5", "features.h5"]
 
 missing_files = [f for f in required_files if not (output_dir / f).exists()]

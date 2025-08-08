@@ -61,18 +61,18 @@ int main() {
     std::vector<FLOAT> host_output = output.get_value();
 
     // Save results
-    tio::mkdir("./pool");
-    save_tensor(host_input, "./pool/input.bin");
-    save_tensor(host_output, "./pool/output.bin");
+    tio::mkdir("./test/pool");
+    save_tensor(host_input,  "./test/pool/input.bin");
+    save_tensor(host_output, "./test/pool/output.bin");
 
     // Save dimensions for Python verifier
     auto output_shape = output.get_shape();
-    std::ofstream dims_file("./pool/dims.txt");
+    std::ofstream dims_file("./test/pool/dims.txt");
     dims_file << channels << " " << height << " " << width << " ";
     dims_file << output_shape[1] << " " << output_shape[2] << " " << pool_factor;
     dims_file.close();
 
-    std::cout << "Saved average pooling test data to ./pool/" << std::endl;
+    std::cout << "Saved average pooling test data to ./test/pool/" << std::endl;
 
     return 0;
 }

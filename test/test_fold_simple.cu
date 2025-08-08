@@ -117,16 +117,16 @@ int main() {
 
     // --- 4. Save using tensorio ---
 
-    tio::mkdir("./fold_test");
+    tio::mkdir("./test/fold_test");
     
-    tio::save_hdf5(host_input, {height, width}, "./fold_test/input.h5", "input");
+    tio::save_hdf5(host_input, {height, width}, "./test/fold_test/input.h5", "input");
     
     std::vector<FLOAT> host_folded_output = folded_output_d.get_value();
-    tio::save_hdf5(host_folded_output, {folded_shape[0], folded_shape[1], folded_shape[2]}, "./fold_test/folded_output.h5", "folded");
+    tio::save_hdf5(host_folded_output, {folded_shape[0], folded_shape[1], folded_shape[2]}, "./test/fold_test/folded_output.h5", "folded");
     
-    tio::save_hdf5(host_output, {height, width}, "./fold_test/final_output.h5", "output");
+    tio::save_hdf5(host_output, {height, width}, "./test/fold_test/final_output.h5", "output");
 
-    std::cout << "Saved .h5 files to ./fold_test/" << std::endl;
+    std::cout << "Saved .h5 files to ./test/fold_test/" << std::endl;
 
     auto result = (mean_error < tolerance) ? 0 : 1;
 

@@ -16,7 +16,7 @@ def hwc_to_chw(img_hwc):
 
 def compare_outputs():
     # Load dimensions from C++ execution
-    with open("./pool/dims.txt", "r") as f:
+    with open("./test/pool/dims.txt", "r") as f:
         dims = list(map(int, f.read().split()))
     c, h, w, target_h, target_w, pool_factor = dims
     
@@ -27,7 +27,7 @@ def compare_outputs():
     py_input_chw = hwc_to_chw(py_input_hwc)
 
     # Load C++ output data
-    cpp_output = load_cpp_tensor("./pool/output.bin").reshape(c, target_h, target_w)
+    cpp_output = load_cpp_tensor("./test/pool/output.bin").reshape(c, target_h, target_w)
     
     # --- Reference computation using PyTorch ---
     input_tensor = torch.from_numpy(py_input_chw).unsqueeze(0) # Add batch dim
@@ -60,8 +60,8 @@ def compare_outputs():
     cpp_hwc_display = cv2.resize(cpp_hwc, (w, h), interpolation=cv2.INTER_NEAREST)
     py_hwc_display = cv2.resize(py_hwc, (w, h), interpolation=cv2.INTER_NEAREST)
 
-    cv2.imwrite("./pool/cpp_output.png", (cpp_hwc_display * 255).astype(np.uint8)[:,:,::-1])
-    cv2.imwrite("./pool/pytorch_output.png", (py_hwc_display * 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./test/pool/cpp_output.png", (cpp_hwc_display * 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./test/pool/pytorch_output.png", (py_hwc_display * 255).astype(np.uint8)[:,:,::-1])
     
     # Difference image
     diff_hwc = np.abs(cpp_hwc - py_hwc)
@@ -70,7 +70,7 @@ def compare_outputs():
         diff_enhanced = (diff_hwc_display / output_diff) * 255
     else:
         diff_enhanced = np.zeros_like(diff_hwc_display)
-    cv2.imwrite("./pool/difference.png", np.clip(diff_enhanced, 0, 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./test/pool/difference.png", np.clip(diff_enhanced, 0, 255).astype(np.uint8)[:,:,::-1])
     
     print("\nSaved outputs (cpp_output.png, pytorch_output.png, difference.png) to ./pool/")
     
@@ -82,7 +82,7 @@ def compare_outputs():
         print(f"\nTest PASSED")
 
 if __name__ == "__main__":
-    if not os.path.exists("./pool/output.bin"):
+    if not os.path.exists("./test/pool/output.bin"):
         print("Run the C++ program first!")
         sys.exit(1)
     else:

@@ -20,7 +20,7 @@ def hwc_to_chw(img_hwc):
 
 def compare_outputs():
     # ... (loading dims and image is the same) ...
-    with open("./interp/dims.txt", "r") as f:
+    with open("./test/interp/dims.txt", "r") as f:
         dims = list(map(int, f.read().split()))
     c, h, w, target_h, target_w = dims
     
@@ -29,7 +29,7 @@ def compare_outputs():
     py_input_hwc = (cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)).astype(np.float32) / 255.0
     py_input_chw = hwc_to_chw(py_input_hwc)
 
-    cpp_output = load_cpp_tensor("./interp/output.bin").reshape(c, target_h, target_w)
+    cpp_output = load_cpp_tensor("./test/interp/output.bin").reshape(c, target_h, target_w)
     
     # --- MODIFICATION: Use PyTorch for reference interpolation ---
     # Convert numpy array to torch tensor
@@ -69,13 +69,13 @@ def compare_outputs():
         diff_enhanced = np.zeros_like(diff_hwc)
     diff_img_rgb = np.clip(diff_enhanced, 0, 255).astype(np.uint8)
     
-    cv2.imwrite("./interp/cpp_output.png", (cpp_hwc * 255).astype(np.uint8)[:,:,::-1])
-    cv2.imwrite("./interp/pytorch_output.png", (py_hwc * 255).astype(np.uint8)[:,:,::-1])
-    cv2.imwrite("./interp/difference.png", diff_img_rgb[:,:,::-1])
+    cv2.imwrite("./test/interp/cpp_output.png", (cpp_hwc * 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./test/interp/pytorch_output.png", (py_hwc * 255).astype(np.uint8)[:,:,::-1])
+    cv2.imwrite("./test/interp/difference.png", diff_img_rgb[:,:,::-1])
     
     comparison = np.hstack([(cpp_hwc * 255).astype(np.uint8), (py_hwc * 255).astype(np.uint8)])
-    cv2.imwrite("./interp/comparison.png", comparison[:,:,::-1])
-    print("\nSaved outputs to ./interp/")
+    cv2.imwrite("./test/interp/comparison.png", comparison[:,:,::-1])
+    print("\nSaved outputs to ./test/interp/")
     
     if output_diff > 1e-5: # Loosened slightly for CPU vs GPU float differences
         print(f"\nTest FAILED: difference {output_diff:.2e} exceeds threshold 1e-5")
@@ -84,7 +84,7 @@ def compare_outputs():
         print(f"\nTest PASSED")
 
 if __name__ == "__main__":
-    if not os.path.exists("./interp/output.bin"):
+    if not os.path.exists("./test/interp/output.bin"):
         print("Run the C++ program first!")
         sys.exit(1)
     else:

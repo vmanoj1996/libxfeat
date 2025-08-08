@@ -20,8 +20,7 @@ void print_tensor_info(const std::string& name, const DevicePointer<float>& tens
         std::cout << shape[i];
         if (i < shape.size() - 1) std::cout << "×";
     }
-    std::cout << " | Range: [" << std::fixed << std::setprecision(4) 
-              << min_val << ", " << max_val << "] | Mean: " << mean_val << std::endl;
+    std::cout << " | Range: [" << std::fixed << std::setprecision(4) << min_val << ", " << max_val << "] | Mean: " << mean_val << std::endl;
 }
 
 int main() {
@@ -86,26 +85,26 @@ int main() {
         
         auto input_shape = img_device.get_shape();
         auto input_data = img_device.get_value();
-        tio::save_hdf5(input_data, input_shape, "./xfeat_output/input.h5", "input");
+        tio::save_hdf5(input_data, input_shape, "./test/xfeat_output/input.h5", "input");
         std::cout << "✓ Saved input.h5" << std::endl;
         
         auto heatmap_shape = heatmap.get_shape();
         auto heatmap_data = heatmap.get_value();
-        tio::save_hdf5(heatmap_data, heatmap_shape, "./xfeat_output/heatmap.h5", "heatmap");
+        tio::save_hdf5(heatmap_data, heatmap_shape, "./test/xfeat_output/heatmap.h5", "heatmap");
         std::cout << "✓ Saved heatmap.h5" << std::endl;
         
         auto keypoints_shape = keypoints_folded.get_shape();
         auto keypoints_data = keypoints_folded.get_value();
-        tio::save_hdf5(keypoints_data, keypoints_shape, "./xfeat_output/keypoints.h5", "keypoints");
+        tio::save_hdf5(keypoints_data, keypoints_shape, "./test/xfeat_output/keypoints.h5", "keypoints");
         std::cout << "✓ Saved keypoints.h5" << std::endl;
         
         auto feats_shape = feats.get_shape();
         auto feats_data = feats.get_value();
-        tio::save_hdf5(feats_data, feats_shape, "./xfeat_output/features.h5", "features");
+        tio::save_hdf5(feats_data, feats_shape, "./test/xfeat_output/features.h5", "features");
         std::cout << "✓ Saved features.h5" << std::endl;
         
         // Save metadata
-        std::ofstream metadata("./xfeat_output/metadata.txt");
+        std::ofstream metadata("./test/xfeat_output/metadata.txt");
         metadata << "Image: " << image_path << std::endl;
         metadata << "Image size: " << img.cols << "×" << img.rows << std::endl;
         metadata << "Model: " << model_path << std::endl;

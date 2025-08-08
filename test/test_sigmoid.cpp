@@ -35,10 +35,10 @@ int main()
     std::vector<FLOAT> host_output = output.get_value();
     
     // Save results
-    tio::mkdir("./sigmoid");
-    save_tensor(host_input, "./sigmoid/input.bin");
-    save_tensor(host_output, "./sigmoid/output.bin");
+    tio::mkdir("./test/sigmoid");
+    save_tensor(host_input, "./test/sigmoid/input.bin");
+    save_tensor(host_output, "./test/sigmoid/output.bin");
     
-    std::cout << "Saved " << total_size << " elements to ./sigmoid/" << std::endl;
+    std::cout << "Saved " << total_size << " elements to ./test/sigmoid/" << std::endl;
     return 0;
 }

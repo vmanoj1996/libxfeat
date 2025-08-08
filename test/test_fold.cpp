@@ -113,13 +113,13 @@ int main() {
 
     // --- 4. Save Artifacts for Debugging ---
 
-    tio::mkdir("./fold_test");
+    tio::mkdir("./test/fold_test");
 
     // Save binary tensors (for numerical verification)
-    save_tensor(host_input, "./fold_test/input.bin");
+    save_tensor(host_input, "./test/fold_test/input.bin");
     std::vector<FLOAT> host_folded_output = folded_output_d.get_value();
     save_tensor(host_folded_output, "./fold_test/folded_output.bin");
-    save_tensor(host_output, "./fold_test/final_output.bin");
+    save_tensor(host_output, "./test/fold_test/final_output.bin");
 
     // --- NEW CODE: SAVE IMAGES FOR VISUAL VERIFICATION ---
     
@@ -127,27 +127,27 @@ int main() {
     // to a savable 8-bit image (range 0-255).
     cv::Mat input_img_to_save;
     img_float.convertTo(input_img_to_save, CV_8U, 255.0);
-    cv::imwrite("./fold_test/input_image.png", input_img_to_save);
+    cv::imwrite("./test/fold_test/input_image.png", input_img_to_save);
 
     // Wrap the final host_output vector in a cv::Mat header
     cv::Mat output_mat(height, width, CV_32F, host_output.data());
     // Convert the reconstructed float image to a savable 8-bit image
     cv::Mat output_img_to_save;
     output_mat.convertTo(output_img_to_save, CV_8U, 255.0);
-    cv::imwrite("./fold_test/final_output_image.png", output_img_to_save);
+    cv::imwrite("./test/fold_test/final_output_image.png", output_img_to_save);
 
     // --------------------------------------------------------
 
     // Save dimensions for Python verifier
     auto final_shape = final_output_d.get_shape();
-    std::ofstream dims_file("./fold_test/dims.txt");
+    std::ofstream dims_file("./test/fold_test/dims.txt");
     dims_file << "input: " << input_d.get_shape()[0] << " " << input_d.get_shape()[1] << " " << input_d.get_shape()[2] << "\n";
     dims_file << "folded: " << folded_shape[0] << " " << folded_shape[1] << " " << folded_shape[2] << "\n";
     dims_file << "unfold_input: " << unfold_input_d.get_shape()[0] << " " << unfold_input_d.get_shape()[1] << " " << unfold_input_d.get_shape()[2] << "\n";
     dims_file << "final_output: " << final_shape[0] << " " << final_shape[1] << " " << final_shape[2] << "\n";
     dims_file.close();
 
-    std::cout << "Saved fold/unfold test data and images to ./fold_test/" << std::endl;
+    std::cout << "Saved fold/unfold test data and images to ./test/fold_test/" << std::endl;
 
     return (mean_error < tolerance) ? 0 : 1;
 }

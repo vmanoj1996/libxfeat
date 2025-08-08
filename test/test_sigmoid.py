@@ -22,8 +22,8 @@ def compare_outputs():
     py_output = apply_sigmoid(py_input)
     
     # Load C++ version
-    cpp_input = load_cpp_tensor("./sigmoid/input.bin")
-    cpp_output = load_cpp_tensor("./sigmoid/output.bin")
+    cpp_input  = load_cpp_tensor("./test/sigmoid/input.bin")
+    cpp_output = load_cpp_tensor("./test/sigmoid/output.bin")
     
     # Compare
     input_diff = np.max(np.abs(py_input - cpp_input))
@@ -43,7 +43,7 @@ def compare_outputs():
     return passed
 
 if __name__ == "__main__":
-    if not os.path.exists("./sigmoid/output.bin"):
+    if not os.path.exists("./test/sigmoid/output.bin"):
         print("Run the C++ program first!")
         sys.exit(1)
     else:

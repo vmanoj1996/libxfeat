@@ -62,13 +62,13 @@ int main()
     std::vector<FLOAT> host_output = output.get_value();
     
     // Save results
-    tio::mkdir("./interp");
+    tio::mkdir("./test/interp");
     
-    save_tensor(host_input, "./interp/input.bin");
-    save_tensor(host_output, "./interp/output.bin");
+    save_tensor(host_input, "./test/interp/input.bin");
+    save_tensor(host_output, "./test/interp/output.bin");
     
     // Save dimensions for Python
-    std::ofstream dims_file("./interp/dims.txt");
+    std::ofstream dims_file("./test/interp/dims.txt");
     dims_file << channels << " " << height << " " << width << " ";
     dims_file << target_height << " " << target_width;
     dims_file.close();
