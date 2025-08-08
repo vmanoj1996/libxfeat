@@ -128,6 +128,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     {
         
         FLOAT sum = 0.0f;
+
         // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
         int in_row_start = out_row * p.s1 - p.p1;
         int in_col_start = out_col * p.s2 - p.p2;
@@ -226,7 +227,9 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     // spawn just 1 thread per output channel. but it is still effective. the 3d indexing is just for convenience. 
     // each exec block would correspond to 16x16 output tile for a single output channel
-    dim3 threadcount(1, 4, 32);
+
+    // This happens to be the most optimal and launchable kernel. two warps 32, 32 will access memory regions close to each other. horizontal scanning would be encouraged which is cache friendly I guess
+    dim3 threadcount(1, 2, 64); 
     dim3 blocks(params.co, (output_prop.height + threadcount.y - 1) / threadcount.y, (output_prop.width + threadcount.z - 1) / threadcount.z);
 
     const int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
