@@ -169,6 +169,8 @@ Conv2D<Operation>::~Conv2D()
     post_op.destroy();
 }
 
+#define LAUNCH_OPTIMIZED_KERNEL(K) convolve2d_optim_kernel<K><<<blocks, threadcount, kernel_shared_per_block, stream>>>( input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op)
+
 template<typename Operation>
 DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &input_device)
 {
@@ -188,8 +190,18 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    if(params.k1 == 3 && params.k2 == 3) convolve2d_optim_kernel<3><<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
-    else convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    if(params.k1 == params.k2 && params.k1==1) 
+    {
+        LAUNCH_OPTIMIZED_KERNEL(1);
+    }
+    else if(params.k1 == params.k2 && params.k1==3)
+    {
+        LAUNCH_OPTIMIZED_KERNEL(3);
+    }
+    else 
+    {
+        convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    }
 
     CUDA_SYNC_IF_NEEDED();
 
