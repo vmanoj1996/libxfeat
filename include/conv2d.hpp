@@ -95,7 +95,7 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
     return std::make_unique<Conv2D<params, Operation>>(input_prop, kernel_data, op, stream_);
 }
 
-#ifdef __CUDACC__
+#ifdef __CUDACC__ // do not build the implementation for cpp files
 
 template<Conv2DParams p, typename Operation>
 __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op)

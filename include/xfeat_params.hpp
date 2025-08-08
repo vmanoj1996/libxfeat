@@ -141,6 +141,9 @@ public:
        if (buf_it != buffers_.end()) {
            return buf_it->second.data;
        }
+
+       std::cout<<name<<std::endl;
+       throw std::runtime_error("Error loading parameter");
        
        return std::vector<FLOAT>{}; // Empty vector if not found
    }

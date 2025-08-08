@@ -60,20 +60,18 @@ private:
         add_conv_layer<IC, OC, K, S, P>(layer1Prop, backbone_layers, BNR(model, layername + "1"), weights_name);
     }
 
-    template<int IC, int OC, int K, int S, int P, typename Operation> void add_heatmap_layer(const std::string &block, int layer_idx, Operation operation)
+    template<int IC, int OC, int K, int S, int P, typename Operation> void add_heatmap_layer(const std::string &layername, Operation operation)
     {
         using std::to_string;
         ImgProperty layer1Prop = {IC, height/8, width/8};
-        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
-        auto weights_name = layername + ".weight";
+        auto weights_name = "net." + layername + ".weight";
         add_conv_layer<IC, OC, K, S, P>(layer1Prop, heatmap_layers, operation, weights_name);
     }
-    template<int IC, int OC, int K, int S, int P, typename Operation> void add_fusion_layer(const std::string &block, int layer_idx, Operation operation)
+    template<int IC, int OC, int K, int S, int P, typename Operation> void add_fusion_layer(const std::string &layername, Operation operation)
     {
         using std::to_string;
         ImgProperty layer1Prop = {IC, height/8, width/8};
-        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
-        auto weights_name = layername + ".weight";
+        auto weights_name = "net." + layername + ".weight";
         add_conv_layer<IC, OC, K, S, P>(layer1Prop, block_fusion_layers, operation, weights_name);
     }
 

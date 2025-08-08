@@ -167,9 +167,9 @@ void XFeat::setup_heatmap()
 {
     if (heatmap_layers.size() != 0){std::cout << "already heatmap_layers populated\n";return;}
 
-    add_heatmap_layer<64,64,1,1,0>("heatmap_head.0.layer", 0, BNR(model, "net.heatmap_head.0.layer.1"));
-    add_heatmap_layer<64,64,1,1,0>("heatmap_head.1.layer", 0, BNR(model, "net.heatmap_head.1.layer.1"));
-    add_heatmap_layer<64,1,1,1,0>("heatmap_head", 2, Bias(model.getParam("net.heatmap_head.2.bias")));
+    add_heatmap_layer<64,64,1,1,0>("heatmap_head.0.layer.0", BNR(model, "net.heatmap_head.0.layer.1"));
+    add_heatmap_layer<64,64,1,1,0>("heatmap_head.1.layer.0", BNR(model, "net.heatmap_head.1.layer.1"));
+    add_heatmap_layer<64,1,1,1,0>("heatmap_head.2", Bias(model.getParam("net.heatmap_head.2.bias")));
 
     // Sigmoid activation
     auto output_spec = heatmap_layers.back()->get_output_spec();
@@ -181,11 +181,11 @@ void XFeat::setup_block_fusion()
     if (block_fusion_layers.size() != 0){std::cout << "already block_fusion_layers populated\n"; return;}
 
     // 2 BasicLayers with 3x3 conv + BatchNorm + ReLU, stride=1
-    add_fusion_layer<64,64,3,1,1>("block_fusion.0.layer", 0, BNR(model, "net.block_fusion.0.layer.1"));
-    add_fusion_layer<64,64,3,1,1>("block_fusion.1.layer", 0, BNR(model, "net.block_fusion.1.layer.1"));
+    add_fusion_layer<64,64,3,1,1>("block_fusion.0.layer.0", BNR(model, "net.block_fusion.0.layer.1"));
+    add_fusion_layer<64,64,3,1,1>("block_fusion.1.layer.0", BNR(model, "net.block_fusion.1.layer.1"));
 
     // Final conv: 64 -> 64, 1x1 kernel (no BatchNorm/ReLU)
-    add_fusion_layer<64,64,1,1,0>("block_fusion", 2, Bias(model.getParam("net.block_fusion.2.bias")));
+    add_fusion_layer<64,64,1,1,0>("block_fusion.2", Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
 XFeatOut XFeat::forward_impl(DevicePointer<FLOAT> &input)
