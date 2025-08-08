@@ -9,6 +9,8 @@
 
 #include <memory>
 
+using XFeatOut = std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&>;
+
 class XFeat
 {
 
@@ -16,8 +18,9 @@ class XFeat
     XFeat(std::string model_file, int height_, int width_);
     ~XFeat() = default;
     
-    std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> forward(DevicePointer<FLOAT>& input);
-    
+    XFeatOut forward_impl(DevicePointer<FLOAT>& input);
+    XFeatOut forward(DevicePointer<FLOAT>& input);
+
     // Disable copy operations
     XFeat(const XFeat&) = delete;
     XFeat& operator=(const XFeat&) = delete;
@@ -33,9 +36,22 @@ private:
     std::unique_ptr<Layer> add_skip, add_layer_pyramid;
     std::unique_ptr<Layer> norm_layer;
 
+    // cuda graph
+    cudaGraph_t graph;
+    cudaGraphExec_t graphExec;
+    bool graph_created = false;
+    cudaStream_t stream;
+
+    // block setups
     void setup_kp();
     void setup_descriptor();
     void setup_heatmap();
     void setup_block_fusion();
 
+    // graph and output
+    DevicePointer<FLOAT>* heatmap_ref;
+    DevicePointer<FLOAT>* keypoints_folded_ref;  
+    DevicePointer<FLOAT>* keypoints_ref;
+    DevicePointer<FLOAT>* feats_ref;
+    void create_cuda_graph(DevicePointer<FLOAT>& sample_input);
 };

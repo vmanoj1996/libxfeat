@@ -56,7 +56,6 @@ int main() {
     input.set_value(host_input_data);
     std::cout << "Input data prepared." << std::endl;
 
-
     // --- Model Initialization ---
     std::cout << "Initializing XFeat model..." << std::endl;
     XFeat model(model_path, height, width); 

@@ -40,12 +40,44 @@ inline void save_layer_data(const DevicePointer<float> &data, const std::string 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
     norm_layer = image_norm_2d({1, height, width}, 1e-5f);
-
     setup_descriptor();
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
 
+    // create a execution lane on gpu
+    cudaStreamCreate(&stream);
+}
+
+void XFeat::create_cuda_graph(DevicePointer<FLOAT>& sample_input) 
+{
+    if (graph_created) return;
+
+    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+    auto [h, kf, k, f] = forward_impl(sample_input);
+    heatmap_ref = &h;
+    keypoints_folded_ref = &kf;
+    keypoints_ref = &k;
+    feats_ref = &f;
+    cudaStreamEndCapture(stream, &graph); // capture the graph
+
+    // create an executable graph instance
+    cudaGraphInstantiate(&graphExec, graph, nullptr, nullptr, 0);
+    
+    graph_created = true;
+}
+
+XFeatOut XFeat::forward(DevicePointer<FLOAT>& input) 
+{
+    if (!graph_created) 
+    {
+        create_cuda_graph(input);
+    }
+    
+    cudaGraphLaunch(graphExec, stream);
+    cudaStreamSynchronize(stream);
+    
+    return std::tie(*heatmap_ref, *keypoints_folded_ref, *keypoints_ref, *feats_ref);
 }
 
 void XFeat::setup_kp()
@@ -228,7 +260,7 @@ void XFeat::setup_block_fusion()
     add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
-std::tuple<DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&, DevicePointer<FLOAT>&> XFeat::forward(DevicePointer<FLOAT> &input)
+XFeatOut XFeat::forward_impl(DevicePointer<FLOAT> &input)
 {
     auto run_backbone = [&](int start, int count, auto& input_ref) -> auto& 
     {
