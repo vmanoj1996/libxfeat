@@ -120,44 +120,42 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     }
     __syncthreads();
 
-    if (out_row < output_prop.height && out_col < output_prop.width && idx_co < p.co)
-    {
+    if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
         
-        FLOAT sum = 0.0f;
+    FLOAT sum = 0.0f;
 
-        // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
-        int in_row_start = out_row * p.s1 - p.p1;
-        int in_col_start = out_col * p.s2 - p.p2;
+    // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
+    int in_row_start = out_row * p.s1 - p.p1;
+    int in_col_start = out_col * p.s2 - p.p2;
 
+    #pragma unroll
+    for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
+    {
         #pragma unroll
-        for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
+        for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
+            int input_row_index = (in_row_start + kernel_row);
+            bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
+
             #pragma unroll
-            for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
-            {
-                int input_row_index = (in_row_start + kernel_row);
-                bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
+            for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
+            {                    
+                // load kernel from shared memory for faster access
+                FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
 
-                #pragma unroll
-                for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
-                {                    
-                    // load kernel from shared memory for faster access
-                    FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
+                int input_col_index = (in_col_start + kernel_col);
+                bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
 
-                    int input_col_index = (in_col_start + kernel_col);
-                    bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+                FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
 
-                    FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
-
-                    sum += input_value * kernel_value;
-                }
+                sum += input_value * kernel_value;
             }
         }
-
-        int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
-
-        output_device[o_index] = op.forward(sum, idx_co);
     }
+
+    int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
+
+    output_device[o_index] = op.forward(sum, idx_co);
 }
 
 
