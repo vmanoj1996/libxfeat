@@ -78,7 +78,7 @@ int main() {
         print_tensor_info("Features", feats);
         
         // Create output directory
-        tio::mkdir("./xfeat_output");
+        tio::mkdir("./test/xfeat_output");
         
         // Save outputs to H5 format
         std::cout << "\n--- Saving Outputs ---" << std::endl;

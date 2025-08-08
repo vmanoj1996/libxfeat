@@ -129,7 +129,7 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
 #endif
 
     convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
 
     return output_device;
 }

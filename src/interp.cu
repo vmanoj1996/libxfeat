@@ -76,7 +76,7 @@ DevicePointer<FLOAT> &BilinearInterp2D::forward(const DevicePointer<FLOAT> &inpu
 
     bilinear_interp_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), input_prop.height, input_prop.width, output_prop.height, output_prop.width, input_prop.channels);
 
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
 
     return output_device;
 }

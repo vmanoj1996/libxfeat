@@ -280,16 +280,16 @@ XFeatOut XFeat::forward_impl(DevicePointer<FLOAT> &input)
         return *current;
     };
     
-    auto run_layers = [](auto& layers, auto& input_ref) -> auto& 
-    {
-        auto* current = &input_ref;
-        for (size_t i = 0; i < layers.size(); i++) {
-            current = &layers[i]->forward(*current);
-            // Save layer outputs with meaningful names
-            save_layer_data(*current, "layer_" + std::to_string(i));
-        }
-        return *current;
-    };
+    // auto run_layers = [](auto& layers, auto& input_ref) -> auto& 
+    // {
+    //     auto* current = &input_ref;
+    //     for (size_t i = 0; i < layers.size(); i++) {
+    //         current = &layers[i]->forward(*current);
+    //         // Save layer outputs with meaningful names
+    //         save_layer_data(*current, "layer_" + std::to_string(i));
+    //     }
+    //     return *current;
+    // };
 
     // Run heads with specific naming
     auto run_named_layers = [&](auto& layers, auto& input_ref, const std::string& prefix) -> auto& 

@@ -81,7 +81,7 @@ DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_devic
     std::cout << "starting pool kernel " << input_prop << " " << output_prop << " "<< blocks.x << " " << blocks.y << " " << blocks.z << " " << std::endl;
 #endif
     avgpool2d_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
 
     return output_device;
 }

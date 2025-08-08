@@ -75,7 +75,7 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
 
         fold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
 
-        cudaDeviceSynchronize();
+        CUDA_SYNC_IF_NEEDED();
 
         return output_device;
     }
@@ -110,7 +110,7 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
 UnFold2D::UnFold2D(int height_, int width_, int ratio_, cudaStream_t stream_): Fold2D_common(height_, width_, ratio_)
 {
     stream = stream_;
-    
+
     if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
     {
         std::cerr << "height and width should be multiple of " << reduction_ratio << std::endl;
@@ -140,7 +140,7 @@ DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device
     dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
     unfold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
 
     return output_device;
 }

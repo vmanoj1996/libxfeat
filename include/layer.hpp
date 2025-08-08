@@ -3,6 +3,12 @@
 #include "primitives.hpp"
 #include <cuda_runtime.h>
 
+#ifdef XFEAT_CUDA_GRAPH
+    #define CUDA_SYNC_IF_NEEDED(stream) 
+#else
+    #define CUDA_SYNC_IF_NEEDED(stream) cudaDeviceSynchronize()
+#endif
+
 class Layer
 {
     protected:

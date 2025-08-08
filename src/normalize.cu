@@ -72,7 +72,7 @@ DevicePointer<FLOAT>& ImageNorm2D::forward(const DevicePointer<FLOAT>& input_dev
     // Compute sum using CUB
     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, input_device.get(), d_sum_result, size, stream);
     division_kernel<<<1, 1, 0, stream>>>(d_sum_result, size);
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
     
     // Create thrust transform iterator for variance calculation
     VarianceOp variance_op(d_sum_result);

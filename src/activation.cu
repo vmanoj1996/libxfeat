@@ -35,6 +35,6 @@ DevicePointer<FLOAT>& ActivationLayer<Operation>::forward(const DevicePointer<FL
     // Apply activation element-wise
     apply_activation_kernel<<<grid, block, 0, stream>>>(input.get(), output_device.get(), total_size, op);
     
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
     return output_device;
 }

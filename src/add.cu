@@ -41,7 +41,7 @@ DevicePointer<FLOAT>& Add::forward(const std::vector<const DevicePointer<FLOAT>*
     bool has_third = (inputs.size() == 3);
     
     elementwise_add_kernel<<<grid, block, 0, stream>>>(inputs[0]->get(), inputs[1]->get(), third_input, output_device.get(), total_size, has_third);
-    cudaDeviceSynchronize();
+    CUDA_SYNC_IF_NEEDED();
     
     return output_device;
 }
