@@ -15,8 +15,9 @@ private:
     ImgProperty input_prop, output_prop;
 
 public:
-    ActivationLayer(ImgProperty input_prop_, Operation op_) : input_prop(input_prop_), output_prop(input_prop_), op(op_)
+    ActivationLayer(ImgProperty input_prop_, Operation op_, cudaStream_t stream_) : input_prop(input_prop_), output_prop(input_prop_), op(op_)
     {
+        stream = stream_;
         std::vector<int> shape = {input_prop.channels, input_prop.height, input_prop.width};
         output_device.alloc(shape);
     }
@@ -32,9 +33,9 @@ public:
 };
 
 template<typename Operation>
-inline std::unique_ptr<Layer> activation(ImgProperty input_prop, Operation op)
+inline std::unique_ptr<Layer> activation(ImgProperty input_prop, Operation op, cudaStream_t stream_)
 {
-   return std::make_unique<ActivationLayer<Operation>>(input_prop, op);
+   return std::make_unique<ActivationLayer<Operation>>(input_prop, op, stream_);
 }
 
 template class ActivationLayer<Sigmoid>;

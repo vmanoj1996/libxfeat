@@ -34,8 +34,9 @@ __global__ void instance_norm_kernel(const float* input, float* output, const fl
     }
 }
 
-ImageNorm2D::ImageNorm2D(ImgProperty input_prop_, float eps_) : input_prop(input_prop_), eps(eps_), size(input_prop_.height * input_prop_.width)
+ImageNorm2D::ImageNorm2D(ImgProperty input_prop_, float eps_, cudaStream_t stream_) : input_prop(input_prop_), eps(eps_), size(input_prop_.height * input_prop_.width)
 {
+    stream = stream_;
     output_prop = {input_prop_.channels, input_prop_.height, input_prop_.width};
 
     std::vector<int> output_Shape = {output_prop.channels, output_prop.height, output_prop.width};
@@ -69,8 +70,8 @@ void ImageNorm2D::cleanup()
 DevicePointer<FLOAT>& ImageNorm2D::forward(const DevicePointer<FLOAT>& input_device) 
 {
     // Compute sum using CUB
-    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, input_device.get(), d_sum_result, size);
-    division_kernel<<<1, 1>>>(d_sum_result, size);
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, input_device.get(), d_sum_result, size, stream);
+    division_kernel<<<1, 1, 0, stream>>>(d_sum_result, size);
     cudaDeviceSynchronize();
     
     // Create thrust transform iterator for variance calculation
@@ -79,13 +80,13 @@ DevicePointer<FLOAT>& ImageNorm2D::forward(const DevicePointer<FLOAT>& input_dev
     auto variance_iter = thrust::make_transform_iterator(input_ptr, variance_op);
     
     // Compute variance using CUB Sum with thrust transform iterator
-    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, variance_iter, d_var_result, size);
-    division_kernel<<<1, 1>>>(d_var_result, size);
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, variance_iter, d_var_result, size, stream);
+    division_kernel<<<1, 1, 0, stream>>>(d_var_result, size);
     
     // Apply normalization
     dim3 block(256);
     dim3 grid((size + block.x - 1) / block.x);
-    instance_norm_kernel<<<grid, block>>>(input_device.get(), output_device.get(), d_sum_result, d_var_result, size, eps);
+    instance_norm_kernel<<<grid, block, 0, stream>>>(input_device.get(), output_device.get(), d_sum_result, d_var_result, size, eps);
     
     return output_device;
 }

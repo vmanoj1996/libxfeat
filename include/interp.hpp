@@ -19,7 +19,7 @@ private:
    int target_height, target_width;
 
 public:
-   BilinearInterp2D(ImgProperty input_prop_, int target_height_, int target_width_); 
+   BilinearInterp2D(ImgProperty input_prop_, int target_height_, int target_width_, cudaStream_t stream_); 
    ~BilinearInterp2D() = default;
    
    using Layer::forward;
@@ -31,7 +31,7 @@ public:
 };
 
 // Factory functions
-inline std::unique_ptr<Layer> interp2d(ImgProperty input_prop, int height, int width) 
+inline std::unique_ptr<Layer> interp2d(ImgProperty input_prop, int height, int width, cudaStream_t stream_) 
 {
-   return std::make_unique<BilinearInterp2D>(input_prop, height, width);
+   return std::make_unique<BilinearInterp2D>(input_prop, height, width, stream_);
 }

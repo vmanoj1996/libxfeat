@@ -84,9 +84,10 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
 }
 
 template<typename Operation>
-Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_): 
+Conv2D<Operation>::Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_): 
     params(params_), input_prop(input_prop_), post_op(post_op_)
 {
+    stream = stream_;
     validate_params();
     output_prop.channels = params.co;
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
@@ -127,7 +128,7 @@ DevicePointer<FLOAT> &Conv2D<Operation>::forward(const DevicePointer<FLOAT> &inp
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
+    convolve2d_kernel<<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), params, input_prop, output_prop, post_op);
     cudaDeviceSynchronize();
 
     return output_device;

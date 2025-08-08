@@ -58,8 +58,8 @@ private:
     Operation post_op;
 
 public:
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, Operation post_op_); 
-    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data): Conv2D(input_prop_, params_, kernel_data, Operation{}) {} // main constructor
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
+    Conv2D(ImgProperty input_prop_, Conv2DParams params_, const std::vector<FLOAT>& kernel_data, cudaStream_t stream_): Conv2D(input_prop_, params_, kernel_data, Operation{}, stream_) {} // main constructor
     
     ~Conv2D(); // automatically made virtual by the compiler
     
@@ -78,13 +78,13 @@ public:
 
 };
 //  FACTORIES
-inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data) 
+inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data, cudaStream_t stream_) 
 {
-    return std::make_unique<Conv2D<Identity>>(input_prop, params, kernel_data);
+    return std::make_unique<Conv2D<Identity>>(input_prop, params, kernel_data, Identity(), stream_);
 }
 
 template<typename Operation>
-inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data, Operation op) 
+inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, Conv2DParams params, const std::vector<FLOAT>& kernel_data, Operation op, cudaStream_t stream_) 
 {
-    return std::make_unique<Conv2D<Operation>>(input_prop, params, kernel_data, op);
+    return std::make_unique<Conv2D<Operation>>(input_prop, params, kernel_data, op, stream_);
 }

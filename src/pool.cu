@@ -53,8 +53,9 @@ __global__ void avgpool2d_kernel(const FLOAT *input_device, FLOAT *output_device
     }
 }
 
-AvgPool2D::AvgPool2D(ImgProperty input_prop_, PoolParams params_) : params(params_), input_prop(input_prop_)
+AvgPool2D::AvgPool2D(ImgProperty input_prop_, PoolParams params_, cudaStream_t stream_) : params(params_), input_prop(input_prop_)
 {
+    stream = stream_;
     if (params.k1 <= 0 || params.k2 <= 0) throw std::invalid_argument("kernel size must be positive");
     if (params.s1 <= 0 || params.s2 <= 0) throw std::invalid_argument("stride must be positive");
     if (params.p1 < 0 || params.p2 < 0)   throw std::invalid_argument("padding must be non-negative");
@@ -79,7 +80,7 @@ DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_devic
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout << "starting pool kernel " << input_prop << " " << output_prop << " "<< blocks.x << " " << blocks.y << " " << blocks.z << " " << std::endl;
 #endif
-    avgpool2d_kernel<<<blocks, threadcount>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
+    avgpool2d_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
     cudaDeviceSynchronize();
 
     return output_device;

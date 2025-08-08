@@ -20,7 +20,7 @@ private:
     void cleanup();
 
 public:
-    ImageNorm2D(ImgProperty input_prop_, float eps_ = 1e-5f);
+    ImageNorm2D(ImgProperty input_prop_, float eps_, cudaStream_t stream_);
     ~ImageNorm2D();
     
     using Layer::forward;
@@ -31,7 +31,7 @@ public:
     virtual ImgProperty get_input_spec() const override { return input_prop; }
 };
 
-inline std::unique_ptr<Layer> image_norm_2d(ImgProperty input_prop, float eps = 1e-5f) 
+inline std::unique_ptr<Layer> image_norm_2d(ImgProperty input_prop, float eps, cudaStream_t stream_) 
 {
-    return std::make_unique<ImageNorm2D>(input_prop, eps);
+    return std::make_unique<ImageNorm2D>(input_prop, eps, stream_);
 }

@@ -18,8 +18,9 @@ __global__ void elementwise_add_kernel(const float* input1, const float* input2,
     }
 }
 
-Add::Add(ImgProperty output_prop_) : output_prop(output_prop_), input_prop(output_prop_)
+Add::Add(ImgProperty output_prop_, cudaStream_t stream_) : output_prop(output_prop_), input_prop(output_prop_)
 {
+    stream = stream_;
     std::vector<int> shape = {output_prop.channels, output_prop.height, output_prop.width};
     output_device.alloc(shape);
 }
@@ -39,8 +40,7 @@ DevicePointer<FLOAT>& Add::forward(const std::vector<const DevicePointer<FLOAT>*
     const float* third_input = (inputs.size() == 3) ? inputs[2]->get() : nullptr;
     bool has_third = (inputs.size() == 3);
     
-    elementwise_add_kernel<<<grid, block>>>(inputs[0]->get(), inputs[1]->get(), third_input, 
-                                           output_device.get(), total_size, has_third);
+    elementwise_add_kernel<<<grid, block, 0, stream>>>(inputs[0]->get(), inputs[1]->get(), third_input, output_device.get(), total_size, has_third);
     cudaDeviceSynchronize();
     
     return output_device;

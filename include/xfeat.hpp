@@ -30,7 +30,7 @@ private:
     const int height, width;
 
     // layers
-    std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers, block_fusion_layers, heatmap_layers, unfold_layer ;
+    std::vector<std::unique_ptr<Layer>> kp_layers, backbone_layers, block_fusion_layers, heatmap_layers, unfold_layer;
     std::unique_ptr<Layer> skip_pool, skip_conv;
     std::unique_ptr<Layer> interp_x4_to_x3, interp_x5_to_x3;
     std::unique_ptr<Layer> add_skip, add_layer_pyramid;

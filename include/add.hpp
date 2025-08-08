@@ -14,7 +14,7 @@ private:
     ImgProperty output_prop, input_prop;
 
 public:
-    Add(ImgProperty output_prop_);
+    Add(ImgProperty output_prop_, cudaStream_t stream_);
     ~Add() = default;
     
     // Forward for multiple inputs
@@ -26,7 +26,7 @@ public:
 };
 
 // Factory function
-inline std::unique_ptr<Layer> add_layer(ImgProperty output_prop) 
+inline std::unique_ptr<Layer> add_layer(ImgProperty output_prop, cudaStream_t stream_) 
 {
-    return std::make_unique<Add>(output_prop);
+    return std::make_unique<Add>(output_prop, stream_);
 }

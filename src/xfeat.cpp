@@ -39,14 +39,14 @@ inline void save_layer_data(const DevicePointer<float> &data, const std::string 
 
 XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file), height(height_), width(width_)
 {
-    norm_layer = image_norm_2d({1, height, width}, 1e-5f);
+    // create a execution lane on gpu
+    cudaStreamCreate(&stream);
+
+    norm_layer = image_norm_2d({1, height, width}, 1e-5f, stream);
     setup_descriptor();
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
-
-    // create a execution lane on gpu
-    cudaStreamCreate(&stream);
 }
 
 void XFeat::create_cuda_graph(DevicePointer<FLOAT>& sample_input) 
@@ -90,7 +90,7 @@ void XFeat::setup_kp()
         return; // already done
     }
 
-    kp_layers.emplace_back(make_fold(height, width));
+    kp_layers.emplace_back(make_fold(height, width, stream));
 
     auto [cheight, cwidth] = std::make_pair(height / 8, width / 8);
     const int KP_CH = 64;
@@ -104,7 +104,8 @@ void XFeat::setup_kp()
                 {KP_CH, cheight, cwidth},
                 {1, 1, KP_CH, KP_CH, 1, 1, 0, 0},
                 model.getParam(layername + "0.weight"),
-                BNR(model, layername + "1")));
+                BNR(model, layername + "1"),
+                stream));
     }
 
     // Final conv layer
@@ -113,9 +114,11 @@ void XFeat::setup_kp()
             {KP_CH, cheight, cwidth},
             {1, 1, KP_CH, KP_CH + 1, 1, 1, 0, 0},
             model.getParam("net.keypoint_head.3.weight"),
-            Bias(model.getParam("net.keypoint_head.3.bias"))));
+            Bias(model.getParam("net.keypoint_head.3.bias")), 
+            stream
+        ));
 
-    unfold_layer.emplace_back(make_unfold(height, width));
+    unfold_layer.emplace_back(make_unfold(height, width, stream));
 }
 void XFeat::setup_descriptor()
 {
@@ -151,7 +154,8 @@ void XFeat::setup_descriptor()
         backbone_layers.emplace_back(conv2d(
             {in_ch, h, w}, {k, k, in_ch, out_ch, stride, stride, padding, padding},
             model.getParam(layername + "0.weight"),
-            BNR(model, layername + "1")));
+            BNR(model, layername + "1"), 
+            stream));
     };
 
     // Block1: 1->4->8->8->24
@@ -180,14 +184,14 @@ void XFeat::setup_descriptor()
     add_conv_layer("block5", 2, 128, 128, 3, 1, 1);
     add_conv_layer("block5", 3, 128, 64,  1, 1, 0);
 
-    skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0));
-    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")));
+    skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0), stream);
+    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")), stream);
 
-    interp_x4_to_x3 = interp2d(backbone_layers[12-1]->get_output_spec(), height/8, width/8);
-    interp_x5_to_x3 = interp2d(backbone_layers[16-1]->get_output_spec(), height/8, width/8);
+    interp_x4_to_x3 = interp2d(backbone_layers[12-1]->get_output_spec(), height/8, width/8, stream);
+    interp_x5_to_x3 = interp2d(backbone_layers[16-1]->get_output_spec(), height/8, width/8, stream);
 
-    add_skip = add_layer({24, height/4, width/4});
-    add_layer_pyramid = add_layer(backbone_layers[9-1]->get_output_spec());
+    add_skip = add_layer({24, height/4, width/4}, stream);
+    add_layer_pyramid = add_layer(backbone_layers[9-1]->get_output_spec(), stream);
 }
 
 void XFeat::setup_heatmap()
@@ -212,7 +216,8 @@ void XFeat::setup_heatmap()
         heatmap_layers.emplace_back(conv2d(
             input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
             model.getParam(layer_name + ".weight"),
-            operation));
+            operation,
+            stream));
     };
     // 2 BasicLayers with 1x1 conv + BatchNorm + ReLU
     add_heatmap_layer("net.heatmap_head.0.layer.0", 64, 64, 1, 1, 0, BNR(model, "net.heatmap_head.0.layer.1"));
@@ -223,7 +228,7 @@ void XFeat::setup_heatmap()
 
     // Sigmoid activation
     auto output_spec = heatmap_layers.back()->get_output_spec();
-    heatmap_layers.emplace_back(activation(output_spec, Sigmoid{}));
+    heatmap_layers.emplace_back(activation(output_spec, Sigmoid{}, stream));
 }
 
 void XFeat::setup_block_fusion()
@@ -249,7 +254,8 @@ void XFeat::setup_block_fusion()
         block_fusion_layers.emplace_back(conv2d(
                 input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
                 model.getParam(layer_name + ".weight"),
-                operation));
+                operation,
+                stream));
     };
 
     // 2 BasicLayers with 3x3 conv + BatchNorm + ReLU, stride=1

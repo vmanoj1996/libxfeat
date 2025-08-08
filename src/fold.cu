@@ -40,9 +40,9 @@ __global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int
 }
 
 
-Fold2D::Fold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
+Fold2D::Fold2D(int height_, int width_, int ratio_, cudaStream_t stream_): Fold2D_common(height_, width_, ratio_)
 {
-    
+    stream = stream_;
     if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
     {
         std::cerr << "height and width should be multiple of " << reduction_ratio << std::endl;
@@ -73,7 +73,7 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
         dim3 threads(TC, TC);
         dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
-        fold_kernel<<<blocks, threads>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
+        fold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
 
         cudaDeviceSynchronize();
 
@@ -107,8 +107,9 @@ __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, i
 }
 
 
-UnFold2D::UnFold2D(int height_, int width_, int ratio_): Fold2D_common(height_, width_, ratio_)
+UnFold2D::UnFold2D(int height_, int width_, int ratio_, cudaStream_t stream_): Fold2D_common(height_, width_, ratio_)
 {
+    stream = stream_;
     
     if (height % reduction_ratio != 0 || width % reduction_ratio != 0)
     {
@@ -138,7 +139,7 @@ DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device
     dim3 threads(TC, TC);
     dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
 
-    unfold_kernel<<<blocks, threads>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
+    unfold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
     cudaDeviceSynchronize();
 
     return output_device;

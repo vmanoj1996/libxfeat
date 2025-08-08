@@ -29,7 +29,7 @@ private:
     PoolParams params;
 
 public:
-    AvgPool2D(ImgProperty input_prop_, PoolParams params_); 
+    AvgPool2D(ImgProperty input_prop_, PoolParams params_, cudaStream_t stream_); 
     ~AvgPool2D() = default; // automatically made virtual by the compiler
     
     using Layer::forward;
@@ -41,7 +41,7 @@ public:
 };
 
 // Factory functions
-inline std::unique_ptr<Layer> avgpool2d(ImgProperty input_prop, PoolParams params) 
+inline std::unique_ptr<Layer> avgpool2d(ImgProperty input_prop, PoolParams params, cudaStream_t stream_) 
 {
-   return std::make_unique<AvgPool2D>(input_prop, params);
+   return std::make_unique<AvgPool2D>(input_prop, params, stream_);
 }
