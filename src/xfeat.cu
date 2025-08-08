@@ -93,26 +93,27 @@ void XFeat::setup_kp()
     kp_layers.emplace_back(make_fold(height, width, 8, stream));
 
     auto [cheight, cwidth] = std::make_pair(height / 8, width / 8);
-    const int KP_CH = 64;
+    constexpr int KP_CH = 64;
 
+    constexpr Conv2DParams kpParam{1, 1, KP_CH, KP_CH, 1, 1, 0, 0};
     // 3 conv layers with BatchNorm+ReLU
     for (int i = 0; i < 3; i++)
     {
         auto layername = "net.keypoint_head." + to_string(i) + ".layer.";
+    
         kp_layers.emplace_back(
-            conv2d(
+            conv2d<kpParam>(
                 {KP_CH, cheight, cwidth},
-                {1, 1, KP_CH, KP_CH, 1, 1, 0, 0},
                 model.getParam(layername + "0.weight"),
                 BNR(model, layername + "1"),
                 stream));
     }
 
     // Final conv layer
+    constexpr Conv2DParams kpFinalParam{1, 1, KP_CH, KP_CH+1, 1, 1, 0, 0};
     kp_layers.emplace_back(
-        conv2d(
+        conv2d<kpFinalParam>(
             {KP_CH, cheight, cwidth},
-            {1, 1, KP_CH, KP_CH + 1, 1, 1, 0, 0},
             model.getParam("net.keypoint_head.3.weight"),
             Bias(model.getParam("net.keypoint_head.3.bias")), 
             stream
@@ -122,109 +123,53 @@ void XFeat::setup_kp()
 }
 void XFeat::setup_descriptor()
 {
-    using std::to_string;
-
-    if (backbone_layers.size() != 0)
-    {
-        std::cout << "already backbone_layers populated\n";
-        return;
-    }
-
-    //  helper to make layers with less pain
-    auto add_conv_layer = [&](const std::string &block, int layer_idx, int in_ch, int out_ch, int k, int stride, int padding)
-    {
-        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
-
-        // Get current dimensions
-        int h, w;
-        if (backbone_layers.empty())
-        {
-            h = height;
-            w = width;
-        }
-        else
-        {
-            // Calculate dimensions based on previous layer
-            // For now, we'll track manually - you can implement get_output_spec() later
-            auto output_spec = backbone_layers.back()->get_output_spec();
-            h = output_spec.height;
-            w = output_spec.width;
-        }
-
-        backbone_layers.emplace_back(conv2d(
-            {in_ch, h, w}, {k, k, in_ch, out_ch, stride, stride, padding, padding},
-            model.getParam(layername + "0.weight"),
-            BNR(model, layername + "1"), 
-            stream));
-    };
+    if (backbone_layers.size() != 0){std::cout << "already backbone_layers populated\n";return;}
 
     // Block1: 1->4->8->8->24
-    add_conv_layer("block1", 0, 1, 4, 3, 1, 1);
-    add_conv_layer("block1", 1, 4, 8, 3, 2, 1);
-    add_conv_layer("block1", 2, 8, 8, 3, 1, 1);
-    add_conv_layer("block1", 3, 8, 24, 3, 2, 1);
+    add_backbone_layer<1,4,3,1,1>("block1", 0);
+    add_backbone_layer<4,8,3,2,1>("block1", 1);
+    add_backbone_layer<8,8,3,1,1>("block1", 2);
+    add_backbone_layer<8,24,3,2,1>("block1", 3);
 
     // Block2: 24->24 (2 layers)
-    add_conv_layer("block2", 0, 24, 24, 3, 1, 1);
-    add_conv_layer("block2", 1, 24, 24, 3, 1, 1);
+    add_backbone_layer<24,24,3,1,1>("block2", 0);
+    add_backbone_layer<24,24,3,1,1>("block2", 1);
 
     // Block3: 24->64->64->64
-    add_conv_layer("block3", 0, 24, 64, 3, 2, 1);
-    add_conv_layer("block3", 1, 64, 64, 3, 1, 1);
-    add_conv_layer("block3", 2, 64, 64, 1, 1, 0);
+    add_backbone_layer<24,64,3,2,1>("block3", 0);
+    add_backbone_layer<64,64,3,1,1>("block3", 1);
+    add_backbone_layer<64,64,1,1,0>("block3", 2);
 
     // Block4: 64->64->64->64 (3 layers)
-    add_conv_layer("block4", 0, 64, 64, 3, 2, 1);
-    add_conv_layer("block4", 1, 64, 64, 3, 1, 1);
-    add_conv_layer("block4", 2, 64, 64, 3, 1, 1);
+    add_backbone_layer<64,64,3,2,1>("block4", 0);
+    add_backbone_layer<64,64,3,1,1>("block4", 1);
+    add_backbone_layer<64,64,3,1,1>("block4", 2);
 
     // Block5: 64->128->128->128->64
-    add_conv_layer("block5", 0, 64,  128, 3, 2, 1);
-    add_conv_layer("block5", 1, 128, 128, 3, 1, 1);
-    add_conv_layer("block5", 2, 128, 128, 3, 1, 1);
-    add_conv_layer("block5", 3, 128, 64,  1, 1, 0);
+    add_backbone_layer<64,128,3,2,1>("block5", 0);
+    add_backbone_layer<128,128,3,1,1>("block5", 1);
+    add_backbone_layer<128,128,3,1,1>("block5", 2);
+    add_backbone_layer<128,64,1,1,0>("block5", 3);
 
     skip_pool = avgpool2d({1, height, width}, PoolParams(4, 4, 4, 4, 0, 0), stream);
-    skip_conv = conv2d({1, height/4, width/4}, {1, 1, 1, 24, 1, 1, 0, 0}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")), stream);
+
+    constexpr Conv2DParams skip_params{1, 1, 1, 24, 1, 1, 0, 0};
+    skip_conv = conv2d<skip_params>( {1, height/4, width/4}, model.getParam("net.skip1.1.weight"), Bias(model.getParam("net.skip1.1.bias")), stream);
 
     interp_x4_to_x3 = interp2d(backbone_layers[12-1]->get_output_spec(), height/8, width/8, stream);
     interp_x5_to_x3 = interp2d(backbone_layers[16-1]->get_output_spec(), height/8, width/8, stream);
 
-    add_skip = add_layer({24, height/4, width/4}, stream);
+    add_skip          = add_layer({24, height/4, width/4}, stream);
     add_layer_pyramid = add_layer(backbone_layers[9-1]->get_output_spec(), stream);
 }
 
 void XFeat::setup_heatmap()
 {
-    using std::to_string;
+    if (heatmap_layers.size() != 0){std::cout << "already heatmap_layers populated\n";return;}
 
-    if (heatmap_layers.size() != 0)
-    {
-        std::cout << "already heatmap_layers populated\n";
-        return;
-    }
-
-    auto add_heatmap_layer = [&](const std::string &layer_name, int in_ch, int out_ch, int k, int stride, int padding, auto operation)
-    {
-        ImgProperty input_spec = {in_ch, height / 8, width / 8};
-        if (!heatmap_layers.empty())
-        {
-            auto output_spec = heatmap_layers.back()->get_output_spec();
-            input_spec = {in_ch, output_spec.height, output_spec.width};
-        }
-
-        heatmap_layers.emplace_back(conv2d(
-            input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
-            model.getParam(layer_name + ".weight"),
-            operation,
-            stream));
-    };
-    // 2 BasicLayers with 1x1 conv + BatchNorm + ReLU
-    add_heatmap_layer("net.heatmap_head.0.layer.0", 64, 64, 1, 1, 0, BNR(model, "net.heatmap_head.0.layer.1"));
-    add_heatmap_layer("net.heatmap_head.1.layer.0", 64, 64, 1, 1, 0, BNR(model, "net.heatmap_head.1.layer.1"));
-
-    // Final conv: 64 -> 1 channel (with bias)
-    add_heatmap_layer("net.heatmap_head.2", 64, 1, 1, 1, 0, Bias(model.getParam("net.heatmap_head.2.bias")));
+    add_heatmap_layer<64,64,1,1,0>("heatmap_head.0.layer", 0, BNR(model, "net.heatmap_head.0.layer.1"));
+    add_heatmap_layer<64,64,1,1,0>("heatmap_head.1.layer", 0, BNR(model, "net.heatmap_head.1.layer.1"));
+    add_heatmap_layer<64,1,1,1,0>("heatmap_head", 2, Bias(model.getParam("net.heatmap_head.2.bias")));
 
     // Sigmoid activation
     auto output_spec = heatmap_layers.back()->get_output_spec();
@@ -233,37 +178,14 @@ void XFeat::setup_heatmap()
 
 void XFeat::setup_block_fusion()
 {
-    using std::to_string;
-
-    if (block_fusion_layers.size() != 0)
-    {
-        std::cout << "already block_fusion_layers populated\n";
-        return;
-    }
-
-    auto add_fusion_layer = [&](const std::string &layer_name, int in_ch, int out_ch,
-                                int k, int stride, int padding, auto operation)
-    {
-        // Get current dimensions
-        ImgProperty input_spec = {in_ch, height / 8, width / 8};
-        if (!block_fusion_layers.empty())
-        {
-            auto output_spec = block_fusion_layers.back()->get_output_spec();
-            input_spec = {in_ch, output_spec.height, output_spec.width};
-        }
-        block_fusion_layers.emplace_back(conv2d(
-                input_spec, {k, k, in_ch, out_ch, stride, stride, padding, padding},
-                model.getParam(layer_name + ".weight"),
-                operation,
-                stream));
-    };
+    if (block_fusion_layers.size() != 0){std::cout << "already block_fusion_layers populated\n"; return;}
 
     // 2 BasicLayers with 3x3 conv + BatchNorm + ReLU, stride=1
-    add_fusion_layer("net.block_fusion.0.layer.0", 64, 64, 3, 1, 1, BNR(model, "net.block_fusion.0.layer.1"));
-    add_fusion_layer("net.block_fusion.1.layer.0", 64, 64, 3, 1, 1, BNR(model, "net.block_fusion.1.layer.1"));
+    add_fusion_layer<64,64,3,1,1>("block_fusion.0.layer", 0, BNR(model, "net.block_fusion.0.layer.1"));
+    add_fusion_layer<64,64,3,1,1>("block_fusion.1.layer", 0, BNR(model, "net.block_fusion.1.layer.1"));
 
     // Final conv: 64 -> 64, 1x1 kernel (no BatchNorm/ReLU)
-    add_fusion_layer("net.block_fusion.2", 64, 64, 1, 1, 0, Bias(model.getParam("net.block_fusion.2.bias")));
+    add_fusion_layer<64,64,1,1,0>("block_fusion", 2, Bias(model.getParam("net.block_fusion.2.bias")));
 }
 
 XFeatOut XFeat::forward_impl(DevicePointer<FLOAT> &input)

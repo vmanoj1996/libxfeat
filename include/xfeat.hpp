@@ -48,6 +48,37 @@ private:
     void setup_heatmap();
     void setup_block_fusion();
 
+    
+
+    // conv setup helpers
+    template<int IC, int OC, int K, int S, int P> void add_backbone_layer(const std::string &block, int layer_idx)
+    {
+        using std::to_string;
+        ImgProperty layer1Prop = {IC, height, width};
+        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
+        auto weights_name = layername + "0.weight";
+        add_conv_layer<IC, OC, K, S, P>(layer1Prop, backbone_layers, BNR(model, layername + "1"), weights_name);
+    }
+
+    template<int IC, int OC, int K, int S, int P, typename Operation> void add_heatmap_layer(const std::string &block, int layer_idx, Operation operation)
+    {
+        using std::to_string;
+        ImgProperty layer1Prop = {IC, height/8, width/8};
+        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
+        auto weights_name = layername + ".weight";
+        add_conv_layer<IC, OC, K, S, P>(layer1Prop, heatmap_layers, operation, weights_name);
+    }
+    template<int IC, int OC, int K, int S, int P, typename Operation> void add_fusion_layer(const std::string &block, int layer_idx, Operation operation)
+    {
+        using std::to_string;
+        ImgProperty layer1Prop = {IC, height/8, width/8};
+        auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
+        auto weights_name = layername + ".weight";
+        add_conv_layer<IC, OC, K, S, P>(layer1Prop, block_fusion_layers, operation, weights_name);
+    }
+
+    template<int IC, int OC, int K, int S, int P, typename operation> void add_conv_layer(ImgProperty layer1Prop, std::vector<std::unique_ptr<Layer>>& layers, operation op, std::string weights_name);
+
     // graph and output
     DevicePointer<FLOAT>* heatmap_ref;
     DevicePointer<FLOAT>* keypoints_folded_ref;  
@@ -56,3 +87,23 @@ private:
     void create_cuda_graph(DevicePointer<FLOAT>& sample_input);
     XFeatOut forward_impl(DevicePointer<FLOAT>& input);
 };
+
+template<int IC, int OC, int K, int S, int P, typename operation>
+inline void XFeat::add_conv_layer(ImgProperty layer1Prop, std::vector<std::unique_ptr<Layer>>& layers, operation op, std::string weights_name) 
+{
+    ImgProperty input_spec = layer1Prop;
+    if (!layers.empty())
+    {
+        auto output_spec = layers.back()->get_output_spec();
+        input_spec = {IC, output_spec.height, output_spec.width};
+    }
+
+    constexpr Conv2DParams params{K, K, IC, OC, S, S, P, P};
+    layers.emplace_back(
+        conv2d<params>(
+            input_spec,
+            model.getParam(weights_name),
+            op, 
+            stream));
+}
+

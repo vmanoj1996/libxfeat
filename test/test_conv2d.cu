@@ -20,7 +20,7 @@ int main() {
     const int padding = 1;
 
     ImgProperty input_prop {in_channels, height, width};
-    Conv2DParams params {
+    constexpr Conv2DParams params {
         kernel_size, kernel_size, // k1, k2
         in_channels, out_channels, // ci, co
         stride, stride,           // s1, s2
@@ -51,7 +51,7 @@ int main() {
 
     // --- 3. Instantiate Layer and Run Forward Pass ---
     std::cout << "\n--- Performing forward pass ---" << std::endl;
-    auto conv_layer = conv2d(input_prop, params, host_kernel, 0);
+    auto conv_layer = conv2d<params>(input_prop, host_kernel, Identity(), 0);
     
     DevicePointer<FLOAT> input_d(host_input, {in_channels, height, width});
     auto& output_d = conv_layer->forward(input_d);
