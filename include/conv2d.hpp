@@ -101,13 +101,13 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // SETUP ------------------------------------------------------------------------------------------------------------------------
     extern __shared__ __align__(16) FLOAT kernel_per_ch[];
 
-    int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
-    int out_row = threadIdx.y + blockIdx.y * blockDim.y;
-    int out_col = threadIdx.z + blockIdx.z * blockDim.z;
+    const int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
+    const int out_row = threadIdx.y + blockIdx.y * blockDim.y;
+    const int out_col = threadIdx.z + blockIdx.z * blockDim.z;
     
     // cooperative copy to copy the kernel to shared memory
-    int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
-    int total_threads = blockDim.y * blockDim.z; 
+    const int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
+    const int total_threads = blockDim.y * blockDim.z; 
     constexpr int kernel_net_size = p.ci * p.k1 * p.k2;
 
     // copy from idx_co * kernel_net_size to idx_co * kernel_net_size + kernel_net_size (last excluded)
@@ -133,8 +133,8 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     FLOAT sum = 0.0f;
 
     // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
-    int in_row_start = out_row * p.s1 - p.p1;
-    int in_col_start = out_col * p.s2 - p.p2;
+    const int in_row_start = out_row * p.s1 - p.p1;
+    const int in_col_start = out_col * p.s2 - p.p2;
 
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
@@ -161,7 +161,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
         }
     }
 
-    int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
+    const int o_index = idx_co * output_prop.height * output_prop.width + out_row * output_prop.width + out_col;
 
     output_device[o_index] = op.forward(sum, idx_co);
 }
