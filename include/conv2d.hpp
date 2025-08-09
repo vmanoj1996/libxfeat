@@ -34,6 +34,8 @@ k1 for row and k2 for column
 #include <vector>
 #include <assert.h>
 
+#include <cuda/pipeline>
+#include <cooperative_groups.h>
 
 // careful while reordering
 struct Conv2DParams {
@@ -125,7 +127,6 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
         */
         kernel_per_ch[i] = __ldg(&kernel_device[idx_co * kernel_net_size + i]);
     }
-    __syncthreads();
 
     // --------------------------------------------------------------------------------------------------------------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
@@ -136,26 +137,34 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     const int in_row_start = out_row * p.s1 - p.p1;
     const int in_col_start = out_col * p.s2 - p.p2;
 
+    __syncthreads(); // to sync the memory copy operations
+
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
+        const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
+        const int kernel_base = idx_ci * (p.k1 * p.k2);
+
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
-            int input_row_index = (in_row_start + kernel_row);
-            bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
+            const int input_row_offset = kernel_row * input_prop.width;
+            const int kernel_row_offset = kernel_row * p.k2;
+
+            const int input_row_index = (in_row_start + kernel_row);
+            const bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
 
             #pragma unroll
             for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
             {                    
                 // load kernel from shared memory for faster access
-                FLOAT kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * (p.k2) + kernel_col];
+                FLOAT kernel_value = kernel_per_ch[kernel_base + kernel_row_offset + kernel_col];
 
-                int input_col_index = (in_col_start + kernel_col);
-                bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+                const int input_col_index = (in_col_start + kernel_col);
+                const bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
 
-                FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
-
+                // FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
+                const FLOAT input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
                 sum += input_value * kernel_value;
             }
         }
