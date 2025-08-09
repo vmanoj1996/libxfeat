@@ -24,7 +24,7 @@ endif()
 # For Release builds (e.g., cmake .. OR cmake -DCMAKE_BUILD_TYPE=Release ..)
 # -O3 is for high optimization. -DNDEBUG disables asserts.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xptxas -allow-expensive-optimizations=true --fmad=true -arch=sm_89 -Xptxas -warn-spills --ptxas-options=-v -DNDEBUG")
 
 # For Debug builds (e.g., cmake -DCMAKE_BUILD_TYPE=Debug ..)
 # -O0 disables optimization. -g adds debug symbols for GDB. -G adds debug information for gpu along with line info
@@ -51,14 +51,14 @@ file(GLOB_RECURSE SOURCE_FILES
 )
 
 # Create source library
-add_library(conv2d_lib ${SOURCE_FILES})
+add_library(xfeat_lib ${SOURCE_FILES})
 
-target_include_directories(conv2d_lib PUBLIC 
+target_include_directories(xfeat_lib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${HDF5_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
 )
-target_link_libraries(conv2d_lib PUBLIC 
+target_link_libraries(xfeat_lib PUBLIC 
     CUDA::cudart
     ${HDF5_LIBRARIES}
     ${OpenCV_LIBS}
@@ -66,12 +66,12 @@ target_link_libraries(conv2d_lib PUBLIC
 
 # This uses a "generator expression" to add the flag only for the Debug config. 
 # ENABLE_XFEAT_DEBUG - outputs debug information to console and files
-# target_compile_definitions(conv2d_lib PUBLIC 
+# target_compile_definitions(xfeat_lib PUBLIC 
 #     ${HDF5_DEFINITIONS}
 #     $<$<CONFIG:Debug>:ENABLE_XFEAT_DEBUG>
 # )
-target_compile_definitions(conv2d_lib PUBLIC XFEAT_CUDA_GRAPH)
-set_target_properties(conv2d_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(xfeat_lib PUBLIC XFEAT_CUDA_GRAPH)
+set_target_properties(xfeat_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Enable testing ------------------------------------------------------------------------------------
 enable_testing()
@@ -85,7 +85,7 @@ target_include_directories(test_lib INTERFACE
     ${MATIO_INCLUDE_DIRS}
 )
 target_link_libraries(test_lib INTERFACE 
-    conv2d_lib 
+    xfeat_lib 
     ${MATIO_LIBRARIES}
 )
 
