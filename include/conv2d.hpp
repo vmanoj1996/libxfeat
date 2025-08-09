@@ -137,13 +137,14 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     const int in_row_start = out_row * p.s1 - p.p1;
     const int in_col_start = out_col * p.s2 - p.p2;
 
-    __syncthreads(); // to sync the memory copy operations
+    __syncthreads(); // to sync the memory copy operations to shared memory
 
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
         const int kernel_base = idx_ci * (p.k1 * p.k2);
+        
 
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
@@ -156,15 +157,23 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
 
             #pragma unroll
             for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
-            {                    
+            {   
+                const int input_col_index = (in_col_start + kernel_col);
+                FLOAT input_value = 0;
+                if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1) 
+                {    
+                    // no bound checks needed. but this optimization does seem to help much
+                    input_value = input_device[input_base + input_row_offset + input_col_index];
+                }
+                else
+                {
+                    const bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+                    input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
+                }
+
                 // load kernel from shared memory for faster access
                 FLOAT kernel_value = kernel_per_ch[kernel_base + kernel_row_offset + kernel_col];
 
-                const int input_col_index = (in_col_start + kernel_col);
-                const bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
-
-                // FLOAT input_value = (row_valid && col_valid)? input_device[idx_ci * input_prop.height * input_prop.width + input_row_index * input_prop.width + input_col_index]: 0.0f;
-                const FLOAT input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
                 sum += input_value * kernel_value;
             }
         }
