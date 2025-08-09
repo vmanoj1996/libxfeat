@@ -144,7 +144,6 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
         const int kernel_base = idx_ci * (p.k1 * p.k2);
-        
 
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
@@ -159,8 +158,8 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
             for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
             {   
                 const int input_col_index = (in_col_start + kernel_col);
-                FLOAT input_value = 0;
-                if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1) 
+                FLOAT input_value = 0.0f;
+                if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1 && p.k1 == 1 && p.k2 == 1) 
                 {    
                     // no bound checks needed. but this optimization does seem to help much
                     input_value = input_device[input_base + input_row_offset + input_col_index];
