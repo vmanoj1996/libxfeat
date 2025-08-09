@@ -48,8 +48,6 @@ private:
     void setup_heatmap();
     void setup_block_fusion();
 
-    
-
     // conv setup helpers
     template<int IC, int OC, int K, int S, int P> void add_backbone_layer(const std::string &block, int layer_idx)
     {

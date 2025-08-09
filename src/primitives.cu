@@ -8,13 +8,6 @@
 #include <stdexcept>
 #include "device_ops.hpp"
 
-// Common functionality to reuse 
-// template<typename T>
-// DevicePointer<T>::DevicePointer(int total_dim)
-// {
-//     alloc(total_dim);
-// }
-
 template<typename T>
 DevicePointer<T>::DevicePointer(const std::vector<T> &input, std::vector<int> dims_)
 {

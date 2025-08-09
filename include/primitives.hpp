@@ -50,7 +50,6 @@ class DevicePointer
     // const means it wont modify the class object in any way
 
     // Disable default operations
-    // DevicePointer(const DevicePointer&) = delete;
     DevicePointer(DevicePointer&&) = delete;
     DevicePointer& operator=(const DevicePointer&) = delete;
     DevicePointer& operator=(DevicePointer&&) = delete;

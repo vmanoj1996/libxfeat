@@ -32,6 +32,8 @@ k1 for row and k2 for column
 #include <memory>
 #include <iostream>
 #include <vector>
+#include <assert.h>
+
 
 // careful while reordering
 struct Conv2DParams {
@@ -96,7 +98,8 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 template<Conv2DParams p, typename Operation>
 __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
-    extern __shared__ FLOAT kernel_per_ch[];
+    // SETUP ------------------------------------------------------------------------------------------------------------------------
+    extern __shared__ __align__(16) FLOAT kernel_per_ch[];
 
     int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
     int out_row = threadIdx.y + blockIdx.y * blockDim.y;
@@ -105,7 +108,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // cooperative copy to copy the kernel to shared memory
     int tid = threadIdx.y * blockDim.z + threadIdx.z; // unique thread id (first channel id is 0 always)
     int total_threads = blockDim.y * blockDim.z; 
-    int kernel_net_size = p.ci * p.k1 * p.k2;
+    constexpr int kernel_net_size = p.ci * p.k1 * p.k2;
 
     // copy from idx_co * kernel_net_size to idx_co * kernel_net_size + kernel_net_size (last excluded)
     // first thread works on 0, 256, 512 ... till the end of kernel_net_size
@@ -114,12 +117,17 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // plus all threads in the block get to do some work to copy our giant kernel.
     // plus all threads would work on closeby memory regions (which is cache friendly)
 
+    //  this operation takes 50 uS
     for(int i = tid; i < kernel_net_size; i += total_threads) 
     {
-        kernel_per_ch[i] = kernel_device[idx_co * kernel_net_size + i];
+        /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
+            It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
+        */
+        kernel_per_ch[i] = __ldg(&kernel_device[idx_co * kernel_net_size + i]);
     }
     __syncthreads();
 
+    // --------------------------------------------------------------------------------------------------------------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
         
     FLOAT sum = 0.0f;
@@ -157,9 +165,6 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
 
     output_device[o_index] = op.forward(sum, idx_co);
 }
-
-
-
 
 template<Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_):  input_prop(input_prop_), post_op(post_op_)
@@ -227,12 +232,13 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     dim3 blocks(params.co, (output_prop.height + threadcount.y - 1) / threadcount.y, (output_prop.width + threadcount.z - 1) / threadcount.z);
 
     const int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
+    const int kernel_shared_per_block_padded = ((kernel_shared_per_block + 15) / 16) * 16; // 16 byte padding.
 
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    convolve2d_kernel<params><<<blocks, threadcount, kernel_shared_per_block, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+    convolve2d_kernel<params><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
 
     CUDA_SYNC_IF_NEEDED();
 
