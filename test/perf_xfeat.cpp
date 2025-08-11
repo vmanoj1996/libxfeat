@@ -15,7 +15,8 @@ nsight-sys report.nsys-rep
 #include <numeric>
 #include <algorithm>
 #include <iomanip> // For std::fixed and std::setprecision
-
+#include <thread>
+#include <chrono>
 #include <nvtx3/nvToolsExt.h>
 
 // Include the CUDA runtime header for synchronization
@@ -28,7 +29,7 @@ int main() {
     const int height = 480;
     const int width = 640;
     const int channels = 1;
-    const int num_runs = 1000;
+    const int num_runs = 1;
     const std::string model_path = "../params/xfeat_weights.h5";
 
     std::cout << "----------------------------------" << std::endl;
@@ -75,6 +76,7 @@ int main() {
     }
     std::cout << "Warm-up complete." << std::endl;
 
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     // --- Timed Performance Measurement ---
     std::cout << "Starting " << num_runs << " timed runs..." << std::endl;

@@ -55,6 +55,10 @@ inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) {
    return os;
 }
 
+// 48 KB 
+#define CONST_ALLOC_SIZE 64*1024
+__constant__ FLOAT const_kernel[CONST_ALLOC_SIZE/sizeof(FLOAT)];
+
 template<Conv2DParams params, typename Operation>
 class Conv2D: public Layer
 {
@@ -68,6 +72,11 @@ private:
 
     // post operation
     Operation post_op;
+
+    // launch config
+    dim3 blocks, threadcount;
+    int kernel_shared_per_block_padded;
+    int CONST_CHUNK_SIZE, MAX_CO_LAUNCH, LAUNCH_COUNT;
 
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
@@ -98,12 +107,12 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 #ifdef __CUDACC__ // do not build the implementation for cpp files
 
 template<Conv2DParams p, typename Operation>
-__global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op)
+__global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op, int start_co)
 {
     // SETUP ------------------------------------------------------------------------------------------------------------------------
     extern __shared__ __align__(16) FLOAT kernel_per_ch[];
 
-    const int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
+    const int idx_co  = start_co + threadIdx.x + blockIdx.x * blockDim.x; // channel output - global index
     const int out_row = threadIdx.y + blockIdx.y * blockDim.y;
     const int out_col = threadIdx.z + blockIdx.z * blockDim.z;
     
@@ -119,15 +128,6 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // plus all threads in the block get to do some work to copy our giant kernel.
     // plus all threads would work on closeby memory regions (which is cache friendly)
 
-    //  this operation takes 50 uS
-    for(int i = tid; i < kernel_net_size; i += total_threads) 
-    {
-        /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
-            It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
-        */
-        kernel_per_ch[i] = __ldg(&kernel_device[idx_co * kernel_net_size + i]);
-    }
-
     // --------------------------------------------------------------------------------------------------------------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
         
@@ -137,20 +137,18 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     const int in_row_start = out_row * p.s1 - p.p1;
     const int in_col_start = out_col * p.s2 - p.p2;
 
-    __syncthreads(); // to sync the memory copy operations to shared memory
-
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
-        const int kernel_base = idx_ci * (p.k1 * p.k2);
+
+        // kernel const kernel contains start_co to start_co+MAX_CO_LAUNCH. start_co means an offset of start_co*kernel_net_size
+        const int kernel_base = (idx_co - start_co)*kernel_net_size + idx_ci * (p.k1 * p.k2);
 
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
             const int input_row_offset = kernel_row * input_prop.width;
-            const int kernel_row_offset = kernel_row * p.k2;
-
             const int input_row_index = (in_row_start + kernel_row);
             const bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
 
@@ -159,7 +157,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
             {   
                 const int input_col_index = (in_col_start + kernel_col);
                 FLOAT input_value = 0.0f;
-                if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1 && p.k1 == 1 && p.k2 == 1) 
+                if constexpr (p.p1 == 0 && p.p2 == 0) 
                 {    
                     // no bound checks needed. but this optimization does seem to help much
                     input_value = input_device[input_base + input_row_offset + input_col_index];
@@ -171,7 +169,7 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
                 }
 
                 // load kernel from shared memory for faster access
-                FLOAT kernel_value = kernel_per_ch[kernel_base + kernel_row_offset + kernel_col];
+                FLOAT kernel_value = const_kernel[kernel_base + kernel_row * p.k2 + kernel_col];
 
                 sum += input_value * kernel_value;
             }
@@ -225,6 +223,37 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // set the kernel up
     set_kernel(kernel_data);
+
+    // configure launch 
+
+    // spawn just 1 thread per output channel. but it is still effective. the 3d indexing is just for convenience. 
+    // each exec block would correspond to 16x16 output tile for a single output channel
+
+    // This happens to be the most optimal and launchable kernel. two warps 32, 32 will access memory regions close to each other. horizontal scanning would be encouraged which is cache friendly I guess
+    // max per dim limit is 64
+
+    threadcount = dim3(1, 2, 64); 
+    blocks = dim3(params.co, (output_prop.height + threadcount.y - 1) / threadcount.y, (output_prop.width + threadcount.z - 1) / threadcount.z);
+
+    int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
+    kernel_shared_per_block_padded = ((kernel_shared_per_block + 15) / 16) * 16; // 16 byte padding.
+
+    // l1 and shared are part of the same hardware. 
+    // by default 48 KB is given to shared memory pool
+    // lets try reducing it to give more l1 memory. 1KB is default allocation. lets give another 1 KB just in case
+    // HARD CODED STUFF TODO
+    // int shared_mem_kb = 2 + (kernel_shared_per_block_padded + 1023) / 1024;
+    // int MAX_SHARED_MEM = 100; // 4070
+    // int carveout_percentage = (shared_mem_kb * 100) / MAX_SHARED_MEM; 
+    // int carveout = std::min(100, std::max(0, carveout_percentage));
+
+    // this setting actually screws up warp occupancy. I dont understand how. disabled for now!!!!!!
+    // cudaFuncSetAttribute(convolve2d_kernel<params, Operation>, cudaFuncAttributePreferredSharedMemoryCarveout, cudaSharedmemCarveoutMaxL1);
+
+    CONST_CHUNK_SIZE = params.ci * params.k1 * params.k2 * sizeof(FLOAT);
+    MAX_CO_LAUNCH = CONST_ALLOC_SIZE / CONST_CHUNK_SIZE;
+    LAUNCH_COUNT = (params.co + MAX_CO_LAUNCH - 1)/MAX_CO_LAUNCH;
+
 }
 
 template<Conv2DParams params, typename Operation>
@@ -241,21 +270,21 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    // spawn just 1 thread per output channel. but it is still effective. the 3d indexing is just for convenience. 
-    // each exec block would correspond to 16x16 output tile for a single output channel
-
-    // This happens to be the most optimal and launchable kernel. two warps 32, 32 will access memory regions close to each other. horizontal scanning would be encouraged which is cache friendly I guess
-    dim3 threadcount(1, 2, 64); 
-    dim3 blocks(params.co, (output_prop.height + threadcount.y - 1) / threadcount.y, (output_prop.width + threadcount.z - 1) / threadcount.z);
-
-    const int kernel_shared_per_block = params.k1 * params.k2 * params.ci * sizeof(FLOAT);
-    const int kernel_shared_per_block_padded = ((kernel_shared_per_block + 15) / 16) * 16; // 16 byte padding.
-
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    convolve2d_kernel<params><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+    for(int index=0; index<LAUNCH_COUNT; index++)
+    {
+        int start_co = index * MAX_CO_LAUNCH;
+        int remaining_channels = params.co - start_co;
+        int channels_this_iter = min(MAX_CO_LAUNCH, remaining_channels);
+
+        cudaMemcpyToSymbolAsync(const_kernel, kernel_device.get() + start_co * params.ci * params.k1 * params.k2, CONST_CHUNK_SIZE * channels_this_iter, 0, cudaMemcpyDeviceToDevice, stream);
+
+        dim3 modified_blocks{channels_this_iter, blocks.y, blocks.z};
+        convolve2d_kernel<params><<<modified_blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), output_device.get(), input_prop, output_prop, post_op, start_co);
+    }
 
     CUDA_SYNC_IF_NEEDED();
 

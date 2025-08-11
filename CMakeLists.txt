@@ -24,7 +24,24 @@ endif()
 # For Release builds (e.g., cmake .. OR cmake -DCMAKE_BUILD_TYPE=Release ..)
 # -O3 is for high optimization. -DNDEBUG disables asserts.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xptxas -allow-expensive-optimizations=true --fmad=true -arch=sm_89 -Xptxas -warn-spills --ptxas-options=-v -DNDEBUG")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xptxas -allow-expensive-optimizations=true --fmad=true -arch=sm_89 -Xptxas -warn-spills --ptxas-options=-v -DNDEBUG --use_fast_math --extra-device-vectorization")
+
+option(ENABLE_PGO "Enable Profile Guided Optimization" OFF)
+
+if(ENABLE_PGO)
+    # Stage 1: Profile generation
+    if(PGO_STAGE STREQUAL "GENERATE")
+        message(STATUS "PGO: Profile generation stage")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-generate")
+        set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -Xcompiler -fprofile-generate")
+        
+    # Stage 2: Use profiles for optimization  
+    elseif(PGO_STAGE STREQUAL "USE")
+        message(STATUS "PGO: Profile use stage")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-use")
+        set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -Xcompiler -fprofile-use")
+    endif()
+endif()
 
 # For Debug builds (e.g., cmake -DCMAKE_BUILD_TYPE=Debug ..)
 # -O0 disables optimization. -g adds debug symbols for GDB. -G adds debug information for gpu along with line info
@@ -63,6 +80,8 @@ target_link_libraries(xfeat_lib PUBLIC
     ${HDF5_LIBRARIES}
     ${OpenCV_LIBS}
 )
+
+target_link_libraries(xfeat_lib PUBLIC gcov)
 
 # This uses a "generator expression" to add the flag only for the Debug config. 
 # ENABLE_XFEAT_DEBUG - outputs debug information to console and files
