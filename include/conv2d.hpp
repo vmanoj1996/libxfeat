@@ -283,7 +283,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 #endif
 
     constexpr int TOTAL_KERNEL_SIZE = params.co*params.ci*params.k1*params.k2*sizeof(FLOAT);
-    if constexpr (TOTAL_KERNEL_SIZE>31*1024)
+    if constexpr (TOTAL_KERNEL_SIZE>30*1024)
     {
         convolve2d_kernel<params, true><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
     }
