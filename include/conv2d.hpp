@@ -33,12 +33,15 @@ k1 for row and k2 for column
 #include <iostream>
 #include <vector>
 #include <assert.h>
+#include <type_traits>
+
 
 #include <cuda/pipeline>
 #include <cooperative_groups.h>
 
 // careful while reordering
-struct Conv2DParams {
+struct Conv2DParams 
+{
    int k1, k2, ci, co;
    int s1, s2, p1, p2;
    
@@ -47,7 +50,14 @@ struct Conv2DParams {
        : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) {
+template<int CO, int CI, int K1, int K2>
+struct KernelStruct
+{
+    FLOAT data[CO][CI][K1][K2];
+};
+
+inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) 
+{
    os << "Conv2DParams(k1=" << params.k1 << ", k2=" << params.k2 
       << ", ci=" << params.ci << ", co=" << params.co 
       << ", s1=" << params.s1 << ", s2=" << params.s2 
@@ -61,6 +71,7 @@ class Conv2D: public Layer
 
 private:
     DevicePointer<FLOAT> kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
+    KernelStruct<params.co, params.ci, params.k1, params.k2> kernel_host;
     DevicePointer<FLOAT> output_device; // co x output_height x output_width
 
     // Conv2DParams params;
@@ -97,8 +108,12 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 
 #ifdef __CUDACC__ // do not build the implementation for cpp files
 
-template<Conv2DParams p, typename Operation>
-__global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const FLOAT * __restrict__ kernel_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op)
+template<Conv2DParams p, bool useGlobalKernel, typename Operation>
+__global__ void convolve2d_kernel(
+    const FLOAT * __restrict__ input_device, 
+    typename std::conditional<useGlobalKernel, const FLOAT* __restrict__, const __grid_constant__ KernelStruct<p.co, p.ci, p.k1, p.k2>>::type kernel,
+    FLOAT * __restrict__ output_device, 
+    ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
     // SETUP ------------------------------------------------------------------------------------------------------------------------
     extern __shared__ __align__(16) FLOAT kernel_per_ch[];
@@ -120,14 +135,17 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     // plus all threads would work on closeby memory regions (which is cache friendly)
 
     //  this operation takes 50 uS
-    for(int i = tid; i < kernel_net_size; i += total_threads) 
+    if constexpr(useGlobalKernel)
     {
-        /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
-            It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
-        */
-        kernel_per_ch[i] = __ldg(&kernel_device[idx_co * kernel_net_size + i]);
+        for(int i = tid; i < kernel_net_size; i += total_threads) 
+        {
+            /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
+                It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
+            */
+            kernel_per_ch[i] = __ldg(&kernel[idx_co * kernel_net_size + i]);
+        }
     }
-
+        
     // --------------------------------------------------------------------------------------------------------------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
         
@@ -143,13 +161,11 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
-        const int kernel_base = idx_ci * (p.k1 * p.k2);
 
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
             const int input_row_offset = kernel_row * input_prop.width;
-            const int kernel_row_offset = kernel_row * p.k2;
 
             const int input_row_index = (in_row_start + kernel_row);
             const bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
@@ -171,7 +187,15 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, const
                 }
 
                 // load kernel from shared memory for faster access
-                FLOAT kernel_value = kernel_per_ch[kernel_base + kernel_row_offset + kernel_col];
+                FLOAT kernel_value;
+                if constexpr(useGlobalKernel)
+                {
+                    kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * p.k2 + kernel_col];
+                }
+                else
+                {
+                    kernel_value = kernel.data[idx_co][idx_ci][kernel_row][kernel_col];
+                }
 
                 sum += input_value * kernel_value;
             }
@@ -225,6 +249,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // set the kernel up
     set_kernel(kernel_data);
+
+    // set the kernel also on host. We can optimize this off later TODO
+    memcpy(kernel_host.data, kernel_data.data(), kernel_data.size()*sizeof(FLOAT));
 }
 
 template<Conv2DParams params, typename Operation>
@@ -255,7 +282,16 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
-    convolve2d_kernel<params><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+    constexpr int TOTAL_KERNEL_SIZE = params.co*params.ci*params.k1*params.k2*sizeof(FLOAT);
+    if constexpr (TOTAL_KERNEL_SIZE>31*1024)
+    {
+        convolve2d_kernel<params, true><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+    }
+    else
+    {
+        convolve2d_kernel<params, false><<<blocks, threadcount, 0, stream>>>(input_device.get(), kernel_host, output_device.get(), input_prop, output_prop, post_op);
+    }
+    
 
     CUDA_SYNC_IF_NEEDED();
 
