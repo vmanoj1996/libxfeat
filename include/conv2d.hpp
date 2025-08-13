@@ -55,16 +55,13 @@ inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) {
    return os;
 }
 
-// 48 KB 
-#define CONST_ALLOC_SIZE 64*1024
-__constant__ FLOAT const_kernel[CONST_ALLOC_SIZE/sizeof(FLOAT)];
 
 template<Conv2DParams params, typename Operation>
 class Conv2D: public Layer
 {
 
 private:
-    DevicePointer<FLOAT> kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
+    HostPointer<FLOAT> kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
     DevicePointer<FLOAT> output_device; // co x output_height x output_width
 
     // Conv2DParams params;
@@ -106,11 +103,32 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 
 #ifdef __CUDACC__ // do not build the implementation for cpp files
 
-template<Conv2DParams p, typename Operation>
-__global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, FLOAT * __restrict__ output_device, ImgProperty input_prop, ImgProperty output_prop, Operation op, int start_co)
+struct KernelStore {
+    const FLOAT* weights;
+    int start_co;
+};
+
+// 48 KB 
+#define CONST_PARAM_ALLOC_SIZE 32*1024
+
+template<CO_CURRENT_COUNT, CI, K1, K2>
+struct KernelStore
+{
+    int data[CO_CURRENT_COUNT][CI][K1][K2];
+};
+
+
+template<Conv2DParams p, int CO_CURRENT_COUNT, typename Operation>
+__global__ void convolve2d_kernel(
+    const FLOAT * __restrict__ input_device, 
+    FLOAT * __restrict__ output_device, 
+    const ImgProperty input_prop, 
+    const ImgProperty output_prop, 
+    const Operation op, 
+    const int start_co, 
+    const __grid_constant__ KernelStore<CO_CURRENT_COUNT, p.ci, p.k1, p.k2> __restrict__ weights)
 {
     // SETUP ------------------------------------------------------------------------------------------------------------------------
-    extern __shared__ __align__(16) FLOAT kernel_per_ch[];
 
     const int idx_co  = start_co + threadIdx.x + blockIdx.x * blockDim.x; // channel output - global index
     const int out_row = threadIdx.y + blockIdx.y * blockDim.y;
@@ -142,9 +160,6 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, FLOAT
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
 
-        // kernel const kernel contains start_co to start_co+MAX_CO_LAUNCH. start_co means an offset of start_co*kernel_net_size
-        const int kernel_base = (idx_co - start_co)*kernel_net_size + idx_ci * (p.k1 * p.k2);
-
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
@@ -168,8 +183,8 @@ __global__ void convolve2d_kernel(const FLOAT * __restrict__ input_device, FLOAT
                     input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
                 }
 
-                // load kernel from shared memory for faster access
-                FLOAT kernel_value = const_kernel[kernel_base + kernel_row * p.k2 + kernel_col];
+                // kernel const kernel contains start_co to start_co+MAX_CO_LAUNCH. start_co means an offset of start_co*kernel_net_size
+                FLOAT kernel_value = weights.data[idx_co - start_co][idx_ci][kernel_row][kernel_col];
 
                 sum += input_value * kernel_value;
             }
@@ -251,7 +266,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // cudaFuncSetAttribute(convolve2d_kernel<params, Operation>, cudaFuncAttributePreferredSharedMemoryCarveout, cudaSharedmemCarveoutMaxL1);
 
     CONST_CHUNK_SIZE = params.ci * params.k1 * params.k2 * sizeof(FLOAT);
-    MAX_CO_LAUNCH = CONST_ALLOC_SIZE / CONST_CHUNK_SIZE;
+    MAX_CO_LAUNCH = CONST_PARAM_ALLOC_SIZE / CONST_CHUNK_SIZE;
     LAUNCH_COUNT = (params.co + MAX_CO_LAUNCH - 1)/MAX_CO_LAUNCH;
 
 }
@@ -280,10 +295,9 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         int remaining_channels = params.co - start_co;
         int channels_this_iter = min(MAX_CO_LAUNCH, remaining_channels);
 
-        cudaMemcpyToSymbolAsync(const_kernel, kernel_device.get() + start_co * params.ci * params.k1 * params.k2, CONST_CHUNK_SIZE * channels_this_iter, 0, cudaMemcpyDeviceToDevice, stream);
-
         dim3 modified_blocks{channels_this_iter, blocks.y, blocks.z};
-        convolve2d_kernel<params><<<modified_blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), output_device.get(), input_prop, output_prop, post_op, start_co);
+        auto kernel_ptr = kernel_device.get() + start_co * params.ci * params.k1 * params.k2;
+        convolve2d_kernel<params><<<modified_blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), input_prop, output_prop, post_op, start_co, kernel_ptr);
     }
 
     CUDA_SYNC_IF_NEEDED();

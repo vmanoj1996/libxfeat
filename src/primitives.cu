@@ -118,3 +118,110 @@ void DevicePointer<T>::print_shape() const
 // forward declarations of all potential combinations 
 template class DevicePointer<FLOAT>;
 template class DevicePointer<int>;
+
+
+
+
+//  HOST POINTER -------------------------------------------------------------------
+template<typename T>
+HostPointer<T>::HostPointer(const std::vector<T> &input, std::vector<int> dims_)
+{
+    alloc(dims_);
+    set_value(input);
+}
+
+template<typename T>
+HostPointer<T>::HostPointer(const HostPointer<T> &input)
+{
+    // copy constructor
+    alloc(input.dims);
+    std::memcpy(ptr, input.get(), input.size * sizeof(T));
+}
+
+template<typename T>
+HostPointer<T>::~HostPointer()
+{
+    if(ptr) delete[] ptr;
+}
+
+template<typename T>
+T* HostPointer<T>::get() const
+{
+    return ptr;
+}
+
+template<typename T>
+void HostPointer<T>::alloc(std::vector<int> dims_)
+{
+    int total_dim = 1;
+    for(auto dim: dims_)
+    {
+        total_dim *= dim;
+    }
+    dims = dims_;
+    
+    alloc(total_dim);
+}
+
+template<typename T>
+void HostPointer<T>::alloc(int total_dim)
+{
+    size = total_dim;
+    if(dims.empty())
+    {
+        // If there is no multiple dims in vector, put the total dim instead
+        dims.push_back(total_dim);
+    }
+
+    if(ptr) 
+    {
+        throw std::runtime_error("ptr already allocated\n");
+    }
+
+    try {
+        ptr = new T[total_dim]();  // () initializes to zero
+    } catch (const std::bad_alloc& e) {
+        std::string error_msg = "Host malloc failed: " + std::string(e.what()) + 
+                               "\nCall stack:\n" + boost::stacktrace::to_string(boost::stacktrace::stacktrace());
+        throw std::runtime_error(error_msg);
+    }
+}
+
+template<typename T>
+void HostPointer<T>::set_value(const std::vector<T> &input)
+{
+    if(ptr){
+        std::memcpy(ptr, input.data(), input.size() * sizeof(T));
+    }
+}
+
+template<typename T>
+std::vector<T> HostPointer<T>::get_value() const
+{
+    std::vector<T> result(size);
+    if(ptr && size > 0) {
+        std::memcpy(result.data(), ptr, size * sizeof(T));
+    }
+    return result;
+}
+
+template<typename T>
+std::vector<int> HostPointer<T>::get_shape() const
+{
+    std::vector<int> result = dims;
+    return result;
+}
+
+template<typename T>
+void HostPointer<T>::print_shape() const
+{
+    for(auto dim: dims)
+    {
+        std::cout<<dim<<" ";
+    }
+    std::cout<<"\n";
+}
+
+// Forward declarations
+template class HostPointer<FLOAT>;
+template class HostPointer<int>;

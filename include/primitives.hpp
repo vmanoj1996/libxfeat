@@ -34,7 +34,38 @@ class DevicePointer
     
     public:
     DevicePointer() = default;
-    // DevicePointer(int total_dim);
+    DevicePointer(const std::vector<T> &input, std::vector<int> dims_);
+    DevicePointer(const DevicePointer<T> &input);
+    ~DevicePointer();
+
+    T* get() const;
+    
+    void alloc(std::vector<int> dims_);
+
+    void set_value(const std::vector<T> &input);
+    std::vector<T> get_value() const;
+    std::vector<int> get_shape() const;
+    void print_shape() const;
+    // const means it wont modify the class object in any way
+
+    // Disable default operations
+    DevicePointer(DevicePointer&&) = delete;
+    DevicePointer& operator=(const DevicePointer&) = delete;
+    DevicePointer& operator=(DevicePointer&&) = delete;
+};
+
+template<typename T>
+class HostPointer
+{
+    private:
+    T *ptr = nullptr;
+    size_t size; // total size
+    std::vector<int> dims;
+
+    void alloc(int total_dim);
+    
+    public:
+    DevicePointer() = default;
     DevicePointer(const std::vector<T> &input, std::vector<int> dims_);
     DevicePointer(const DevicePointer<T> &input);
     ~DevicePointer();
