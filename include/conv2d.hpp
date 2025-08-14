@@ -80,6 +80,11 @@ private:
     // post operation
     Operation post_op;
 
+    // texture handle and data
+    cudaTextureObject_t input_texture = 0;
+    cudaArray_t input_texture_storage;
+    cudaExtent input_texture_extent;
+
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, cudaStream_t stream_): Conv2D(input_prop_, kernel_data, Operation{}, stream_) {}
@@ -110,7 +115,7 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 
 template<Conv2DParams p, bool useGlobalKernel, typename Operation>
 __global__ void convolve2d_kernel(
-    const FLOAT * __restrict__ input_device, 
+    cudaTextureObject_t input_texture, 
     typename std::conditional<useGlobalKernel, const FLOAT* __restrict__, const __grid_constant__ KernelStruct<p.co, p.ci, p.k1, p.k2>>::type kernel,
     FLOAT * __restrict__ output_device, 
     ImgProperty input_prop, ImgProperty output_prop, Operation op)
@@ -174,17 +179,18 @@ __global__ void convolve2d_kernel(
             for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
             {   
                 const int input_col_index = (in_col_start + kernel_col);
-                FLOAT input_value = 0.0f;
-                if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1 && p.k1 == 1 && p.k2 == 1) 
-                {    
-                    // no bound checks needed. but this optimization does seem to help much
-                    input_value = input_device[input_base + input_row_offset + input_col_index];
-                }
-                else
-                {
-                    const bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
-                    input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
-                }
+                // FLOAT input_value = 0.0f;
+                // if constexpr (p.p1 == 0 && p.p2 == 0 && p.s1 == 1 && p.s2 == 1 && p.k1 == 1 && p.k2 == 1) 
+                // {    
+                //     // no bound checks needed. but this optimization does seem to help much
+                //     input_value = input_device[input_base + input_row_offset + input_col_index];
+                // }
+                // else
+                // {
+                    // const bool col_valid = (input_col_index >= 0 && input_col_index < input_prop.width);
+                    // input_value = (row_valid && col_valid) ? input_device[input_base + input_row_offset + input_col_index] : 0.0f;
+                // }
+                FLOAT input_value = tex3D<FLOAT>(input_texture, input_col_index, input_row_index, idx_ci); // the indexing is in reverse order 
 
                 // load kernel from shared memory for faster access
                 FLOAT kernel_value;
@@ -252,12 +258,47 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // set the kernel also on host. We can optimize this off later TODO
     memcpy(kernel_host.data, kernel_data.data(), kernel_data.size()*sizeof(FLOAT));
+
+    // Input Texture ---------------------------------------------------------------------------------------
+    // https://stackoverflow.com/a/41666009/12391994
+    
+    // storage
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<FLOAT>();
+    input_texture_extent = make_cudaExtent(input_prop.width, input_prop.height, params.ci); // sad people at NVIDIA put it in reverse I guess:|
+    cudaMalloc3DArray(&input_texture_storage, &channelDesc, input_texture_extent);
+
+    // storage description for the texture
+    cudaResourceDesc resDesc = {};
+    resDesc.resType = cudaResourceTypeArray;
+    resDesc.res.array.array = input_texture_storage;
+    
+    // configure the texture
+    cudaTextureDesc texDesc = {};
+    texDesc.addressMode[0] = cudaAddressModeBorder;  // X: return 0 outside bounds
+    texDesc.addressMode[1] = cudaAddressModeBorder;  // Y: return 0 outside bounds
+    texDesc.addressMode[2] = cudaAddressModeBorder;  // Z: return 0 outside bounds
+    texDesc.filterMode = cudaFilterModePoint;        // No interpolation (nearest)
+    texDesc.readMode   = cudaReadModeElementType;      // Read as actual data type
+    texDesc.normalizedCoords = false;                // Use integer coordinates
+
+    // Create the texture object
+    cudaCreateTextureObject(&input_texture, &resDesc, &texDesc, NULL);
+
 }
 
 template<Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::~Conv2D()
 {
     post_op.destroy();
+
+    if (input_texture) 
+    {
+        cudaDestroyTextureObject(input_texture);
+    }
+    if (input_texture_storage) 
+    {
+        cudaFreeArray(input_texture_storage);
+    }
 }
 
 template<Conv2DParams params, typename Operation>
@@ -282,15 +323,26 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     std::cout<<"starting conv kernel "<<input_prop<<" "<<output_prop<<" "<<params<<blocks.x<<" "<<blocks.y<<" "<<blocks.z<<" "<<std::endl;
 #endif
 
+    // copier machine for input texture
+    // cudaMemcpy3DParms copyParams = {0};
+    // copyParams.srcPtr = make_cudaPitchedPtr(input_device.get(), input_texture_extent.width*sizeof(FLOAT), input_texture_extent.width, input_texture_extent.height);
+    // copyParams.dstArray = input_texture_storage;
+    // copyParams.extent   = input_texture_extent;
+    // copyParams.kind     = cudaMemcpyDeviceToDevice;
+    // cudaMemcpy3DAsync(&copyParams, stream);
+
     constexpr int TOTAL_KERNEL_SIZE = params.co*params.ci*params.k1*params.k2*sizeof(FLOAT);
-    if constexpr (TOTAL_KERNEL_SIZE>31*1024)
-    {
-        convolve2d_kernel<params, true><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
-    }
-    else
-    {
-        convolve2d_kernel<params, false><<<blocks, threadcount, 0, stream>>>(input_device.get(), kernel_host, output_device.get(), input_prop, output_prop, post_op);
-    }
+    convolve2d_kernel<params, true><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>
+        (input_texture, kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+
+    // if constexpr (TOTAL_KERNEL_SIZE>31*1024)
+    // {
+    //     convolve2d_kernel<params, true><<<blocks, threadcount, kernel_shared_per_block_padded, stream>>>(input_device.get(), kernel_device.get(), output_device.get(), input_prop, output_prop, post_op);
+    // }
+    // else
+    // {
+    //     convolve2d_kernel<params, false><<<blocks, threadcount, 0, stream>>>(input_device.get(), kernel_host, output_device.get(), input_prop, output_prop, post_op);
+    // }
     
 
     CUDA_SYNC_IF_NEEDED();
