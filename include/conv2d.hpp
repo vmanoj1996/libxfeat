@@ -135,14 +135,50 @@ __global__ void convolve2d_kernel(
     // plus all threads would work on closeby memory regions (which is cache friendly)
 
     //  this operation takes 50 uS
+    // if constexpr(useGlobalKernel)
+    // {
+    //     for(int i = tid; i < kernel_net_size; i += total_threads) 
+    //     {
+    //         /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
+    //             It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
+    //         */
+    //         kernel_per_ch[i] = __ldg(&kernel[idx_co * kernel_net_size + i]);
+    //     }
+
+    // }
+    // if((uintptr_t)(idx_co * kernel_net_size)%16 !=0)
+    // {
+    //     printf("not aligned\n");
+    // }
     if constexpr(useGlobalKernel)
     {
-        for(int i = tid; i < kernel_net_size; i += total_threads) 
+        const float* kernel_src = &kernel[idx_co * kernel_net_size];
+        
+        // Calculate alignment
+        const int misalignment = (reinterpret_cast<uintptr_t>(kernel_src) / sizeof(float)) % 4;
+        const int prefix_floats = (misalignment == 0) ? 0 : (4 - misalignment);
+        
+        // Single thread handles prefix (max 3 floats)
+        if (tid == 0) {
+            for(int i = 0; i < prefix_floats && i < kernel_net_size; i++) {
+                kernel_per_ch[i] = __ldg(&kernel_src[i]);
+            }
+        }
+        
+        // All threads participate in vectorized middle section
+        const int aligned_start = min(prefix_floats, kernel_net_size);
+        const int vec_count = (kernel_net_size - aligned_start) / 4;
+        
+        for(int i = tid; i < vec_count; i += total_threads) 
         {
-            /* __ldg() is a CUDA intrinsic to perform read-only data cache loads from global memory.
-                It tells the compiler and hardware that the data loaded won’t be written by any thread during kernel execution.
-            */
-            kernel_per_ch[i] = __ldg(&kernel[idx_co * kernel_net_size + i]);
+            reinterpret_cast<float4*>(&kernel_per_ch[aligned_start])[i] = __ldg(reinterpret_cast<const float4*>(&kernel_src[aligned_start]) + i);
+        }
+        
+        // Handle remainder (also max 3 floats)
+        const int remainder_start = aligned_start + vec_count * 4;
+        const int remainder = kernel_net_size - remainder_start;
+        if (tid < remainder) {
+            kernel_per_ch[remainder_start + tid] = __ldg(&kernel_src[remainder_start + tid]);
         }
     }
         
@@ -161,6 +197,16 @@ __global__ void convolve2d_kernel(
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
         const int input_base = idx_ci * input_prop.height * input_prop.width + in_row_start * input_prop.width;
+
+        // load directly into registers for small kernels
+        FLOAT kernel_reg[p.k1][p.k2];
+        if constexpr (p.k1 <= 3 && p.k2 <= 3)
+        {
+            #pragma unroll
+            for(int i = 0; i < p.k1*p.k2; i++) {
+                kernel_reg[i/p.k2][i%p.k1] = kernel_per_ch[idx_ci * (p.k1 * p.k2) + i];
+            }
+        }
 
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
@@ -187,15 +233,16 @@ __global__ void convolve2d_kernel(
                 }
 
                 // load kernel from shared memory for faster access
-                FLOAT kernel_value;
-                if constexpr(useGlobalKernel)
-                {
-                    kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * p.k2 + kernel_col];
-                }
-                else
-                {
-                    kernel_value = kernel.data[idx_co][idx_ci][kernel_row][kernel_col];
-                }
+                FLOAT kernel_value = kernel_reg[kernel_row][kernel_col];
+                
+                // if constexpr(useGlobalKernel)
+                // {
+                //     kernel_value = kernel_per_ch[idx_ci * (p.k1 * p.k2) + kernel_row * p.k2 + kernel_col];
+                // }
+                // else
+                // {
+                //     kernel_value = kernel.data[idx_co][idx_ci][kernel_row][kernel_col];
+                // }
 
                 sum += input_value * kernel_value;
             }
