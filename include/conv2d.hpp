@@ -148,8 +148,6 @@ __global__ void convolve2d_kernel(
         
     // --------------------------------------------------------------------------------------------------------------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
-        
-    FLOAT sum = 0.0f;
 
     // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
     const int in_row_start = out_row * p.s1 - p.p1;
@@ -157,6 +155,7 @@ __global__ void convolve2d_kernel(
 
     __syncthreads(); // to sync the memory copy operations to shared memory
 
+    FLOAT sum = 0.0f;
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
@@ -165,11 +164,10 @@ __global__ void convolve2d_kernel(
         #pragma unroll
         for (int kernel_row = 0; kernel_row < p.k1; kernel_row++)
         {
-            const int input_row_offset = kernel_row * input_prop.width;
-
             const int input_row_index = (in_row_start + kernel_row);
             const bool row_valid = (input_row_index >= 0 && input_row_index < input_prop.height);
 
+            const int input_row_offset = kernel_row * input_prop.width;
             #pragma unroll
             for (int kernel_col = 0; kernel_col < p.k2; kernel_col++)
             {   
