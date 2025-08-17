@@ -6,7 +6,7 @@
 // https://github.com/verlab/accelerated_features/blob/main/modules/model.py
 
 #include "xfeat.hpp"
-#include "conv2d.hpp"
+#include "conv2d_gemm.hpp"
 #include "fold.hpp"
 #include <fstream>
 #include "primitives.hpp"

@@ -4,7 +4,7 @@
 #pragma once
 #include "xfeat_params.hpp"
 
-#include "conv2d.hpp"
+#include "conv2d_gemm.hpp"
 #include "fold.hpp"
 
 #include <memory>

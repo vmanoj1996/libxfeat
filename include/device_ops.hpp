@@ -40,29 +40,6 @@ public:
 
 };
 
-#ifdef __CUDACC__
-__device__ inline float BatchNormRelu::forward(float u, int buffer_index)
-{
-    float y = 0.0f;
-    y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
-    y = fmaxf(y, 0.0f);
-
-    return y;
-}
-#endif
-
-inline BatchNormRelu BNR(const std::vector<float>& mean, const std::vector<float>& var) 
-{
-    // shortform for batch norm relu
-    return BatchNormRelu::create(mean, var);
-}
-
-template<typename Model>
-inline BatchNormRelu BNR(Model model, std::string layername) 
-{
-    return BatchNormRelu::create(model.getParam(layername + ".running_mean"), model.getParam(layername + ".running_var"));
-}
-
 struct BiasOp
 {
     // all the pointers should be on the device
@@ -93,6 +70,30 @@ public:
         if (bias) { cudaFree(bias); bias = nullptr; }
     }
 };
+
+#ifdef __CUDACC__
+__device__ inline float BatchNormRelu::forward(float u, int buffer_index)
+{
+    float y = 0.0f;
+    y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
+    y = fmaxf(y, 0.0f);
+
+    return y;
+}
+#endif
+
+inline BatchNormRelu BNR(const std::vector<float>& mean, const std::vector<float>& var) 
+{
+    // shortform for batch norm relu
+    return BatchNormRelu::create(mean, var);
+}
+
+template<typename Model>
+inline BatchNormRelu BNR(Model model, std::string layername) 
+{
+    return BatchNormRelu::create(model.getParam(layername + ".running_mean"), model.getParam(layername + ".running_var"));
+}
+
 
 inline BiasOp Bias(const std::vector<float>& data) 
 {

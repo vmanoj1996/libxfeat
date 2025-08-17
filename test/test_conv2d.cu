@@ -5,7 +5,7 @@
 #include <numeric>
 #include <cstdlib>
 
-#include "conv2d.hpp"
+#include "conv2d_gemm.hpp"
 #include "tensorio.hpp" // For saving HDF5 files
 
 int main() {
