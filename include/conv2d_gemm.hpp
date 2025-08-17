@@ -73,13 +73,14 @@ private:
     // post operation
     Operation post_op;
 
-    // input converted to row
-    DevicePointer<FLOAT> input_row;
+    // input converted to row (by im2row operation)
+    DevicePointer<FLOAT> input_row; // MxN size
+    DevicePointer<FLOAT> kernel_im2row; // NxCo
     int input_M;
     int input_N;
 
     // profile guided threadcount storage
-    dim3 tc_im2col{4, 32}; // this is pretty close to the optimal
+    dim3 tc_im2row{4, 32}; // this is pretty close to the optimal
     dim3 get_profiled_threadcount();
 
 public:
@@ -112,7 +113,7 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 // KERNEL  --------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef __CUDACC__ // do not build the implementation for cpp files. only cu files will build this section
 
-inline __global__ void im2col_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
+inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
 {
     // output is M x N - M number of patches and N is the patch size.
     const int m = threadIdx.x + blockDim.x * blockIdx.x;
@@ -219,11 +220,14 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // set the img2row matrix (input in row form)
     input_M = output_prop.height *output_prop.width;
     input_N = params.ci*params.k1*params.k2;
-    std::vector<int> input_row_shape = {input_M, input_N};
-    input_row.alloc(input_row_shape);
+    input_row.alloc({input_M, input_N});
+
+    // set the im2row kernel matrix
+    kernel_im2row.alloc({input_N, params.co});
+
 
     // set the optimized kernel launch parameters obtained with pgo
-    tc_im2col = get_profiled_threadcount();
+    tc_im2row = get_profiled_threadcount();
 
 }
 
@@ -243,12 +247,12 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePoi
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    if(tc1==0 && tc2 ==0) tc_im2col = dim3(2, 32); 
-    else tc_im2col = dim3(tc1, tc2); 
+    if(tc1==0 && tc2 ==0) tc_im2row = dim3(2, 32); 
+    else tc_im2row = dim3(tc1, tc2); 
 
-    dim3 blocks((input_M + tc_im2col.x - 1)/tc_im2col.x, (input_N + tc_im2col.y - 1)/tc_im2col.y);
+    dim3 blocks((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
 
-    im2col_kernel<<<blocks, tc_im2col, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
     CUDA_SYNC_IF_NEEDED();
 
@@ -271,15 +275,14 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
     auto actual_shape = input_device.get_shape();
-
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 blocks((input_M + tc_im2col.x - 1)/tc_im2col.x, (input_N + tc_im2col.y - 1)/tc_im2col.y);
+    dim3 blocks((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
 
-    im2col_kernel<<<blocks, tc_im2col, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
-    CUDA_SYNC_IF_NEEDED();
 
+    CUDA_SYNC_IF_NEEDED();
     return output_device;
 }
 
