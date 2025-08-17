@@ -141,24 +141,26 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
 
     // refer to my (manoj) notes to check the conventions and symbol meanings
     // get the dimensions corresponding to the output row and column
-    int beta_o  = m / oprop.width;
-    int gamma_o = m % oprop.width;
+    const int beta_o  = m / oprop.width;
+    const int gamma_o = m - beta_o*oprop.width; // faster than m % oprop.width
 
     // get the top left corner of the input patch. basically the row and column
-    int beta_i_  = p.s1 * beta_o  - p.p1; 
-    int gamma_i_ = p.s2 * gamma_o - p.p2;
+    const int beta_i_  = p.s1 * beta_o  - p.p1; 
+    const int gamma_i_ = p.s2 * gamma_o - p.p2;
 
     // get the patch channel and patch local row, col
-    int alpha_i = n / k1k2;
-    int theta  = (n % k1k2) / p.k2;
-    int phi    = (n % k1k2) % p.k2;
+    const int alpha_i = n / k1k2;
+    const int alpha_i_rem = n - k1k2*alpha_i; // faster than modulus - n%(k1k2)
+    const int theta  = alpha_i_rem / p.k2;
+    const int phi    = alpha_i_rem - theta*p.k2; // faster than (n%k1k2) % p.k2
 
     // get the row and column of the input corresponding to m, n
-    int beta_i  = beta_i_  + theta;
-    int gamma_i = gamma_i_ + phi;
+    const int beta_i  = beta_i_  + theta;
+    const int gamma_i = gamma_i_ + phi;
 
-    // gather operation
-    bool valid = (beta_i>=0 && beta_i<iprop.height && gamma_i>=0 && gamma_i<iprop.width);
+    // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
+    // bool valid = (beta_i>=0 && beta_i<iprop.height && gamma_i>=0 && gamma_i<iprop.width);
+    const bool valid = ( (unsigned)beta_i < (unsigned)iprop.height ) && ( (unsigned)gamma_i<(unsigned)iprop.width );
     output[m*N + n] = valid ? input[alpha_i*(iprop.height*iprop.width) + beta_i*iprop.width + gamma_i]:0.0f;
 }
 
@@ -209,7 +211,7 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
 // }
 
 template<typename Operation>
-inline __global__ void postop_kernel(FLOAT* data, Operation post_op, int co, int M) 
+inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int co, int M) 
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int total_elements = co * M;
