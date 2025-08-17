@@ -41,7 +41,7 @@ https://iq.opengenus.org/im2col/
 #include <cuda/pipeline>
 #include <cooperative_groups.h>
 
-#include <cublas_v2.h>
+#include <cublasLt.h>
 
 // careful while reordering
 struct Conv2DParams 
@@ -88,6 +88,13 @@ private:
     // profile guided threadcount storage
     dim3 tc_im2row{4, 32}; // this is pretty close to the optimal
     dim3 get_profiled_threadcount();
+
+    // Gemm setup
+    cublasLtHandle_t ltHandle;
+    cublasLtMatmulDesc_t operationDesc;
+    cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
+    cublasLtMatmulPreference_t preference;
+    cublasLtMatmulHeuristicResult_t heuristicResult; // gets the best algo for the problem size
 
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
@@ -261,10 +268,28 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
-
     const dim3 TC(16, 16);
     const dim3 blockcount((input_N+TC.x-1)/TC.x, (params.co+TC.y-1)/TC.y);
     kernel_im2row_kernel<<<blockcount, TC>>>(kernel_device.get(), kernel_im2row.get(), params, input_N);
+
+    // setup the cublaslt
+    cublasLtCreate(&ltHandle);
+
+    // Create operation descriptor
+    cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F);
+
+    // Create matrix layouts (cublas thinks matrices in stored in column major)
+    cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, input_N);
+    cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
+    cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, params.co);
+
+    // Create preference
+    cublasLtMatmulPreferenceCreate(&preference);
+
+    // Get heuristic
+    int returnedResults = 0;
+    cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
+                                preference, 1, &heuristicResult, &returnedResults);
 
     // set the optimized kernel launch parameters obtained with pgo
     tc_im2row = get_profiled_threadcount();
@@ -274,6 +299,14 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 template<Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::~Conv2D()
 {
+    // cublas lt clear
+    cublasLtMatmulPreferenceDestroy(preference);
+    cublasLtMatrixLayoutDestroy(Adesc);
+    cublasLtMatrixLayoutDestroy(Bdesc);
+    cublasLtMatrixLayoutDestroy(Cdesc);
+    cublasLtMatmulDescDestroy(operationDesc);
+    cublasLtDestroy(ltHandle);
+
     post_op.destroy();
 }
 
@@ -321,33 +354,27 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
-    extern cublasHandle_t blasHandle;
 
     // Gemm and get the output
+    // cuBLAS is column-major. 
+    // cublas thinks that our matrix 2d is transposed because of that
+    // which corresponds to our row-major (M x Co).
+    // Compute (Co x M) = (Co x N) * (N x M), transpose the whole operation which is what will happen here
     const int M  = input_M;
     const int N  = input_N;
     const int Co = params.co;
     const int H  = output_prop.height;
     const int W  = output_prop.width;
+    const FLOAT alpha = 1.0f, beta = 0.0f;
 
-    const FLOAT alpha = 1.0f;
-    const FLOAT beta  = 0.0f;
-
-    // cuBLAS is column-major. 
-    // cublas thinks that our matrix 2d is transposed because of that
-    // which corresponds to our row-major (M x Co).
-    // Compute (Co x M) = (Co x N) * (N x M), transpose the whole operation which is what will happen here
-    cublasSetStream(blasHandle, stream);
-    cublasStatus_t st = cublasSgemm(
-        blasHandle,
-        CUBLAS_OP_N, CUBLAS_OP_N, // no transpose
-        Co, M, N,
-        &alpha,
-        kernel_im2row.get(), Co,  // (Co x N)
-        input_row.get(),     N,   // (N x M)
-        &beta,
-        output_row.get(),    Co   // (Co x M)
-    );
+    cublasLtMatmul(ltHandle, operationDesc,
+                &alpha,
+                kernel_im2row.get(), Adesc,
+                input_row.get(), Bdesc,
+                &beta,
+                output_row.get(), Cdesc,
+                output_row.get(), Cdesc,
+                &heuristicResult.algo, nullptr, 0, stream);
 
     // reshape the output
 
