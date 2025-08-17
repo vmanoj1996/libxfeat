@@ -70,7 +70,7 @@ class Conv2D: public Layer
 
 private:
     DevicePointer<FLOAT> kernel_device; // co, ci, k1, k2 order for cache optimality. Thats how pytorch is built too. optimized for row major operations
-    DevicePointer<FLOAT> output_device; // co x output_height x output_width
+    DevicePointer<FLOAT> output_device; // co x output_height x output_width or reinterpreted as Co x M
 
     // Conv2DParams params;
     ImgProperty input_prop, output_prop;
@@ -81,7 +81,6 @@ private:
     // input converted to row (by im2row operation)
     DevicePointer<FLOAT> input_row; // MxN size
     DevicePointer<FLOAT> kernel_im2row; // NxCo
-    DevicePointer<FLOAT> output_row; // Co vs M in row major format
     int input_M;
     int input_N;
 
@@ -190,6 +189,22 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
     kernel_im2row[output_idx] = kernel_device[input_idx];
 }
 
+// inline __global__ void output_reshape_kernel(const FLOAT __restrict__ *output_row, FLOAT __restrict__ *output_device, int CO, int M, int HO, int WO)
+// {
+//     // output_row is in format: [CO, M], M = Ho*Wo
+//     // output_device output format: [CO, Ho, Wo]
+    
+//     // one thread per element of input
+//     const int co = threadIdx.x + blockDim.x * blockIdx.x;
+//     const int m = threadIdx.y + blockDim.y * blockIdx.y;
+
+//     if(co>=CO || m>=M) return;
+    
+//     int row = m/WO;
+//     int col = m%WO;
+//     output_device[co*(M) + row*(WO) + col] = output_row[co*M + m];
+// }
+
 // IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 template<Conv2DParams params, typename Operation>
 inline dim3 Conv2D<params, Operation>::get_profiled_threadcount() 
@@ -264,7 +279,6 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     input_M = output_prop.height *output_prop.width;
     input_N = params.ci*params.k1*params.k2;
     input_row.alloc({input_M, input_N});
-    output_row.alloc({params.co, input_M});
 
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
@@ -350,10 +364,8 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     auto actual_shape = input_device.get_shape();
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 blocks((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
-
-    im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
-    
+    dim3 blocks_im2row((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
+    im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
 
     // Gemm and get the output
     // cuBLAS is column-major. 
@@ -372,11 +384,15 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
                 kernel_im2row.get(), Adesc,
                 input_row.get(), Bdesc,
                 &beta,
-                output_row.get(), Cdesc,
-                output_row.get(), Cdesc,
+                output_device.get(), Cdesc,
+                output_device.get(), Cdesc,
                 &heuristicResult.algo, nullptr, 0, stream);
 
-    // reshape the output
+    // reshape the output. not needed I guess. because the output is already in Co x M format
+    // constexpr dim3 TC_R(2, 32);
+
+    // dim3 blocks_reshape((Co + TC_R.x - 1)/TC_R.x, (M + TC_R.y - 1)/TC_R.y);
+    // output_reshape_kernel<<<blocks_reshape, TC_R, 0, stream >>>(output_row.get(), output_device.get(), Co, M, H, W);
 
     CUDA_SYNC_IF_NEEDED();
     return output_device;
