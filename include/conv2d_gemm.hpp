@@ -93,7 +93,10 @@ private:
     cublasLtMatmulDesc_t operationDesc;
     cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
     cublasLtMatmulPreference_t preference;
-    cublasLtMatmulHeuristicResult_t heuristicResult; // gets the best algo for the problem size
+    cublasLtMatmulHeuristicResult_t heuristicResult; // gets the best algo and workspace size for the problem size
+
+    void* gemm_workspace=nullptr;
+    size_t gemm_workspace_size;
 
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
@@ -331,8 +334,24 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // Get heuristic
     int returnedResults = 0;
-    cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
+    cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
                                 preference, 1, &heuristicResult, &returnedResults);
+
+    // printf("Heuristic status: %d, Found algorithms: %d\n", status, returnedResults);
+    // if (returnedResults > 0) {
+    //     printf("Algorithm workspace size: %zu bytes\n", heuristicResult.workspaceSize);
+    //     printf("Algorithm status: %d\n", heuristicResult.state);
+    //     printf("Waves count: %f\n", heuristicResult.wavesCount);
+        
+    //     // If you want to see algo details, you need to use the capability API
+    //     // But algo structure itself is opaque
+    // } else {
+    //     printf("WARNING: No algorithms found by heuristic!\n");
+    // }
+
+    // Set the workspace 
+    cudaMalloc(&gemm_workspace, heuristicResult.workspaceSize);
+    gemm_workspace_size = heuristicResult.workspaceSize;
 
     // set the optimized kernel launch parameters obtained with pgo -----------------------------------------
     tc_im2row = get_profiled_threadcount();
@@ -349,6 +368,7 @@ Conv2D<params, Operation>::~Conv2D()
     cublasLtMatrixLayoutDestroy(Cdesc);
     cublasLtMatmulDescDestroy(operationDesc);
     cublasLtDestroy(ltHandle);
+    if(gemm_workspace) cudaFree(gemm_workspace);
 
     post_op.destroy();
 }
@@ -408,14 +428,14 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         ltHandle, 
         operationDesc,
         &alpha,
-        kernel_im2row.get(), Adesc,    // A: kernel_im2row (N×Co), will be transposed to (Co×N)
-        input_row.get(), Bdesc,         // B: input_row (M×N), will be transposed to (N×M)
+        kernel_im2row.get(), Adesc,
+        input_row.get(), Bdesc,
         &beta,
-        output_device.get(), Cdesc,     // C: output (Co×M)
-        output_device.get(), Cdesc,     // D: same as C (in-place)
+        output_device.get(), Cdesc,
+        output_device.get(), Cdesc,
         &heuristicResult.algo, 
-        nullptr,                        // workspace (nullptr = use internal)
-        0,                             // workspace size
+        gemm_workspace,
+        gemm_workspace_size,
         stream
     );
 
@@ -425,7 +445,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         int blocks_post = (params.co * input_M + TC_post - 1) / TC_post;
         postop_kernel<<<blocks_post, TC_post, 0, stream>>>(output_device.get(), post_op, params.co, input_M);
     }
-    
+
     CUDA_SYNC_IF_NEEDED();
     return output_device;
 }
