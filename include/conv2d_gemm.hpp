@@ -274,7 +274,6 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 tc_im2col(4, 32);
     dim3 blocks((input_M + tc_im2col.x - 1)/tc_im2col.x, (input_N + tc_im2col.y - 1)/tc_im2col.y);
 
     im2col_kernel<<<blocks, tc_im2col, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
