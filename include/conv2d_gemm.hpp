@@ -147,6 +147,35 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     output[m*N + n] = valid ? input[alpha_i*(iprop.height*iprop.width) + beta_i*iprop.width + gamma_i]:0.0f;
 }
 
+inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_device, FLOAT __restrict__ *kernel_im2row, Conv2DParams p, int N)
+{
+    // kernel_device is in format: [co, ci, k1, k2]
+    // kernel_im2row output format: [N, co] where N = ci * k1 * k2
+    
+    const int n = threadIdx.x + blockDim.x * blockIdx.x;
+    const int co = threadIdx.y + blockDim.y * blockIdx.y;
+    
+    if(n >= N || co >= p.co) return;
+    
+    // Decompose n back to (ci, k1_idx, k2_idx)
+    const int k1k2 = p.k1 * p.k2;
+    const int ci = n / k1k2;
+    const int k_idx = n % k1k2;
+    const int k1_idx = k_idx / p.k2;
+    const int k2_idx = k_idx % p.k2;
+    
+    // Input index: kernel_device[co][ci][k1_idx][k2_idx]
+    const int input_idx = co * (p.ci * p.k1 * p.k2) + 
+                          ci * (p.k1 * p.k2) + 
+                          k1_idx * p.k2 + 
+                          k2_idx;
+    
+    // Output index: kernel_im2row[n][co]
+    const int output_idx = n * p.co + co;
+    
+    kernel_im2row[output_idx] = kernel_device[input_idx];
+}
+
 // IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 template<Conv2DParams params, typename Operation>
 inline dim3 Conv2D<params, Operation>::get_profiled_threadcount() 
@@ -225,6 +254,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
 
+    const dim3 TC(16, 16);
+    const dim3 blockcount((input_N+TC.x-1)/TC.x, (params.co+TC.y-1)/TC.y);
+    kernel_im2row_kernel<<<blockcount, TC>>>(kernel_device.get(), kernel_im2row.get(), params, input_N);
 
     // set the optimized kernel launch parameters obtained with pgo
     tc_im2row = get_profiled_threadcount();
