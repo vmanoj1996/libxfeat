@@ -159,8 +159,7 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     const int gamma_i = gamma_i_ + phi;
 
     // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
-    // bool valid = (beta_i>=0 && beta_i<iprop.height && gamma_i>=0 && gamma_i<iprop.width);
-    const bool valid = ( (unsigned)beta_i < (unsigned)iprop.height ) && ( (unsigned)gamma_i<(unsigned)iprop.width );
+    const bool valid = ( (unsigned)beta_i < (unsigned)iprop.height ) & ( (unsigned)gamma_i<(unsigned)iprop.width );
     output[m*N + n] = valid ? input[alpha_i*(iprop.height*iprop.width) + beta_i*iprop.width + gamma_i]:0.0f;
 }
 
