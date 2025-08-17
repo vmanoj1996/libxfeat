@@ -78,6 +78,10 @@ private:
     int input_M;
     int input_N;
 
+    // profile guided threadcount storage
+    dim3 tc_im2col{4, 32}; // this is pretty close to the optimal
+    dim3 get_profiled_threadcount();
+
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, cudaStream_t stream_): Conv2D(input_prop_, kernel_data, Operation{}, stream_) {}
@@ -143,6 +147,49 @@ inline __global__ void im2col_kernel(const FLOAT __restrict__ *input, FLOAT __re
 }
 
 // IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+template<Conv2DParams params, typename Operation>
+inline dim3 Conv2D<params, Operation>::get_profiled_threadcount() 
+{
+    // hardcoded too much including the image dimensions lol. 
+    // This is a vanilla profile guided optimization
+
+    // Structure to hold profile entry
+    struct ProfileEntry {
+        int k, ci, co, s, p, h, w, tc1, tc2;
+    };
+    
+    // Hardcoded best configurations from your profiling results
+    static const ProfileEntry profiles[] = {
+        {3, 1, 4, 1, 1, 480, 640, 8, 16},
+        {3, 4, 8, 2, 1, 480, 640, 4, 64},
+        {3, 8, 8, 1, 1, 240, 320, 4, 32},
+        {3, 8, 24, 2, 1, 240, 320, 4, 32},
+        {1, 1, 24, 1, 0, 120, 160, 128, 1},
+        {3, 24, 24, 1, 1, 120, 160, 4, 32},
+        {3, 24, 64, 2, 1, 120, 160, 4, 32},
+        {3, 64, 64, 1, 1, 60, 80, 4, 32},
+        {1, 64, 64, 1, 0, 60, 80, 4, 16},
+        {3, 64, 64, 2, 1, 60, 80, 4, 32},
+        {3, 64, 64, 1, 1, 30, 40, 4, 32},
+        {3, 64, 128, 2, 1, 30, 40, 4, 32},
+        {3, 128, 128, 1, 1, 15, 20, 4, 64},
+        {1, 128, 64, 1, 0, 15, 20, 4, 32},
+        {1, 64, 1, 1, 0, 60, 80, 4, 16},
+        {1, 64, 65, 1, 0, 60, 80, 4, 16}
+    };
+    
+    // Search for matching configuration using member variables and template params
+    for (const auto& entry : profiles) {
+        if (entry.k == params.k1 && entry.ci == params.ci && entry.co == params.co && 
+            entry.s == params.s1 && entry.p == params.p1 && 
+            entry.h == input_prop.height && entry.w == input_prop.width) {
+            return dim3(entry.tc1, entry.tc2);
+        }
+    }
+    
+    // Default if not found
+    return dim3(4, 32);
+}
 
 template<Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_):  input_prop(input_prop_), post_op(post_op_)
@@ -175,6 +222,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     std::vector<int> input_row_shape = {input_M, input_N};
     input_row.alloc(input_row_shape);
 
+    // set the optimized kernel launch parameters obtained with pgo
+    tc_im2col = get_profiled_threadcount();
+
 }
 
 template<Conv2DParams params, typename Operation>
@@ -193,14 +243,12 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePoi
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 threadcount;
+    if(tc1==0 && tc2 ==0) tc_im2col = dim3(2, 32); 
+    else tc_im2col = dim3(tc1, tc2); 
 
-    if(tc1==0 && tc2 ==0) threadcount = dim3(2, 32); 
-    else threadcount = dim3(tc1, tc2); 
+    dim3 blocks((input_M + tc_im2col.x - 1)/tc_im2col.x, (input_N + tc_im2col.y - 1)/tc_im2col.y);
 
-    dim3 blocks((input_M + threadcount.x - 1)/threadcount.x, (input_N + threadcount.y - 1)/threadcount.y);
-
-    im2col_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2col_kernel<<<blocks, tc_im2col, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
     CUDA_SYNC_IF_NEEDED();
 
@@ -226,10 +274,10 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 threadcount(2, 32);
-    dim3 blocks((input_M + threadcount.x - 1)/threadcount.x, (input_N + threadcount.y - 1)/threadcount.y);
+    dim3 tc_im2col(4, 32);
+    dim3 blocks((input_M + tc_im2col.x - 1)/tc_im2col.x, (input_N + tc_im2col.y - 1)/tc_im2col.y);
 
-    im2col_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2col_kernel<<<blocks, tc_im2col, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
     CUDA_SYNC_IF_NEEDED();
 
