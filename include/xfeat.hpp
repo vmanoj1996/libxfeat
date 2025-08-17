@@ -16,8 +16,7 @@ class XFeat
 
     public:
     XFeat(std::string model_file, int height_, int width_);
-    ~XFeat() = default;
-    
+    ~XFeat();
     
     XFeatOut forward(DevicePointer<FLOAT>& input);
 

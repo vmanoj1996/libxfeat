@@ -62,6 +62,7 @@ target_link_libraries(xfeat_lib PUBLIC
     CUDA::cudart
     ${HDF5_LIBRARIES}
     ${OpenCV_LIBS}
+    cublas
 )
 
 # This uses a "generator expression" to add the flag only for the Debug config. 

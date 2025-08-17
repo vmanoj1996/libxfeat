@@ -17,6 +17,8 @@
 #include "normalize.hpp"
 #include <tensorio.hpp>
 
+cublasHandle_t blasHandle;
+
 
 inline void save_layer_data(const DevicePointer<float> &data, const std::string &name)
 {
@@ -47,6 +49,14 @@ XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file
     setup_kp();
     setup_heatmap();
     setup_block_fusion();
+
+    // setup blas
+    cublasCreate(&blasHandle);
+}
+
+XFeat::~XFeat()
+{
+    cublasDestroy(blasHandle);
 }
 
 void XFeat::create_cuda_graph(DevicePointer<FLOAT>& sample_input) 

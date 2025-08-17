@@ -15,6 +15,9 @@ Pytorch saves the parameters for conv layers in this format according to claude.
 [out_channels, in_channels, kernel_height, kernel_width]
 
 k1 for row and k2 for column
+
+// The idea of im2col Convolution was first introduced in the research paper titled "High Performance Convolutional Neural Networks for Document Processing" by Kumar Chellapilla, Sidd Puri and Patrice Simard.
+https://iq.opengenus.org/im2col/
 */
 
 #pragma once
@@ -37,6 +40,8 @@ k1 for row and k2 for column
 
 #include <cuda/pipeline>
 #include <cooperative_groups.h>
+
+#include <cublas_v2.h>
 
 // careful while reordering
 struct Conv2DParams 
@@ -76,6 +81,7 @@ private:
     // input converted to row (by im2row operation)
     DevicePointer<FLOAT> input_row; // MxN size
     DevicePointer<FLOAT> kernel_im2row; // NxCo
+    DevicePointer<FLOAT> output_row; // Co vs M in row major format
     int input_M;
     int input_N;
 
@@ -147,6 +153,7 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     output[m*N + n] = valid ? input[alpha_i*(iprop.height*iprop.width) + beta_i*iprop.width + gamma_i]:0.0f;
 }
 
+// The idea of im2col Convolution was first introduced in the research paper titled "High Performance Convolutional Neural Networks for Document Processing" by Kumar Chellapilla, Sidd Puri and Patrice Simard.
 inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_device, FLOAT __restrict__ *kernel_im2row, Conv2DParams p, int N)
 {
     // kernel_device is in format: [co, ci, k1, k2]
@@ -250,6 +257,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     input_M = output_prop.height *output_prop.width;
     input_N = params.ci*params.k1*params.k2;
     input_row.alloc({input_M, input_N});
+    output_row.alloc({params.co, input_M});
 
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
@@ -313,6 +321,35 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
+    extern cublasHandle_t blasHandle;
+
+    // Gemm and get the output
+    const int M  = input_M;
+    const int N  = input_N;
+    const int Co = params.co;
+    const int H  = output_prop.height;
+    const int W  = output_prop.width;
+
+    const FLOAT alpha = 1.0f;
+    const FLOAT beta  = 0.0f;
+
+    // cuBLAS is column-major. 
+    // cublas thinks that our matrix 2d is transposed because of that
+    // which corresponds to our row-major (M x Co).
+    // Compute (Co x M) = (Co x N) * (N x M), transpose the whole operation which is what will happen here
+    cublasSetStream(blasHandle, stream);
+    cublasStatus_t st = cublasSgemm(
+        blasHandle,
+        CUBLAS_OP_N, CUBLAS_OP_N, // no transpose
+        Co, M, N,
+        &alpha,
+        kernel_im2row.get(), Co,  // (Co x N)
+        input_row.get(),     N,   // (N x M)
+        &beta,
+        output_row.get(),    Co   // (Co x M)
+    );
+
+    // reshape the output
 
     CUDA_SYNC_IF_NEEDED();
     return output_device;
