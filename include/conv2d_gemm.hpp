@@ -154,7 +154,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     static_assert(params.s2 > 0, "s2 must be positive");
     static_assert(params.p1 >= 0, "p1 must be non-negative");
     static_assert(params.p2 >= 0, "p2 must be non-negative");
-    
+
     output_prop.channels = params.co;
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
     output_prop.width =  (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
@@ -171,8 +171,8 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // set the img2row matrix (input in row form)
     input_M = output_prop.height *output_prop.width;
     input_N = params.ci*params.k1*params.k2;
-    std::vector<int> input_col_shape = {input_M, input_N};
-    input_row.alloc(input_col_shape);
+    std::vector<int> input_row_shape = {input_M, input_N};
+    input_row.alloc(input_row_shape);
 
 }
 
@@ -190,10 +190,10 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 threadcount(32, 32); 
+    dim3 threadcount(2, 32); 
     dim3 blocks((input_M + threadcount.x - 1)/threadcount.x, (input_N + threadcount.y - 1)/threadcount.y);
 
-    im2col_kernel<<<blocks, threadcount>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2col_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
     CUDA_SYNC_IF_NEEDED();
 
