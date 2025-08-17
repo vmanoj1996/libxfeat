@@ -118,6 +118,7 @@ set(python_inter_test test_xfeat_inter.py)
 # C++ perf tests
 set(cpp_perf_tests
     perf_xfeat
+    profile_conv2d
 )
 
 set(python_perf_tests
@@ -142,7 +143,7 @@ endforeach()
 
 # Loop to build and add each C++ performance test
 foreach(test ${cpp_perf_tests})
-    add_executable(${test} test/${test}.cpp)
+    add_executable(${test} test/${test}.cu)
     target_link_libraries(${test} test_lib)
     add_test(NAME ${test} COMMAND ${test})
     set_tests_properties(${test} PROPERTIES LABELS "perf")

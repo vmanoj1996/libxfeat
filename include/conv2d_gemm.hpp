@@ -33,7 +33,7 @@ k1 for row and k2 for column
 #include <vector>
 #include <assert.h>
 #include <type_traits>
-
+#include <fstream>
 
 #include <cuda/pipeline>
 #include <cooperative_groups.h>
@@ -86,6 +86,7 @@ public:
     
     using Layer::forward;
     virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
+    DevicePointer<FLOAT>& forward_profile(const DevicePointer<FLOAT>& input_device, int tc1=0, int tc2=0);
 
     DevicePointer<FLOAT>& get_output();
     Conv2DParams get_param() const;
@@ -107,7 +108,7 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 // KERNEL  --------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef __CUDACC__ // do not build the implementation for cpp files. only cu files will build this section
 
-__global__ void im2col_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
+inline __global__ void im2col_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
 {
     // output is M x N - M number of patches and N is the patch size.
     const int m = threadIdx.x + blockDim.x * blockIdx.x;
@@ -182,15 +183,50 @@ Conv2D<params, Operation>::~Conv2D()
     post_op.destroy();
 }
 
+// #define CONV_PERF_TUNE
+
 template<Conv2DParams params, typename Operation>
-DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLOAT> &input_device)
+DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePointer<FLOAT> &input_device, int tc1, int tc2)
 {
     std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
     auto actual_shape = input_device.get_shape();
 
     if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 threadcount(2, 32); 
+    dim3 threadcount;
+
+    if(tc1==0 && tc2 ==0) threadcount = dim3(2, 32); 
+    else threadcount = dim3(tc1, tc2); 
+
+    dim3 blocks((input_M + threadcount.x - 1)/threadcount.x, (input_N + threadcount.y - 1)/threadcount.y);
+
+    im2col_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    
+    CUDA_SYNC_IF_NEEDED();
+
+    return output_device;
+}
+
+template<Conv2DParams params, typename Operation>
+DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLOAT> &input_device)
+{
+
+// #ifdef CONV_PERF_TUNE
+//     // Save this layer's configuration to file
+//     // delete the txt file before launch or u get two files.
+//     std::ofstream config_file("conv2d_layer_configs.txt" , std::ios::app);
+//     config_file << params.k1 << " " << params.k2 << " " << params.ci << " " << params.co << " "
+//                 << params.s1 << " " << params.s2 << " " << params.p1 << " " << params.p2 << " "
+//                 << input_prop.channels << " " << input_prop.height << " " << input_prop.width << "\n";
+//     config_file.close();
+// #endif
+
+    std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
+    auto actual_shape = input_device.get_shape();
+
+    if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
+
+    dim3 threadcount(2, 32);
     dim3 blocks((input_M + threadcount.x - 1)/threadcount.x, (input_N + threadcount.y - 1)/threadcount.y);
 
     im2col_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
