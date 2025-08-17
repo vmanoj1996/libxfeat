@@ -205,6 +205,18 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
 //     output_device[co*(M) + row*(WO) + col] = output_row[co*M + m];
 // }
 
+template<typename Operation>
+inline __global__ void postop_kernel(FLOAT* data, Operation post_op, int co, int M) 
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int total_elements = co * M;
+
+    if (idx >= total_elements) return;
+
+    int co_idx = idx / M;
+    data[idx] = post_op.forward(data[idx], co_idx);
+}
+
 // IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 template<Conv2DParams params, typename Operation>
 inline dim3 Conv2D<params, Operation>::get_profiled_threadcount() 
@@ -388,11 +400,9 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
                 output_device.get(), Cdesc,
                 &heuristicResult.algo, nullptr, 0, stream);
 
-    // reshape the output. not needed I guess. because the output is already in Co x M format
-    // constexpr dim3 TC_R(2, 32);
-
-    // dim3 blocks_reshape((Co + TC_R.x - 1)/TC_R.x, (M + TC_R.y - 1)/TC_R.y);
-    // output_reshape_kernel<<<blocks_reshape, TC_R, 0, stream >>>(output_row.get(), output_device.get(), Co, M, H, W);
+    int TC_post = 128;
+    int blocks_post = (Co*M + TC_post - 1)/TC_post;
+    postop_kernel<<<blocks_post, TC_post, 0, stream>>>(output_device.get(), post_op, Co, M);
 
     CUDA_SYNC_IF_NEEDED();
     return output_device;
