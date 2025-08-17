@@ -291,23 +291,40 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     input_M = output_prop.height *output_prop.width;
     input_N = params.ci*params.k1*params.k2;
     input_row.alloc({input_M, input_N});
+    cudaDeviceSynchronize();
 
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
     const dim3 TC(16, 16);
     const dim3 blockcount((input_N+TC.x-1)/TC.x, (params.co+TC.y-1)/TC.y);
     kernel_im2row_kernel<<<blockcount, TC>>>(kernel_device.get(), kernel_im2row.get(), params, input_N);
+    cudaDeviceSynchronize();
 
-    // setup the cublaslt
+    // MAT MUL GEMM CONFIGURATION --------------------------------------------------------------------
+
     cublasLtCreate(&ltHandle);
 
     // Create operation descriptor
     cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F);
 
-    // Create matrix layouts (cublas thinks matrices in stored in column major)
-    cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, input_N);
-    cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
-    cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, params.co);
+    // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
+    cublasOperation_t transA = CUBLAS_OP_T;  // Transpose kernel_im2row from N×Co to Co×N
+    cublasOperation_t transB = CUBLAS_OP_T;  // Transpose input_row from M×N to N×M
+    cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
+    cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
+
+    // kernel_im2row: N × Co (row-major)
+    cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
+    cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
+    cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+
+    // input_row: M × N (row-major)
+    cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
+    cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+
+    // output: Co × M (row-major)
+    cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, input_M);
+    cublasLtMatrixLayoutSetAttribute(Cdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
 
     // Create preference
     cublasLtMatmulPreferenceCreate(&preference);
@@ -317,7 +334,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
                                 preference, 1, &heuristicResult, &returnedResults);
 
-    // set the optimized kernel launch parameters obtained with pgo
+    // set the optimized kernel launch parameters obtained with pgo -----------------------------------------
     tc_im2row = get_profiled_threadcount();
 
 }
@@ -384,26 +401,31 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     // cublas thinks that our matrix 2d is transposed because of that
     // which corresponds to our row-major (M x Co).
     // Compute (Co x M) = (Co x N) * (N x M), transpose the whole operation which is what will happen here
-    const int M  = input_M;
-    const int N  = input_N;
-    const int Co = params.co;
-    const int H  = output_prop.height;
-    const int W  = output_prop.width;
-    const FLOAT alpha = 1.0f, beta = 0.0f;
+    const FLOAT alpha = 1.0f;
+    const FLOAT beta = 0.0f;
 
-    cublasLtMatmul(ltHandle, operationDesc,
-                &alpha,
-                kernel_im2row.get(), Adesc,
-                input_row.get(), Bdesc,
-                &beta,
-                output_device.get(), Cdesc,
-                output_device.get(), Cdesc,
-                &heuristicResult.algo, nullptr, 0, stream);
+    cublasStatus_t status = cublasLtMatmul(
+        ltHandle, 
+        operationDesc,
+        &alpha,
+        kernel_im2row.get(), Adesc,    // A: kernel_im2row (N×Co), will be transposed to (Co×N)
+        input_row.get(), Bdesc,         // B: input_row (M×N), will be transposed to (N×M)
+        &beta,
+        output_device.get(), Cdesc,     // C: output (Co×M)
+        output_device.get(), Cdesc,     // D: same as C (in-place)
+        &heuristicResult.algo, 
+        nullptr,                        // workspace (nullptr = use internal)
+        0,                             // workspace size
+        stream
+    );
 
-    int TC_post = 128;
-    int blocks_post = (Co*M + TC_post - 1)/TC_post;
-    postop_kernel<<<blocks_post, TC_post, 0, stream>>>(output_device.get(), post_op, Co, M);
-
+    if constexpr (!std::is_same_v<Operation, Identity>) 
+    {
+        int TC_post = 128;
+        int blocks_post = (params.co * input_M + TC_post - 1) / TC_post;
+        postop_kernel<<<blocks_post, TC_post, 0, stream>>>(output_device.get(), post_op, params.co, input_M);
+    }
+    
     CUDA_SYNC_IF_NEEDED();
     return output_device;
 }
