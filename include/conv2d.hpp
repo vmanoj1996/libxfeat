@@ -22,7 +22,6 @@ k1 for row and k2 for column
 #include "primitives.hpp"
 #include "layer.hpp"
 #include "device_ops.hpp"
-#include "conv2d.hpp"
 
 #include <cuda_runtime.h>
 #include <cassert>
@@ -106,6 +105,7 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
     return std::make_unique<Conv2D<params, Operation>>(input_prop, kernel_data, op, stream_);
 }
 
+// KERNEL  --------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef __CUDACC__ // do not build the implementation for cpp files
 
 template<Conv2DParams p, bool useGlobalKernel, typename Operation>
@@ -115,7 +115,7 @@ __global__ void convolve2d_kernel(
     FLOAT * __restrict__ output_device, 
     ImgProperty input_prop, ImgProperty output_prop, Operation op)
 {
-    // SETUP ------------------------------------------------------------------------------------------------------------------------
+    // SETUP ------------------------
     extern __shared__ __align__(16) FLOAT kernel_per_ch[];
 
     const int idx_co  = threadIdx.x + blockIdx.x * blockDim.x; // channel output
@@ -145,17 +145,16 @@ __global__ void convolve2d_kernel(
             kernel_per_ch[i] = __ldg(&kernel[idx_co * kernel_net_size + i]);
         }
     }
+    __syncthreads(); // to sync the memory copy operations to shared memory
         
-    // --------------------------------------------------------------------------------------------------------------------------------
+    // -------------------------
     if (out_row >= output_prop.height || out_col >= output_prop.width || idx_co >= p.co) return;
 
+    FLOAT sum = 0.0f;
     // once padded, the first operation that will happen is on this particular index in the imaginary padded input (implicit)
     const int in_row_start = out_row * p.s1 - p.p1;
     const int in_col_start = out_col * p.s2 - p.p2;
 
-    __syncthreads(); // to sync the memory copy operations to shared memory
-
-    FLOAT sum = 0.0f;
     #pragma unroll
     for (int idx_ci = 0; idx_ci < p.ci; idx_ci++)
     {
@@ -204,6 +203,7 @@ __global__ void convolve2d_kernel(
 
     output_device[o_index] = op.forward(sum, idx_co);
 }
+// IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 template<Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_):  input_prop(input_prop_), post_op(post_op_)
