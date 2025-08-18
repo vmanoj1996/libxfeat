@@ -13,6 +13,41 @@ cmake .. && make -j && ctest --verbose
 # For debug builds, use cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 
+
+```
+
+### Comparison against the pytorch implementation
+
+```
+see perf_xfeat.py
+--- Performance Summary (original implementation on 4070) ---
+Total time for 1000 runs: 1087.497 ms
+Average latency:        1.087 ms
+Average throughput (FPS): 919.543
+Median latency:         1.078 ms
+Minimum latency:        1.050 ms
+Maximum latency:        1.728 ms
+---------------------------
+
+--- Performance Summary (This implementation with TF32 multiplications enabled (tensor cores) on 4070) ---
+cmake -D USE_TF32=ON ..
+Total time for 1000 runs: 943.413 ms
+Average latency:        0.943 ms
+Average throughput (FPS): 1059.982
+Median latency:         0.938 ms
+Minimum latency:        0.920 ms
+Maximum latency:        1.319 ms
+---------------------------
+
+--- Performance Summary (This implementation with full FP32 on 4070) ---
+cmake -D USE_TF32=OFF ..
+Total time for 1000 runs: 1036.097 ms
+Average latency:        1.036 ms
+Average throughput (FPS): 965.160
+Median latency:         1.029 ms
+Minimum latency:        0.985 ms
+Maximum latency:        1.676 ms
+---------------------------
 ```
 
 ## Sample output
