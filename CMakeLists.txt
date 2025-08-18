@@ -71,6 +71,15 @@ target_link_libraries(xfeat_lib PUBLIC
 #     ${HDF5_DEFINITIONS}
 #     $<$<CONFIG:Debug>:ENABLE_XFEAT_DEBUG>
 # )
+option(USE_TF32 "Enable TensorFloat-32 (TF32) math for Tensor Core operations" ON)
+if(USE_TF32)
+    # If the option is ON, add a preprocessor definition to the target
+    target_compile_definitions(xfeat_lib PRIVATE ENABLE_TF32)
+    message(WARNING "TF32 mode is enabled for target: xfeat_lib. expect lower accuracy for keypoints calculation.")
+else()
+    message(STATUS "Full FP32 mode is enabled for target: xfeat_lib")
+endif()
+
 target_compile_definitions(xfeat_lib PUBLIC XFEAT_CUDA_GRAPH)
 set_target_properties(xfeat_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

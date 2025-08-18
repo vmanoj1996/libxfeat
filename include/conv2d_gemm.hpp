@@ -44,28 +44,27 @@ https://iq.opengenus.org/im2col/
 #include <cublasLt.h>
 
 // careful while reordering
-struct Conv2DParams 
+struct Conv2DParams
 {
-   int k1, k2, ci, co;
-   int s1, s2, p1, p2;
-   
-   Conv2DParams() = default;
-   constexpr Conv2DParams(int k1_, int k2_, int ci_, int co_, int s1_, int s2_, int p1_, int p2_)
-       : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
+    int k1, k2, ci, co;
+    int s1, s2, p1, p2;
+
+    Conv2DParams() = default;
+    constexpr Conv2DParams(int k1_, int k2_, int ci_, int co_, int s1_, int s2_, int p1_, int p2_)
+        : k1(k1_), k2(k2_), ci(ci_), co(co_), s1(s1_), s2(s2_), p1(p1_), p2(p2_) {}
 };
 
-
-inline std::ostream& operator<<(std::ostream& os, const Conv2DParams& params) 
+inline std::ostream &operator<<(std::ostream &os, const Conv2DParams &params)
 {
-   os << "Conv2DParams(k1=" << params.k1 << ", k2=" << params.k2 
-      << ", ci=" << params.ci << ", co=" << params.co 
-      << ", s1=" << params.s1 << ", s2=" << params.s2 
-      << ", p1=" << params.p1 << ", p2=" << params.p2 << ")";
-   return os;
+    os << "Conv2DParams(k1=" << params.k1 << ", k2=" << params.k2
+       << ", ci=" << params.ci << ", co=" << params.co
+       << ", s1=" << params.s1 << ", s2=" << params.s2
+       << ", p1=" << params.p1 << ", p2=" << params.p2 << ")";
+    return os;
 }
 
-template<Conv2DParams params, typename Operation>
-class Conv2D: public Layer
+template <Conv2DParams params, typename Operation>
+class Conv2D : public Layer
 {
 
 private:
@@ -79,7 +78,7 @@ private:
     Operation post_op;
 
     // input converted to row (by im2row operation)
-    DevicePointer<FLOAT> input_row; // MxN size
+    DevicePointer<FLOAT> input_row;     // MxN size
     DevicePointer<FLOAT> kernel_im2row; // NxCo
     int input_M;
     int input_N;
@@ -95,32 +94,31 @@ private:
     cublasLtMatmulPreference_t preference;
     cublasLtMatmulHeuristicResult_t heuristicResult[50]; // get the best algo and workspace size for the problem size
 
-    void* gemm_workspace=nullptr;
+    void *gemm_workspace = nullptr;
     size_t gemm_workspace_size;
 
 public:
-    Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, Operation post_op_, cudaStream_t stream_); 
-    Conv2D(ImgProperty input_prop_, const std::vector<FLOAT>& kernel_data, cudaStream_t stream_): Conv2D(input_prop_, kernel_data, Operation{}, stream_) {}
+    Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_);
+    Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, cudaStream_t stream_) : Conv2D(input_prop_, kernel_data, Operation{}, stream_) {}
 
     ~Conv2D(); // automatically made virtual by the compiler
-    
-    using Layer::forward;
-    virtual DevicePointer<FLOAT>& forward(const DevicePointer<FLOAT>& input_device);
-    DevicePointer<FLOAT>& forward_profile(const DevicePointer<FLOAT>& input_device, int tc1=0, int tc2=0);
 
-    DevicePointer<FLOAT>& get_output();
+    using Layer::forward;
+    virtual DevicePointer<FLOAT> &forward(const DevicePointer<FLOAT> &input_device);
+    DevicePointer<FLOAT> &forward_profile(const DevicePointer<FLOAT> &input_device, int tc1 = 0, int tc2 = 0);
+
+    DevicePointer<FLOAT> &get_output();
     Conv2DParams get_param() const;
 
     void set_kernel(const std::vector<FLOAT> &kernel_data);
 
-    virtual ImgProperty get_output_spec() const {return output_prop;}
-    virtual ImgProperty get_input_spec()  const {return input_prop;}
-
+    virtual ImgProperty get_output_spec() const { return output_prop; }
+    virtual ImgProperty get_input_spec() const { return input_prop; }
 };
 
 //  FACTORIES
-template<Conv2DParams params, typename Operation>
-inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<FLOAT>& kernel_data, Operation op, cudaStream_t stream_) 
+template <Conv2DParams params, typename Operation>
+inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<FLOAT> &kernel_data, Operation op, cudaStream_t stream_)
 {
     return std::make_unique<Conv2D<params, Operation>>(input_prop, kernel_data, op, stream_);
 }
@@ -134,33 +132,34 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     const int m = threadIdx.x + blockDim.x * blockIdx.x;
     const int n = threadIdx.y + blockDim.y * blockIdx.y;
 
-    const int k1k2 = p.k1*p.k2;
+    const int k1k2 = p.k1 * p.k2;
 
     // guard for the last warp
-    if(m>=M || n>=N) return;
+    if (m >= M || n >= N)
+        return;
 
     // refer to my (manoj) notes to check the conventions and symbol meanings
     // get the dimensions corresponding to the output row and column
-    const int beta_o  = m / oprop.width;
-    const int gamma_o = m - beta_o*oprop.width; // faster than m % oprop.width
+    const int beta_o = m / oprop.width;
+    const int gamma_o = m - beta_o * oprop.width; // faster than m % oprop.width
 
     // get the top left corner of the input patch. basically the row and column
-    const int beta_i_  = p.s1 * beta_o  - p.p1; 
+    const int beta_i_ = p.s1 * beta_o - p.p1;
     const int gamma_i_ = p.s2 * gamma_o - p.p2;
 
     // get the patch channel and patch local row, col
     const int alpha_i = n / k1k2;
-    const int alpha_i_rem = n - k1k2*alpha_i; // faster than modulus - n%(k1k2)
-    const int theta  = alpha_i_rem / p.k2;
-    const int phi    = alpha_i_rem - theta*p.k2; // faster than (n%k1k2) % p.k2
+    const int alpha_i_rem = n - k1k2 * alpha_i; // faster than modulus - n%(k1k2)
+    const int theta = alpha_i_rem / p.k2;
+    const int phi = alpha_i_rem - theta * p.k2; // faster than (n%k1k2) % p.k2
 
     // get the row and column of the input corresponding to m, n
-    const int beta_i  = beta_i_  + theta;
+    const int beta_i = beta_i_ + theta;
     const int gamma_i = gamma_i_ + phi;
 
     // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
-    const bool valid = ( (unsigned)beta_i < (unsigned)iprop.height ) & ( (unsigned)gamma_i<(unsigned)iprop.width );
-    output[m*N + n] = valid ? input[alpha_i*(iprop.height*iprop.width) + beta_i*iprop.width + gamma_i]:0.0f;
+    const bool valid = ((unsigned)beta_i < (unsigned)iprop.height) & ((unsigned)gamma_i < (unsigned)iprop.width);
+    output[m * N + n] = valid ? input[alpha_i * (iprop.height * iprop.width) + beta_i * iprop.width + gamma_i] : 0.0f;
 }
 
 // The idea of im2col Convolution was first introduced in the research paper titled "High Performance Convolutional Neural Networks for Document Processing" by Kumar Chellapilla, Sidd Puri and Patrice Simard.
@@ -168,55 +167,58 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
 {
     // kernel_device is in format: [co, ci, k1, k2]
     // kernel_im2row output format: [N, co] where N = ci * k1 * k2
-    
+
     const int n = threadIdx.x + blockDim.x * blockIdx.x;
     const int co = threadIdx.y + blockDim.y * blockIdx.y;
-    
-    if(n >= N || co >= p.co) return;
-    
+
+    if (n >= N || co >= p.co)
+        return;
+
     // Decompose n back to (ci, k1_idx, k2_idx)
     const int k1k2 = p.k1 * p.k2;
     const int ci = n / k1k2;
     const int k_idx = n % k1k2;
     const int k1_idx = k_idx / p.k2;
     const int k2_idx = k_idx % p.k2;
-    
+
     // Input index: kernel_device[co][ci][k1_idx][k2_idx]
-    const int input_idx = co * (p.ci * p.k1 * p.k2) + 
-                          ci * (p.k1 * p.k2) + 
-                          k1_idx * p.k2 + 
+    const int input_idx = co * (p.ci * p.k1 * p.k2) +
+                          ci * (p.k1 * p.k2) +
+                          k1_idx * p.k2 +
                           k2_idx;
-    
+
     // Output index: kernel_im2row[n][co]
     const int output_idx = n * p.co + co;
-    
+
     kernel_im2row[output_idx] = kernel_device[input_idx];
 }
 
-template<typename Operation>
-inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int co, int M) 
+template <typename Operation>
+inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int co, int M)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int total_elements = co * M;
 
-    if (idx >= total_elements) return;
+    if (idx >= total_elements)
+        return;
 
     int co_idx = idx / M;
     data[idx] = post_op.forward(data[idx], co_idx);
 }
 
 // IMPLEMENTATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-template<Conv2DParams params, typename Operation>
-inline dim3 Conv2D<params, Operation>::get_profiled_threadcount() 
+template <Conv2DParams params, typename Operation>
+inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
 {
-    // hardcoded too much including the image dimensions lol. 
+    // hardcoded too much including the image dimensions lol.
     // This is a vanilla profile guided optimization
 
     // Structure to hold profile entry
-    struct ProfileEntry {
+    struct ProfileEntry
+    {
         int k, ci, co, s, p, h, w, tc1, tc2;
     };
-    
+
     // Hardcoded best configurations from your profiling results
     static const ProfileEntry profiles[] = {
         {3, 1, 4, 1, 1, 480, 640, 8, 16},
@@ -234,29 +236,30 @@ inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
         {3, 128, 128, 1, 1, 15, 20, 4, 32},
         {1, 128, 64, 1, 0, 15, 20, 4, 16},
         {1, 64, 1, 1, 0, 60, 80, 4, 32},
-        {1, 64, 65, 1, 0, 60, 80, 4, 16}
-    };
-    
+        {1, 64, 65, 1, 0, 60, 80, 4, 16}};
+
     // Search for matching configuration using member variables and template params
-    for (const auto& entry : profiles) {
-        if (entry.k == params.k1 && entry.ci == params.ci && entry.co == params.co && 
-            entry.s == params.s1 && entry.p == params.p1 && 
-            entry.h == input_prop.height && entry.w == input_prop.width) {
+    for (const auto &entry : profiles)
+    {
+        if (entry.k == params.k1 && entry.ci == params.ci && entry.co == params.co &&
+            entry.s == params.s1 && entry.p == params.p1 &&
+            entry.h == input_prop.height && entry.w == input_prop.width)
+        {
             return dim3(entry.tc1, entry.tc2);
         }
     }
-    
+
     // Default if not found
     return dim3(4, 32);
 }
 
-template<Conv2DParams params, typename Operation>
-Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_):  input_prop(input_prop_), post_op(post_op_)
+template <Conv2DParams params, typename Operation>
+Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_) : input_prop(input_prop_), post_op(post_op_)
 {
     stream = stream_;
-    
+
     static_assert(params.k1 % 2 == 1, "k1 must be odd");
-    static_assert(params.k2 % 2 == 1, "k2 must be odd"); 
+    static_assert(params.k2 % 2 == 1, "k2 must be odd");
     static_assert(params.s1 > 0, "s1 must be positive");
     static_assert(params.s2 > 0, "s2 must be positive");
     static_assert(params.p1 >= 0, "p1 must be non-negative");
@@ -264,7 +267,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     output_prop.channels = params.co;
     output_prop.height = (input_prop.height + 2 * params.p1 - params.k1) / params.s1 + 1;
-    output_prop.width =  (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
+    output_prop.width = (input_prop.width + 2 * params.p2 - params.k2) / params.s2 + 1;
 
     std::vector<int> output_Shape = {params.co, output_prop.height, output_prop.width};
     output_device.alloc(output_Shape);
@@ -276,50 +279,55 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     set_kernel(kernel_data);
 
     // set the img2row matrix (input in row form)
-    input_M = output_prop.height *output_prop.width;
-    input_N = params.ci*params.k1*params.k2;
+    input_M = output_prop.height * output_prop.width;
+    input_N = params.ci * params.k1 * params.k2;
     input_row.alloc({input_M, input_N});
     cudaDeviceSynchronize();
 
     // set the im2row kernel matrix
     kernel_im2row.alloc({input_N, params.co});
     const dim3 TC(16, 16);
-    const dim3 blockcount((input_N+TC.x-1)/TC.x, (params.co+TC.y-1)/TC.y);
+    const dim3 blockcount((input_N + TC.x - 1) / TC.x, (params.co + TC.y - 1) / TC.y);
     kernel_im2row_kernel<<<blockcount, TC>>>(kernel_device.get(), kernel_im2row.get(), params, input_N);
     cudaDeviceSynchronize();
 
     // MAT MUL GEMM CONFIGURATION --------------------------------------------------------------------
-
     cublasLtCreate(&ltHandle);
 
-    // Create operation descriptor
+// Create operation descriptor CUBLAS_COMPUTE_32F_FAST_TF32
+#ifdef ENABLE_TF32
+    cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F_FAST_TF32, CUDA_R_32F); // use tf32 for multiplications in tensor cores
+#else
     cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F);
+#endif
 
-    cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
     /* Easy to follow logic */
+    cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
     {
-    // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
-    cublasOperation_t transA = CUBLAS_OP_T;  // Transpose kernel_im2row from N×Co to Co×N
-    cublasOperation_t transB = CUBLAS_OP_T;  // Transpose input_row from M×N to N×M
-    cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
-    cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
+        // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
+        cublasOperation_t transA = CUBLAS_OP_T; // Transpose kernel_im2row from N×Co to Co×N
+        cublasOperation_t transB = CUBLAS_OP_T; // Transpose input_row from M×N to N×M
+        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
+        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
 
-    // kernel_im2row: N × Co (row-major)
-    cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
-    cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+        // kernel_im2row: N × Co (row-major)
+        cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
+        cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
 
-    // input_row: M × N (row-major)
-    cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
-    cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+        // input_row: M × N (row-major)
+        cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
+        cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
     }
 
-    // optimized version. check above. yields the same speed as above version. probably cublas is smart enough
-    // cublasOperation_t transA = CUBLAS_OP_N;
-    // cublasOperation_t transB = CUBLAS_OP_N; 
-    // cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
-    // cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
-    // cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, params.co, input_N, params.co);
-    // cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
+    /*
+        optimized version. check above. yields the same speed as above version. probably cublas is smart enough
+        cublasOperation_t transA = CUBLAS_OP_N;
+        cublasOperation_t transB = CUBLAS_OP_N;
+        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
+        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
+        cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, params.co, input_N, params.co);
+        cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
+    */
 
     // output: Co × M (row-major)
     cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, input_M);
@@ -328,18 +336,17 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // Get heuristic. pick the best algo -----------------------------------------------------------------------
     cublasLtMatmulPreferenceCreate(&preference);
     int returnedResults = 0;
-    uint64_t workspaceSize = 64 * 1024 * 1024;  // 64 MB
+    uint64_t workspaceSize = 64 * 1024 * 1024; // 64 MB
     cublasLtMatmulPreferenceSetAttribute(
-            preference,
-            CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
-            &workspaceSize,
-            sizeof(workspaceSize)
-        );
-    cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
-                                preference, 50, heuristicResult, &returnedResults);
+        preference,
+        CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+        &workspaceSize,
+        sizeof(workspaceSize));
+    cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc,
+                                                           preference, 50, heuristicResult, &returnedResults);
 
     // printf("Heuristic status: %d, Found algorithms: %d\n", status, returnedResults);
-    // if (returnedResults > 0) 
+    // if (returnedResults > 0)
     // {
     //     printf("Algorithm workspace size: %zu bytes\n", heuristicResult[0].workspaceSize);
     //     printf("Algorithm status: %d\n", heuristicResult[0].state);
@@ -348,7 +355,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     //     printf("WARNING: No algorithms found by heuristic!\n");
     // }
 
-    // Set the workspace 
+    // Set the workspace
     cudaMalloc(&gemm_workspace, heuristicResult[0].workspaceSize);
     gemm_workspace_size = heuristicResult[0].workspaceSize;
 
@@ -356,11 +363,10 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     tc_im2row = get_profiled_threadcount();
 
     cudaFuncSetCacheConfig(im2row_kernel, cudaFuncCachePreferL1); // no shared memory is used. hint
-    cudaFuncSetCacheConfig(postop_kernel<Identity>, cudaFuncCachePreferL1); 
-
+    cudaFuncSetCacheConfig(postop_kernel<Identity>, cudaFuncCachePreferL1);
 }
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 Conv2D<params, Operation>::~Conv2D()
 {
     // cublas lt clear
@@ -370,56 +376,61 @@ Conv2D<params, Operation>::~Conv2D()
     cublasLtMatrixLayoutDestroy(Cdesc);
     cublasLtMatmulDescDestroy(operationDesc);
     cublasLtDestroy(ltHandle);
-    if(gemm_workspace) cudaFree(gemm_workspace);
+    if (gemm_workspace)
+        cudaFree(gemm_workspace);
 
     post_op.destroy();
 }
 
 // #define CONV_PERF_TUNE
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePointer<FLOAT> &input_device, int tc1, int tc2)
 {
     std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
     auto actual_shape = input_device.get_shape();
 
-    if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
+    if (actual_shape != expected_shape)
+        throw std::runtime_error("conv2d: shape mismatch");
 
-    if(tc1==0 && tc2 ==0) tc_im2row = dim3(2, 32); 
-    else tc_im2row = dim3(tc1, tc2); 
+    if (tc1 == 0 && tc2 == 0)
+        tc_im2row = dim3(2, 32);
+    else
+        tc_im2row = dim3(tc1, tc2);
 
-    dim3 blocks((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
+    dim3 blocks((input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
 
     im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
-    
+
     CUDA_SYNC_IF_NEEDED();
 
     return output_device;
 }
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLOAT> &input_device)
 {
 
-// #ifdef CONV_PERF_TUNE
-//     // Save this layer's configuration to file
-//     // delete the txt file before launch or u get two files.
-//     std::ofstream config_file("conv2d_layer_configs.txt" , std::ios::app);
-//     config_file << params.k1 << " " << params.k2 << " " << params.ci << " " << params.co << " "
-//                 << params.s1 << " " << params.s2 << " " << params.p1 << " " << params.p2 << " "
-//                 << input_prop.channels << " " << input_prop.height << " " << input_prop.width << "\n";
-//     config_file.close();
-// #endif
+    // #ifdef CONV_PERF_TUNE
+    //     // Save this layer's configuration to file
+    //     // delete the txt file before launch or u get two files.
+    //     std::ofstream config_file("conv2d_layer_configs.txt" , std::ios::app);
+    //     config_file << params.k1 << " " << params.k2 << " " << params.ci << " " << params.co << " "
+    //                 << params.s1 << " " << params.s2 << " " << params.p1 << " " << params.p2 << " "
+    //                 << input_prop.channels << " " << input_prop.height << " " << input_prop.width << "\n";
+    //     config_file.close();
+    // #endif
 
     std::vector<int> expected_shape = {input_prop.channels, input_prop.height, input_prop.width};
     auto actual_shape = input_device.get_shape();
-    if (actual_shape != expected_shape) throw std::runtime_error("conv2d: shape mismatch");
+    if (actual_shape != expected_shape)
+        throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 blocks_im2row((input_M + tc_im2row.x - 1)/tc_im2row.x, (input_N + tc_im2row.y - 1)/tc_im2row.y);
+    dim3 blocks_im2row((input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
     im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
 
     // Gemm and get the output
-    // cuBLAS is column-major. 
+    // cuBLAS is column-major.
     // cublas thinks that our matrix 2d is transposed because of that
     // which corresponds to our row-major (M x Co).
     // Compute (Co x M) = (Co x N) * (N x M), transpose the whole operation which is what will happen here
@@ -427,7 +438,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     const FLOAT beta = 0.0f;
 
     cublasStatus_t status = cublasLtMatmul(
-        ltHandle, 
+        ltHandle,
         operationDesc,
         &alpha,
         kernel_im2row.get(), Adesc,
@@ -435,13 +446,12 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         &beta,
         output_device.get(), Cdesc,
         output_device.get(), Cdesc,
-        &heuristicResult[0].algo, 
+        &heuristicResult[0].algo,
         gemm_workspace,
         gemm_workspace_size,
-        stream
-    );
+        stream);
 
-    if constexpr (!std::is_same_v<Operation, Identity>) 
+    if constexpr (!std::is_same_v<Operation, Identity>)
     {
         int TC_post = 128;
         int blocks_post = (params.co * input_M + TC_post - 1) / TC_post;
@@ -452,7 +462,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     return output_device;
 }
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 void Conv2D<params, Operation>::set_kernel(const std::vector<FLOAT> &kernel_data)
 {
     size_t expected_size = params.co * params.ci * params.k1 * params.k2;
@@ -463,13 +473,13 @@ void Conv2D<params, Operation>::set_kernel(const std::vector<FLOAT> &kernel_data
     cudaMemcpy(kernel_device.get(), kernel_data.data(), expected_size * sizeof(FLOAT), cudaMemcpyHostToDevice);
 }
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 DevicePointer<FLOAT> &Conv2D<params, Operation>::get_output()
 {
     return output_device;
 }
 
-template<Conv2DParams params, typename Operation>
+template <Conv2DParams params, typename Operation>
 Conv2DParams Conv2D<params, Operation>::get_param() const
 {
     return params;

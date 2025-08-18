@@ -29,7 +29,7 @@ def print_tensor_stats(name, tensor):
           f"Range: [{tensor.min().item():>8.4f}, {tensor.max().item():>8.4f}] | "
           f"Mean: {tensor.mean().item():>8.4f}")
 
-def compare_tensors(cpp_tensor, py_tensor, name, tolerance=1e-3):
+def compare_tensors(cpp_tensor, py_tensor, name, mean_tolerance=1e-3, max_tolerance=1e-3, counter_tol=1e-3):
     """Compare two tensors and return comparison results"""
     if isinstance(py_tensor, torch.Tensor):
         py_tensor = py_tensor.detach().cpu()
@@ -48,11 +48,28 @@ def compare_tensors(cpp_tensor, py_tensor, name, tolerance=1e-3):
     rel_diff = (abs_diff / (torch.abs(py_tensor) + 1e-8)).mean().item()
     
     # Check if within tolerance
-    passed = max_diff < tolerance
+    passed1 = max_diff < max_tolerance
+    passed2 = mean_diff < mean_tolerance
+    passed = (passed1 and passed2)
+    
     status = "✅ PASS" if passed else "❌ FAIL"
     
+    bad_mat = (abs_diff > counter_tol)
+    bad_count = bad_mat.sum().item()
+    
+    if(abs_diff.dim()==3):
+        bad_image = torch.sum(bad_mat, 0)
+    else:
+        bad_image = bad_mat
+    
+    import matplotlib.pyplot as plt
+    filepath  = f"./test/xfeat_output/{name}.png"
+    plt.imsave(filepath, bad_image, cmap='viridis')
+    print(f"      Saved error count image to {filepath}")
+        
+    print(bad_image.shape)
     print(f"  {status} {name:<15} | Max diff: {max_diff:>8.5f} | "
-          f"Mean diff: {mean_diff:>8.5f} | Rel diff: {rel_diff:>8.5f}")
+          f"Mean diff: {mean_diff:>8.5f} | Rel diff: {rel_diff:>8.5f} | Max bad count: {bad_count}")
     
     return passed
 
@@ -141,7 +158,7 @@ results.append(compare_tensors(
     cpp_features.squeeze(), 
     py_features.squeeze(), 
     "Features", 
-    tolerance=1e-2
+    1e-2, 0.1, 0.01
 ))
 
 # Compare heatmap
@@ -149,7 +166,7 @@ results.append(compare_tensors(
     cpp_heatmap.squeeze(), 
     py_heatmap.squeeze(), 
     "Heatmap", 
-    tolerance=1e-2
+    1e-2, 0.01, 0.01
 ))
 
 # Compare keypoints (handle potential shape mismatch)
@@ -158,7 +175,7 @@ if cpp_keypoints.shape == py_keypoints_raw.squeeze().shape:
         cpp_keypoints.squeeze(), 
         py_keypoints_raw.squeeze(), 
         "Keypoints", 
-        tolerance=1e-2
+        1e-2, 0.23, 0.01
     ))
 else:
     print(f"  ⚠️  Keypoints shape mismatch: C++ {cpp_keypoints.shape} vs PyTorch {py_keypoints_raw.squeeze().shape}")
