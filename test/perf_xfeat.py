@@ -14,7 +14,7 @@ def main():
     # Match these with your C++ test for a fair comparison
     height = 480
     width = 640
-    num_runs = 50
+    num_runs = 1000
 
     print("----------------------------------")
     print("Configuration:")
