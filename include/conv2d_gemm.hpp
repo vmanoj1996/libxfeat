@@ -193,22 +193,6 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
     kernel_im2row[output_idx] = kernel_device[input_idx];
 }
 
-// inline __global__ void output_reshape_kernel(const FLOAT __restrict__ *output_row, FLOAT __restrict__ *output_device, int CO, int M, int HO, int WO)
-// {
-//     // output_row is in format: [CO, M], M = Ho*Wo
-//     // output_device output format: [CO, Ho, Wo]
-    
-//     // one thread per element of input
-//     const int co = threadIdx.x + blockDim.x * blockIdx.x;
-//     const int m = threadIdx.y + blockDim.y * blockIdx.y;
-
-//     if(co>=CO || m>=M) return;
-    
-//     int row = m/WO;
-//     int col = m%WO;
-//     output_device[co*(M) + row*(WO) + col] = output_row[co*M + m];
-// }
-
 template<typename Operation>
 inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int co, int M) 
 {
@@ -370,6 +354,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     // set the optimized kernel launch parameters obtained with pgo -----------------------------------------
     tc_im2row = get_profiled_threadcount();
+
+    cudaFuncSetCacheConfig(im2row_kernel, cudaFuncCachePreferL1); // no shared memory is used. hint
+    cudaFuncSetCacheConfig(postop_kernel<Identity>, cudaFuncCachePreferL1); 
 
 }
 
