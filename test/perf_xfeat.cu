@@ -28,7 +28,7 @@ int main() {
     const int height = 480;
     const int width = 640;
     const int channels = 1;
-    const int num_runs = 1;
+    const int num_runs = 1000;
     const std::string model_path = "../params/xfeat_weights.h5";
 
     std::cout << "----------------------------------" << std::endl;

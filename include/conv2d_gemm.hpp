@@ -93,7 +93,7 @@ private:
     cublasLtMatmulDesc_t operationDesc;
     cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
     cublasLtMatmulPreference_t preference;
-    cublasLtMatmulHeuristicResult_t heuristicResult; // gets the best algo and workspace size for the problem size
+    cublasLtMatmulHeuristicResult_t heuristicResult[50]; // get the best algo and workspace size for the problem size
 
     void* gemm_workspace=nullptr;
     size_t gemm_workspace_size;
@@ -239,7 +239,7 @@ inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
         {3, 4, 8, 2, 1, 480, 640, 4, 64},
         {3, 8, 8, 1, 1, 240, 320, 4, 32},
         {3, 8, 24, 2, 1, 240, 320, 4, 32},
-        {1, 1, 24, 1, 0, 120, 160, 128, 1},
+        {1, 1, 24, 1, 0, 120, 160, 128, 2},
         {3, 24, 24, 1, 1, 120, 160, 4, 32},
         {3, 24, 64, 2, 1, 120, 160, 4, 32},
         {3, 64, 64, 1, 1, 60, 80, 4, 32},
@@ -247,9 +247,9 @@ inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
         {3, 64, 64, 2, 1, 60, 80, 4, 32},
         {3, 64, 64, 1, 1, 30, 40, 4, 32},
         {3, 64, 128, 2, 1, 30, 40, 4, 32},
-        {3, 128, 128, 1, 1, 15, 20, 4, 64},
-        {1, 128, 64, 1, 0, 15, 20, 4, 32},
-        {1, 64, 1, 1, 0, 60, 80, 4, 16},
+        {3, 128, 128, 1, 1, 15, 20, 4, 32},
+        {1, 128, 64, 1, 0, 15, 20, 4, 16},
+        {1, 64, 1, 1, 0, 60, 80, 4, 32},
         {1, 64, 65, 1, 0, 60, 80, 4, 16}
     };
     
@@ -311,6 +311,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // Create operation descriptor
     cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F);
 
+    cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
+    /* Easy to follow logic */
+    {
     // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
     cublasOperation_t transA = CUBLAS_OP_T;  // Transpose kernel_im2row from N×Co to Co×N
     cublasOperation_t transB = CUBLAS_OP_T;  // Transpose input_row from M×N to N×M
@@ -318,41 +321,52 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
 
     // kernel_im2row: N × Co (row-major)
-    cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
     cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
     cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
 
     // input_row: M × N (row-major)
     cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
     cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+    }
+
+    // optimized version. check above. yields the same speed as above version. probably cublas is smart enough
+    // cublasOperation_t transA = CUBLAS_OP_N;
+    // cublasOperation_t transB = CUBLAS_OP_N; 
+    // cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
+    // cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
+    // cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, params.co, input_N, params.co);
+    // cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
 
     // output: Co × M (row-major)
     cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, input_M);
     cublasLtMatrixLayoutSetAttribute(Cdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
 
-    // Create preference
+    // Get heuristic. pick the best algo -----------------------------------------------------------------------
     cublasLtMatmulPreferenceCreate(&preference);
-
-    // Get heuristic
     int returnedResults = 0;
+    uint64_t workspaceSize = 64 * 1024 * 1024;  // 64 MB
+    cublasLtMatmulPreferenceSetAttribute(
+            preference,
+            CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+            &workspaceSize,
+            sizeof(workspaceSize)
+        );
     cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 
-                                preference, 1, &heuristicResult, &returnedResults);
+                                preference, 50, heuristicResult, &returnedResults);
 
     // printf("Heuristic status: %d, Found algorithms: %d\n", status, returnedResults);
-    // if (returnedResults > 0) {
-    //     printf("Algorithm workspace size: %zu bytes\n", heuristicResult.workspaceSize);
-    //     printf("Algorithm status: %d\n", heuristicResult.state);
-    //     printf("Waves count: %f\n", heuristicResult.wavesCount);
-        
-    //     // If you want to see algo details, you need to use the capability API
-    //     // But algo structure itself is opaque
+    // if (returnedResults > 0) 
+    // {
+    //     printf("Algorithm workspace size: %zu bytes\n", heuristicResult[0].workspaceSize);
+    //     printf("Algorithm status: %d\n", heuristicResult[0].state);
+    //     printf("Waves count: %f\n", heuristicResult[0].wavesCount);
     // } else {
     //     printf("WARNING: No algorithms found by heuristic!\n");
     // }
 
     // Set the workspace 
-    cudaMalloc(&gemm_workspace, heuristicResult.workspaceSize);
-    gemm_workspace_size = heuristicResult.workspaceSize;
+    cudaMalloc(&gemm_workspace, heuristicResult[0].workspaceSize);
+    gemm_workspace_size = heuristicResult[0].workspaceSize;
 
     // set the optimized kernel launch parameters obtained with pgo -----------------------------------------
     tc_im2row = get_profiled_threadcount();
@@ -434,7 +448,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         &beta,
         output_device.get(), Cdesc,
         output_device.get(), Cdesc,
-        &heuristicResult.algo, 
+        &heuristicResult[0].algo, 
         gemm_workspace,
         gemm_workspace_size,
         stream
