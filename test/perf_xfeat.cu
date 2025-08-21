@@ -68,8 +68,6 @@ int main() {
     std::cout << "Performing warm-up run..." << std::endl;
     try {
         model.forward(input);
-        // Synchronize after the warm-up to ensure it's fully complete
-        cudaDeviceSynchronize(); 
     } catch (const std::exception& e) {
         std::cerr << "Warm-up failed: " << e.what() << std::endl;
         return 1;
@@ -88,7 +86,6 @@ int main() {
         auto start_time = std::chrono::high_resolution_clock::now();
 
         model.forward(input);
-        cudaDeviceSynchronize();
 
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed_time = end_time - start_time;
@@ -121,6 +118,20 @@ int main() {
     double max_time = timings_ms.back();
     double median_time = timings_ms[timings_ms.size() / 2];
 
+    double sum = 0.0;
+    double var_sum = 0.0;
+    for(int i=0; i<timings_ms.size(); i++)
+    {
+        sum += timings_ms[i];
+    }
+    sum = sum / timings_ms.size();
+
+    for(int i=0; i<timings_ms.size(); i++)
+    {
+        var_sum += (timings_ms[i]-sum)*(timings_ms[i]-sum);
+    }
+    var_sum = sqrt(var_sum/timings_ms.size());
+
     std::cout << "\n--- Performance Summary ---" << std::endl;
     std::cout << std::fixed << std::setprecision(3);
     std::cout << "Total time for " << num_runs << " runs: " << total_time << " ms" << std::endl;
@@ -129,6 +140,7 @@ int main() {
     std::cout << "Median latency:         " << median_time << " ms" << std::endl;
     std::cout << "Minimum latency:        " << min_time << " ms" << std::endl;
     std::cout << "Maximum latency:        " << max_time << " ms" << std::endl;
+    std::cout << "Mean,var: " << sum<<" ± "<<var_sum << " ms" << std::endl;
     std::cout << "---------------------------\n" << std::endl;
 
     return 0;
