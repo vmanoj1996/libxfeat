@@ -84,7 +84,7 @@ private:
     int input_N;
 
     // profile guided threadcount storage
-    dim3 tc_im2row{4, 32}; // this is pretty close to the optimal
+    dim3 tc_im2row{4, 64}; // this is pretty close to the optimal
     dim3 get_profiled_threadcount();
 
     // Gemm setup
@@ -105,7 +105,7 @@ public:
 
     using Layer::forward;
     virtual DevicePointer<FLOAT> &forward(const DevicePointer<FLOAT> &input_device);
-    DevicePointer<FLOAT> &forward_profile(const DevicePointer<FLOAT> &input_device, int tc1 = 0, int tc2 = 0);
+    DevicePointer<FLOAT> &forward_profile(const DevicePointer<FLOAT> &input_device, int tc1, int tc2);
 
     DevicePointer<FLOAT> &get_output();
     Conv2DParams get_param() const;
@@ -129,8 +129,12 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
 {
     // output is M x N - M number of patches and N is the patch size.
-    const int m = threadIdx.x + blockDim.x * blockIdx.x;
-    const int n = threadIdx.y + blockDim.y * blockIdx.y;
+    
+    // threadIdx.x varies fastest within a warp
+    // Threads 0-31 in a warp have consecutive threadIdx.x values
+
+    const int n = threadIdx.x + blockDim.x * blockIdx.x;
+    const int m = threadIdx.y + blockDim.y * blockIdx.y;
 
     const int k1k2 = p.k1 * p.k2;
 
@@ -219,24 +223,25 @@ inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
         int k, ci, co, s, p, h, w, tc1, tc2;
     };
 
-    // Hardcoded best configurations from your profiling results
+    // Hardcoded best configurations from profiling results
     static const ProfileEntry profiles[] = {
-        {3, 1, 4, 1, 1, 480, 640, 8, 16},
-        {3, 4, 8, 2, 1, 480, 640, 4, 64},
-        {3, 8, 8, 1, 1, 240, 320, 4, 32},
-        {3, 8, 24, 2, 1, 240, 320, 4, 32},
-        {1, 1, 24, 1, 0, 120, 160, 128, 2},
-        {3, 24, 24, 1, 1, 120, 160, 4, 32},
-        {3, 24, 64, 2, 1, 120, 160, 4, 32},
-        {3, 64, 64, 1, 1, 60, 80, 4, 32},
-        {1, 64, 64, 1, 0, 60, 80, 4, 16},
-        {3, 64, 64, 2, 1, 60, 80, 4, 32},
-        {3, 64, 64, 1, 1, 30, 40, 4, 32},
-        {3, 64, 128, 2, 1, 30, 40, 4, 32},
-        {3, 128, 128, 1, 1, 15, 20, 4, 32},
-        {1, 128, 64, 1, 0, 15, 20, 4, 16},
-        {1, 64, 1, 1, 0, 60, 80, 4, 32},
-        {1, 64, 65, 1, 0, 60, 80, 4, 16}};
+    {3, 1, 4, 1, 1, 480, 640, 4, 16},
+    {3, 4, 8, 2, 1, 480, 640, 8, 16},
+    {3, 8, 8, 1, 1, 240, 320, 8, 16},
+    {3, 8, 24, 2, 1, 240, 320, 8, 16},
+    {1, 1, 24, 1, 0, 120, 160, 2, 64},
+    {3, 24, 24, 1, 1, 120, 160, 8, 16},
+    {3, 24, 64, 2, 1, 120, 160, 8, 16},
+    {3, 64, 64, 1, 1, 60, 80, 16, 8},
+    {1, 64, 64, 1, 0, 60, 80, 8, 16},
+    {3, 64, 64, 2, 1, 60, 80, 16, 8},
+    {3, 64, 64, 1, 1, 30, 40, 16, 16},
+    {3, 64, 128, 2, 1, 30, 40, 16, 16},
+    {3, 128, 128, 1, 1, 15, 20, 8, 16},
+    {1, 128, 64, 1, 0, 15, 20, 8, 16},
+    {1, 64, 1, 1, 0, 60, 80, 8, 16},
+    {1, 64, 65, 1, 0, 60, 80, 8, 16}
+    };
 
     // Search for matching configuration using member variables and template params
     for (const auto &entry : profiles)
@@ -300,34 +305,33 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 #else
     cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F);
 #endif
-
-    /* Easy to follow logic */
+   
     cublasLtOrder_t order_row = CUBLASLT_ORDER_ROW;
-    {
-        // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
-        cublasOperation_t transA = CUBLAS_OP_T; // Transpose kernel_im2row from N×Co to Co×N
-        cublasOperation_t transB = CUBLAS_OP_T; // Transpose input_row from M×N to N×M
-        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
-        cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
+    // {   /* Easy to follow logic */
+    //     // Set transpose operations since you want: Output(Co×M) = Kernel^T(N×Co)^T × Input^T(M×N)^T
+    //     cublasOperation_t transA = CUBLAS_OP_T; // Transpose kernel_im2row from N×Co to Co×N
+    //     cublasOperation_t transB = CUBLAS_OP_T; // Transpose input_row from M×N to N×M
+    //     cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
+    //     cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
 
-        // kernel_im2row: N × Co (row-major)
-        cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
-        cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+    //     // kernel_im2row: N × Co (row-major)
+    //     cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, input_N, params.co, params.co);
+    //     cublasLtMatrixLayoutSetAttribute(Adesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
 
-        // input_row: M × N (row-major)
-        cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
-        cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
-    }
+    //     // input_row: M × N (row-major)
+    //     cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_M, input_N, input_N);
+    //     cublasLtMatrixLayoutSetAttribute(Bdesc, CUBLASLT_MATRIX_LAYOUT_ORDER, &order_row, sizeof(cublasLtOrder_t));
+    // }
 
-    /*
-        optimized version. check above. yields the same speed as above version. probably cublas is smart enough
+    // /*
+        //optimized version. check above. yields the same speed as above version. probably cublas is smart enough
         cublasOperation_t transA = CUBLAS_OP_N;
         cublasOperation_t transB = CUBLAS_OP_N;
         cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transA, sizeof(transA));
         cublasLtMatmulDescSetAttribute(operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transB, sizeof(transB));
         cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, params.co, input_N, params.co);
         cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, input_N, input_M, input_N);
-    */
+    // */
 
     // output: Co × M (row-major)
     cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, params.co, input_M, input_M);
@@ -393,14 +397,17 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePoi
     if (actual_shape != expected_shape)
         throw std::runtime_error("conv2d: shape mismatch");
 
-    if (tc1 == 0 && tc2 == 0)
-        tc_im2row = dim3(2, 32);
-    else
-        tc_im2row = dim3(tc1, tc2);
+    tc_im2row = dim3(tc1, tc2);
 
-    dim3 blocks((input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
+    dim3 blocks((input_N + tc_im2row.x - 1) / tc_im2row.x, (input_M + tc_im2row.y - 1) / tc_im2row.y);
 
     im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+
+    cudaError_t error = cudaGetLastError();
+    if(error)
+    {
+        throw std::runtime_error("kernel launch error");
+    }
 
     CUDA_SYNC_IF_NEEDED();
 
@@ -426,9 +433,18 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     if (actual_shape != expected_shape)
         throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 blocks_im2row((input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
+    dim3 blocks_im2row( (input_N + tc_im2row.x - 1) / tc_im2row.x, (input_M + tc_im2row.y - 1) / tc_im2row.y);
+    
     im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
 
+    cudaError_t error = cudaGetLastError();
+    if(error)
+    {
+        std::cout<<"cuda kernel launch failed \n blocks "<<blocks_im2row.x<<" "<<blocks_im2row.y<<std::endl;
+        std::cout<<"threads "<<tc_im2row.x<<" "<<tc_im2row.y<<std::endl;
+        std::cout<<"M and N "<<input_M<<" "<<input_N<<std::endl;
+        throw std::runtime_error("Exception triggered");
+    }
     // Gemm and get the output
     // cuBLAS is column-major.
     // cublas thinks that our matrix 2d is transposed because of that

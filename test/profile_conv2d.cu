@@ -30,8 +30,16 @@ void profile_template(int h, int w, std::ofstream& csv, std::ofstream& detailed_
             if(tc1 * tc2 > 1024) continue;
             
             // Warmup
-            for(int i = 0; i < 5; i++) 
-                conv->forward_profile(input_d, tc1, tc2);
+            try 
+            {
+                for(int i = 0; i < 5; i++) 
+                    conv->forward_profile(input_d, tc1, tc2);
+            }
+            catch(const std::exception& e)
+            {
+                // kernel launch failed with this config.
+                continue;
+            }
             
             // Time
             cudaEventRecord(start);
