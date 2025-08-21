@@ -53,6 +53,7 @@ int main() {
         
         auto start_time = std::chrono::high_resolution_clock::now();
         XFeat feat(model_path, img.rows, img.cols);
+        feat.init(img_device);
         auto init_time = std::chrono::high_resolution_clock::now();
         
         std::cout << "✓ Model initialized in " 

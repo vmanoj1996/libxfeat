@@ -9,6 +9,13 @@
 #include "device_ops.hpp"
 
 template<typename T>
+__global__ void fill_kernel(T* ptr, size_t n, T value) 
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) ptr[i] = value;
+}
+
+template<typename T>
 DevicePointer<T>::DevicePointer(const std::vector<T> &input, std::vector<int> dims_)
 {
     alloc(dims_);
@@ -81,6 +88,17 @@ void DevicePointer<T>::set_value(const std::vector<T> &input)
     }
 }
 
+template<typename T>
+void DevicePointer<T>::set_constant(T value)
+{
+    if (ptr) 
+    {
+        int threads = 256;
+        int blocks  = (size + threads - 1) / threads;
+        fill_kernel<<<blocks, threads>>>(ptr, size, value);
+        cudaDeviceSynchronize();
+    }
+}
 
 template<typename T>
 std::vector<T> DevicePointer<T>::get_value() const

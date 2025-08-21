@@ -43,6 +43,7 @@ class DevicePointer
     
     void alloc(std::vector<int> dims_);
 
+    void set_constant(T value);
     void set_value(const std::vector<T> &input);
     std::vector<T> get_value() const;
     std::vector<int> get_shape() const;

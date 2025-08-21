@@ -50,7 +50,6 @@ XFeat::XFeat(std::string model_file, int height_, int width_) : model(model_file
     setup_heatmap();
     setup_block_fusion();
 
-    // setup blas
 }
 
 XFeat::~XFeat()
@@ -76,13 +75,16 @@ void XFeat::create_cuda_graph(DevicePointer<FLOAT>& sample_input)
     graph_created = true;
 }
 
-XFeatOut XFeat::forward(DevicePointer<FLOAT>& input) 
+void XFeat::init(DevicePointer<FLOAT>& input) 
 {
     if (!graph_created) 
     {
         create_cuda_graph(input);
     }
-    
+}
+
+XFeatOut XFeat::forward(DevicePointer<FLOAT>& input) 
+{
     cudaGraphLaunch(graphExec, stream);
     cudaStreamSynchronize(stream);
     

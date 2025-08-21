@@ -18,6 +18,7 @@ class XFeat
     XFeat(std::string model_file, int height_, int width_);
     ~XFeat();
     
+    void init(DevicePointer<FLOAT>& input);
     XFeatOut forward(DevicePointer<FLOAT>& input);
 
     // Disable copy operations

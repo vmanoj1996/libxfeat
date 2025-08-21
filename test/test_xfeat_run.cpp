@@ -16,6 +16,7 @@ int main()
     DevicePointer<float> img_device(img_vec, dims);
 
     XFeat feat("../params/xfeat_weights.h5", img.rows, img.cols);
+    feat.init(img_device);
 
     auto [heatmap, keypoints_folded, keypoints, feats] = feat.forward(img_device);
 

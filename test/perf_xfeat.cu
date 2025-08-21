@@ -61,6 +61,7 @@ int main() {
     XFeat model(model_path, height, width); 
     std::cout << "Model initialized." << std::endl;
 
+    model.init(input);
     // --- Warm-up Run ---
     // A warm-up run is essential to ensure CUDA kernels are compiled,
     // caches are warm, and initial setup costs don't affect timing.
