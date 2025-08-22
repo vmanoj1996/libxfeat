@@ -200,11 +200,10 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
 template <typename Operation>
 inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int co, int M)
 {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int total_elements = co * M;
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int total_elements = co * M;
 
-    if (idx >= total_elements)
-        return;
+    if (idx >= total_elements) return;
 
     int co_idx = idx / M;
     data[idx] = post_op.forward(data[idx], co_idx);

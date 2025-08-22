@@ -8,14 +8,11 @@
 __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in_h, int in_w, int out_h, int out_w, int channels)
 {
     // marked constants to accidentally avoid modifying them
-    const int idx_c = threadIdx.x + blockIdx.x * blockDim.x; // channel
+    const int out_x = threadIdx.x + blockIdx.x * blockDim.x; // output col
     const int out_y = threadIdx.y + blockIdx.y * blockDim.y; // output row
-    const int out_x = threadIdx.z + blockIdx.z * blockDim.z; // output col
+    const int idx_c = threadIdx.z + blockIdx.z * blockDim.z; // channel
 
-    if (out_y >= out_h || out_x >= out_w || idx_c >= channels)
-    {
-        return;
-    }
+    if (out_y >= out_h || out_x >= out_w || idx_c >= channels) return;
 
     // Calculate scaling factors
     const float scale_y = static_cast<float>(in_h) / static_cast<float>(out_h);
@@ -49,9 +46,9 @@ __global__ void bilinear_interp_kernel(const FLOAT *input, FLOAT *output, int in
     const float br = input[poffset + y2_c * in_w + x2_c];
 
     // Perform bilinear interpolation
-    const float top = tl * (1.0f - dx) + tr * dx;
+    const float top    = tl * (1.0f - dx) + tr * dx;
     const float bottom = bl * (1.0f - dx) + br * dx;
-    const float result = top * (1.0f - dy) + bottom * dy;
+    const float result = top* (1.0f - dy) + bottom * dy;
  
     const int out_idx = idx_c * (out_h * out_w) + out_y * out_w + out_x;
     output[out_idx] = result;
@@ -64,17 +61,17 @@ DevicePointer<FLOAT> &BilinearInterp2D::forward(const DevicePointer<FLOAT> &inpu
 
     if (actual_shape != expected_shape) throw std::runtime_error("BilinearInterp2D: shape mismatch");
 
-    const int TC = 8;
-    dim3 threadcount(TC, TC, TC);
-    dim3 blocks((output_prop.channels + TC - 1) / TC,
-                (output_prop.height + TC - 1) / TC,
-                (output_prop.width + TC - 1) / TC);
+    dim3 TC(16, 8, 2);
+    dim3 blocks(
+        (output_prop.width    + TC.x - 1) / TC.x,
+        (output_prop.height   + TC.y - 1) / TC.y,
+        (output_prop.channels + TC.z - 1) / TC.z);                ;
 
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout << "starting bilinear interp kernel " << input_prop << " -> " << output_prop<< " blocks: " << blocks.x << " " << blocks.y << " " << blocks.z << std::endl;
 #endif
 
-    bilinear_interp_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), input_prop.height, input_prop.width, output_prop.height, output_prop.width, input_prop.channels);
+    bilinear_interp_kernel<<<blocks, TC, 0, stream>>>(input_device.get(), output_device.get(), input_prop.height, input_prop.width, output_prop.height, output_prop.width, input_prop.channels);
 
     CUDA_SYNC_IF_NEEDED();
 
