@@ -139,8 +139,7 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     const int k1k2 = p.k1 * p.k2;
 
     // guard for the last warp
-    if (m >= M || n >= N)
-        return;
+    if (m >= M || n >= N) return;
 
     // refer to my (manoj) notes to check the conventions and symbol meanings
     // get the dimensions corresponding to the output row and column
