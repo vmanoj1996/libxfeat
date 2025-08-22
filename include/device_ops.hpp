@@ -75,9 +75,9 @@ public:
 struct Sigmoid
 {
 public:
-    __device__ float forward(float u, int buffer_index)
+    __device__ inline float forward(float u, int buffer_index)
     {
-        return 1.0f / (1.0f + expf(-u));
+        return 1.0f / (1.0f + __expf(-u)); // may have lower precision? TODO
     }
 
     inline void destroy() {}
@@ -116,7 +116,8 @@ public:
 __device__ inline float BatchNormRelu::forward(float u, int buffer_index)
 {
     float y = 0.0f;
-    y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
+    // y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
+    y = (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps);
     y = fmaxf(y, 0.0f);
 
     return y;
