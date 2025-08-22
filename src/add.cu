@@ -9,13 +9,11 @@
 __global__ void elementwise_add_kernel(const float* input1, const float* input2, const float* input3, float* output, int total_size, bool has_third_input)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < total_size) {
-        if (has_third_input) {
-            output[idx] = input1[idx] + input2[idx] + input3[idx];
-        } else {
-            output[idx] = input1[idx] + input2[idx];
-        }
-    }
+    if (idx >= total_size) return;
+
+    if (has_third_input) output[idx] = input1[idx] + input2[idx] + input3[idx];
+    else output[idx] = input1[idx] + input2[idx];
+
 }
 
 Add::Add(ImgProperty output_prop_, cudaStream_t stream_) : output_prop(output_prop_), input_prop(output_prop_)

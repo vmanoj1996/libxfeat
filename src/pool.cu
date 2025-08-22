@@ -14,13 +14,9 @@
 
 __global__ void avgpool2d_kernel(const FLOAT *input_device, FLOAT *output_device, PoolParams p, ImgProperty input_prop, ImgProperty output_prop)
 {
-    /* Parameter documentation:
-
-
-    */
-    int idx_co = threadIdx.x + blockIdx.x * blockDim.x; // channel output
+    int out_col = threadIdx.x + blockIdx.x * blockDim.x;
     int out_row = threadIdx.y + blockIdx.y * blockDim.y;
-    int out_col = threadIdx.z + blockIdx.z * blockDim.z;
+    int idx_co  = threadIdx.z + blockIdx.z * blockDim.z; // channel output
 
     float inv_pool_count = 1.0f/(p.k1*p.k2);
 
@@ -70,17 +66,17 @@ AvgPool2D::AvgPool2D(ImgProperty input_prop_, PoolParams params_, cudaStream_t s
 
 DevicePointer<FLOAT> &AvgPool2D::forward(const DevicePointer<FLOAT> &input_device)
 {
-    const int TC = 8;
-    dim3 threadcount(TC, TC, TC);
+    dim3 TC(8, 8, 8);
 
-    dim3 blocks((output_prop.channels + TC - 1) / TC,
-                (output_prop.height   + TC - 1) / TC,
-                (output_prop.width    + TC - 1) / TC);
+    dim3 blocks(
+        (output_prop.width    + TC.x - 1) / TC.x,
+        (output_prop.height   + TC.y - 1) / TC.y,
+        (output_prop.channels + TC.z - 1) / TC.z);
 
 #ifdef ENABLE_XFEAT_DEBUG
     std::cout << "starting pool kernel " << input_prop << " " << output_prop << " "<< blocks.x << " " << blocks.y << " " << blocks.z << " " << std::endl;
 #endif
-    avgpool2d_kernel<<<blocks, threadcount, 0, stream>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
+    avgpool2d_kernel<<<blocks, TC, 0, stream>>>(input_device.get(), output_device.get(), params, input_prop, output_prop);
     CUDA_SYNC_IF_NEEDED();
 
     return output_device;
