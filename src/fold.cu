@@ -21,22 +21,21 @@ nvcc -std=c++20 -arch=sm_89 fold.cu && ./a.out
 __global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
 {
     // input idx
-    int idx1 = threadIdx.x + blockIdx.x * blockDim.x;
-    int idx2 = threadIdx.y + blockIdx.y * blockDim.y;
+    int idx2 = threadIdx.x + blockIdx.x * blockDim.x;
+    int idx1 = threadIdx.y + blockIdx.y * blockDim.y;
 
-    if (idx1 < height && idx2 < width)
-    {
-        // compute the output dimension and index corresponding to idx1, idx2 inputs
-        int idx0_out = (idx1 % ratio) * ratio + (idx2 % ratio);
-        int idx1_out = idx1 / ratio;
-        int idx2_out = idx2 / ratio;
+    if (idx1 >= height || idx2 >= width) return;
 
-        // int idx0_dim = ratio*ratio;
-        int idx1_dim = height / ratio;
-        int idx2_dim = width / ratio;
+    // compute the output dimension and index corresponding to idx1, idx2 inputs
+    int idx0_out = (idx1 % ratio) * ratio + (idx2 % ratio);
+    int idx1_out = idx1 / ratio;
+    int idx2_out = idx2 / ratio;
 
-        output_device[idx0_out * (idx1_dim * idx2_dim) + idx1_out * idx2_dim + idx2_out] = input_device[idx1 * width + idx2];
-    }
+    // int idx0_dim = ratio*ratio;
+    int idx1_dim = height / ratio;
+    int idx2_dim = width / ratio;
+
+    output_device[idx0_out * (idx1_dim * idx2_dim) + idx1_out * idx2_dim + idx2_out] = input_device[idx1 * width + idx2];
 }
 
 
@@ -69,9 +68,8 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
             throw std::invalid_argument("Input and output buffers cannot be the same in fold");
         }
 
-        const int TC = 16;
-        dim3 threads(TC, TC);
-        dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
+        dim3 threads(64, 2);
+        dim3 blocks((width + threads.x - 1) / threads.x, (height + threads.y - 1) / threads.y);
 
         fold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
 
@@ -83,27 +81,25 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
 __global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
 {
     // OUTPUT INDEX
-    int idx1 = threadIdx.x + blockIdx.x * blockDim.x;
-    int idx2 = threadIdx.y + blockIdx.y * blockDim.y;
+    int idx2 = threadIdx.x + blockIdx.x * blockDim.x;
+    int idx1 = threadIdx.y + blockIdx.y * blockDim.y;
 
-    if (idx1 < height && idx2 < width)
-    {
-        // INPUT INDEX
-        int subIndex1 = (idx1 % ratio);
-        int subIndex2 = (idx2 % ratio);
+    if (idx1 >= height || idx2 >= width) return;
+    // INPUT INDEX
+    int subIndex1 = (idx1 % ratio);
+    int subIndex2 = (idx2 % ratio);
 
-        int idx0_in =  subIndex1 * ratio + subIndex2;
-        int idx1_in = idx1 / ratio;
-        int idx2_in = idx2 / ratio;
+    int idx0_in =  subIndex1 * ratio + subIndex2;
+    int idx1_in = idx1 / ratio;
+    int idx2_in = idx2 / ratio;
 
-        // INPUT DIMENSIONS
-        // int idx0_dim = ratio*ratio + 1;
-        int idx1_dim = height / ratio;
-        int idx2_dim = width / ratio;
+    // INPUT DIMENSIONS
+    // int idx0_dim = ratio*ratio + 1;
+    int idx1_dim = height / ratio;
+    int idx2_dim = width / ratio;
 
-        int input_idx = idx0_in * (idx1_dim * idx2_dim) + idx1_in * idx2_dim + idx2_in;
-        output_device[idx1 * width + idx2] = input_device[input_idx];
-    }
+    int input_idx = idx0_in * (idx1_dim * idx2_dim) + idx1_in * idx2_dim + idx2_in;
+    output_device[idx1 * width + idx2] = input_device[input_idx];
 }
 
 
@@ -135,9 +131,8 @@ DevicePointer<FLOAT>& UnFold2D::forward(const DevicePointer<FLOAT>& input_device
 
         throw std::invalid_argument("Input and output buffers cannot be the same in unfold");
     }
-    const int TC = 16;
-    dim3 threads(TC, TC);
-    dim3 blocks((height + TC - 1) / TC, (width + TC - 1) / TC);
+    dim3 threads(32, 4);
+    dim3 blocks((width+threads.x-1)/threads.x, (height+threads.y-1)/threads.y);
 
     unfold_kernel<<<blocks, threads, 0, stream>>>(input_device.get(), output_device.get(), height, width, reduction_ratio);
     CUDA_SYNC_IF_NEEDED();

@@ -70,6 +70,11 @@ void XFeat::create_cuda_graph(DevicePointer<FLOAT>& sample_input)
     cudaStreamEndCapture(stream, &graph); // capture the graph
 
     // create an executable graph instance
+    // cudaGraphInstantiateParams params = {};
+    // params.flags = cudaGraphInstantiateFlagDeviceLaunch | cudaGraphInstantiateFlagUpload;
+    // params.uploadStream = stream; 
+
+    // cudaGraphInstantiateWithParams(&graphExec, graph, &params);
     cudaGraphInstantiate(&graphExec, graph, nullptr, nullptr, 0);
     
     graph_created = true;

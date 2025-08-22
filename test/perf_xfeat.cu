@@ -66,6 +66,7 @@ int main() {
     // A warm-up run is essential to ensure CUDA kernels are compiled,
     // caches are warm, and initial setup costs don't affect timing.
     std::cout << "Performing warm-up run..." << std::endl;
+
     try {
         model.forward(input);
     } catch (const std::exception& e) {
