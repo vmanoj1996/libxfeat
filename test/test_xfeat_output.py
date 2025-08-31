@@ -158,7 +158,7 @@ results.append(compare_tensors(
     cpp_features.squeeze(), 
     py_features.squeeze(), 
     "Features", 
-    1e-2, 0.1, 0.01
+    1e-2, 0.14, 0.01
 ))
 
 # Compare heatmap

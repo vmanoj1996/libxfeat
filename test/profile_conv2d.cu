@@ -56,7 +56,7 @@ void profile_template(int h, int w, std::ofstream& csv, std::ofstream& detailed_
             detailed_csv << K << "," << CI << "," << CO << "," << S << "," << P << ","
                         << h << "," << w << "," << tc1 << "," << tc2 << "," 
                         << avg_ms << std::endl;
-            
+
             if(ms < best_time) {
                 best_time = ms;
                 best_tc1 = tc1;
@@ -68,15 +68,19 @@ void profile_template(int h, int w, std::ofstream& csv, std::ofstream& detailed_
     float avg_time = best_time / 100.0f;
     
     // Console output
-    std::cout << K << "x" << K << " " << CI << "->" << CO 
-              << " s=" << S << " p=" << P << " @ " << h << "x" << w
-              << ": " << avg_time << "ms (best: " 
-              << best_tc1 << "x" << best_tc2 << ")" << std::endl;
+    // std::cout << K << "x" << K << " " << CI << "->" << CO 
+    //           << " s=" << S << " p=" << P << " @ " << h << "x" << w
+    //           << ": " << avg_time << "ms (best: " 
+    //           << best_tc1 << "x" << best_tc2 << ")" << std::endl;
     
     // CSV output (summary)
     csv << K << "," << CI << "," << CO << "," << S << "," << P << ","
         << h << "," << w << "," << avg_time << "," 
         << best_tc1 << "," << best_tc2 << std::endl;
+
+    // best time in different format
+    std::cout << "{" << K << ", " << CI << ", " << CO << ", " << S << ", " << P << ", " 
+                        << h << ", " << w << ", " << best_tc1 << ", " << best_tc2 << "}," << std::endl;
     
     cudaEventDestroy(start); cudaEventDestroy(stop);
 }
