@@ -39,7 +39,7 @@ Average throughput (FPS): 1145.817
 Median latency:         0.867 ms
 Minimum latency:        0.855 ms
 Maximum latency:        1.446 ms
-Mean,var: 0.873 ± 0.044 ms
+Mean,stddev: 0.873 ± 0.044 ms
 ---------------------------
 
 --- Performance Summary (This implementation with full FP32 on 4070) ---
@@ -50,7 +50,7 @@ Average throughput (FPS): 1036.852
 Median latency:         0.960 ms
 Minimum latency:        0.913 ms
 Maximum latency:        1.491 ms
-Mean,var: 0.964 ± 0.039 ms
+Mean,stddev: 0.964 ± 0.039 ms
 ---------------------------
 ```
 

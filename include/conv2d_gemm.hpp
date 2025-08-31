@@ -97,6 +97,10 @@ private:
     void *gemm_workspace = nullptr;
     size_t gemm_workspace_size;
 
+    // input index cache for im2row operation
+    std::vector<int> im2row_ilocs;
+    DevicePointer<int> im2row_ilocs_device;
+
 public:
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, Operation post_op_, cudaStream_t stream_);
     Conv2D(ImgProperty input_prop_, const std::vector<FLOAT> &kernel_data, cudaStream_t stream_) : Conv2D(input_prop_, kernel_data, Operation{}, stream_) {}
@@ -163,6 +167,60 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
     const bool valid = ((unsigned)beta_i < (unsigned)iprop.height) & ((unsigned)gamma_i < (unsigned)iprop.width);
     output[m * N + n] = valid ? input[alpha_i * (iprop.height * iprop.width) + beta_i * iprop.width + gamma_i] : 0.0f;
+}
+
+inline void im2row_indices_host(std::vector<int> &input_locations, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
+{
+    // output is M x N - M number of patches and N is the patch size.
+    
+    // threadIdx.x varies fastest within a warp
+    // Threads 0-31 in a warp have consecutive threadIdx.x values
+
+    input_locations.resize(M*N);
+
+    const int k1k2 = p.k1 * p.k2;
+    for(int m=0; m<M; m++)
+    {
+        for(int n=0; n<N; n++)
+        {
+            // refer to my (manoj) notes to check the conventions and symbol meanings
+            // get the dimensions corresponding to the output row and column
+            const int beta_o = m / oprop.width;
+            const int gamma_o = m - beta_o * oprop.width; // faster than m % oprop.width
+
+            // get the top left corner of the input patch. basically the row and column
+            const int beta_i_ = p.s1 * beta_o - p.p1;
+            const int gamma_i_ = p.s2 * gamma_o - p.p2;
+
+            // get the patch channel and patch local row, col
+            const int alpha_i = n / k1k2;
+            const int alpha_i_rem = n - k1k2 * alpha_i; // faster than modulus - n%(k1k2)
+            const int theta = alpha_i_rem / p.k2;
+            const int phi = alpha_i_rem - theta * p.k2; // faster than (n%k1k2) % p.k2
+
+            // get the row and column of the input corresponding to m, n
+            const int beta_i = beta_i_ + theta;
+            const int gamma_i = gamma_i_ + phi;
+
+            // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
+            const bool valid = ((unsigned)beta_i < (unsigned)iprop.height) & ((unsigned)gamma_i < (unsigned)iprop.width);
+
+            int input_location = alpha_i * (iprop.height * iprop.width) + beta_i * iprop.width + gamma_i;
+            int output_location = m * N + n; // 0 to M*N-1 no need to store actually
+
+            input_locations[output_location] = valid?input_location:-1;
+        }
+    }
+}
+
+inline __global__ void im2row_write_kernel(const int *__restrict__ ilocs, const FLOAT *__restrict__ input, FLOAT *__restrict__ output, int MN)
+{
+    const int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    // guard for the last warp
+    if (idx >= MN) return;
+
+    const int input_index = ilocs[idx];
+    output[idx] = (input_index>=0) ? input[input_index] : 0.0f;
 }
 
 // The idea of im2col Convolution was first introduced in the research paper titled "High Performance Convolutional Neural Networks for Document Processing" by Kumar Chellapilla, Sidd Puri and Patrice Simard.
@@ -366,6 +424,12 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
     cudaFuncSetCacheConfig(im2row_kernel, cudaFuncCachePreferL1); // no shared memory is used. hint
     cudaFuncSetCacheConfig(postop_kernel<Identity>, cudaFuncCachePreferL1);
+
+    // SETUP THE IM2ROW INDICES CACHE-------------------------------------------------------------------------
+    im2row_indices_host(im2row_ilocs, params, input_prop, output_prop, input_M, input_N);
+    im2row_ilocs_device.alloc({input_M, input_N});
+    im2row_ilocs_device.set_value(im2row_ilocs);
+
 }
 
 template <Conv2DParams params, typename Operation>
@@ -431,17 +495,20 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
     if (actual_shape != expected_shape)
         throw std::runtime_error("conv2d: shape mismatch");
 
-    dim3 blocks_im2row( (input_N + tc_im2row.x - 1) / tc_im2row.x, (input_M + tc_im2row.y - 1) / tc_im2row.y);
+    // dim3 blocks_im2row( (input_N + tc_im2row.x - 1) / tc_im2row.x, (input_M + tc_im2row.y - 1) / tc_im2row.y);
+    // im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
     
-    im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
-
+    const int TC = 128;
+    dim3 blockcount = (input_M*input_N + TC - 1) / TC;
+    im2row_write_kernel<<<blockcount, TC, 0, stream>>>(im2row_ilocs_device.get(), input_device.get(), input_row.get(), input_M*input_N);
+    
     cudaError_t error = cudaGetLastError();
     if(error)
     {
-        std::cout<<"cuda kernel launch failed \n blocks "<<blocks_im2row.x<<" "<<blocks_im2row.y<<std::endl;
-        std::cout<<"threads "<<tc_im2row.x<<" "<<tc_im2row.y<<std::endl;
+        // std::cout<<"cuda kernel launch failed \n blocks "<<blocks_im2row.x<<" "<<blocks_im2row.y<<std::endl;
+        // std::cout<<"threads "<<tc_im2row.x<<" "<<tc_im2row.y<<std::endl;
         std::cout<<"M and N "<<input_M<<" "<<input_N<<std::endl;
-        throw std::runtime_error("Exception triggered");
+        throw std::runtime_error("Exception at im2row write kernel launch triggered");
     }
     // Gemm and get the output
     // cuBLAS is column-major.
