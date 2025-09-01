@@ -63,6 +63,50 @@ inline std::ostream &operator<<(std::ostream &os, const Conv2DParams &params)
     return os;
 }
 
+struct MagicDivide
+{
+    // TODO hand check this math
+    uint32_t magic;
+    uint32_t shift;
+    uint32_t is_pow2; // 0 or 1
+    
+    MagicDivide() = default;
+    MagicDivide(uint32_t d) 
+    {
+        is_pow2 = (d & (d - 1)) == 0 ? 1 : 0;
+        if (is_pow2) {
+            magic = 0;
+            shift = __builtin_ctz(d);
+        } else {
+            uint64_t m = (1ULL << 32) / d + 1;
+            magic = (uint32_t)m;
+            shift = 32;
+        }
+    }
+
+
+    #ifdef __CUDACC__
+    __device__ __forceinline__ uint32_t divide(uint32_t n) const 
+    {
+        uint32_t pow2_result = n >> shift;
+        uint32_t magic_result = __umulhi(n, magic); // eq. to n*magic>>32 (high32 bits)
+        return is_pow2 * pow2_result + (1 - is_pow2) * magic_result;
+    }
+    #endif
+};
+
+struct Im2row_magic
+{
+    MagicDivide oprop_width;
+    MagicDivide k1k2;
+    MagicDivide k2;
+
+    Im2row_magic() = default;
+    Im2row_magic(ImgProperty oprop, Conv2DParams p):
+        oprop_width(oprop.width), k1k2(p.k1*p.k2), k2(p.k2) {}
+
+};
+
 template <Conv2DParams params, typename Operation>
 class Conv2D : public Layer
 {
@@ -73,6 +117,9 @@ private:
 
     // Conv2DParams params;
     ImgProperty input_prop, output_prop;
+
+    // im2row division cache
+    Im2row_magic im2row_magic;
 
     // post operation
     Operation post_op;
@@ -126,9 +173,9 @@ inline std::unique_ptr<Layer> conv2d(ImgProperty input_prop, const std::vector<F
 // KERNEL  --------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef __CUDACC__ // do not build the implementation for cpp files. only cu files will build this section
 
-inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N)
+inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __restrict__ *output, Conv2DParams p, ImgProperty iprop, ImgProperty oprop, int M, int N, Im2row_magic md)
 {
-    // output is M x N - M number of patches and N is the patch size.
+    // output is N X M - M number of patches and N is the patch size.
     
     // threadIdx.x varies fastest within a warp
     // Threads 0-31 in a warp have consecutive threadIdx.x values
@@ -142,7 +189,7 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
 
     // refer to my (manoj) notes to check the conventions and symbol meanings
     // get the dimensions corresponding to the output row and column
-    const int beta_o = m / oprop.width;
+    const int beta_o = md.oprop_width.divide(m); // m / oprop.width;
     const int gamma_o = m - beta_o * oprop.width; // faster than m % oprop.width
 
     // get the top left corner of the input patch. basically the row and column
@@ -150,9 +197,9 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     const int gamma_i_ = p.s2 * gamma_o - p.p2;
 
     // get the patch channel and patch local row, col
-    const int alpha_i = n / k1k2;
+    const int alpha_i = md.k1k2.divide(n); // n / k1k2;
     const int alpha_i_rem = n - k1k2 * alpha_i; // faster than modulus - n%(k1k2)
-    const int theta = alpha_i_rem / p.k2;
+    const int theta = md.k2.divide(alpha_i_rem); // alpha_i_rem / p.k2;
     const int phi = alpha_i_rem - theta * p.k2; // faster than (n%k1k2) % p.k2
 
     // get the row and column of the input corresponding to m, n
@@ -299,6 +346,9 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     kernel_im2row_kernel<<<blockcount, TC>>>(kernel_device.get(), kernel_im2row.get(), params, input_N);
     cudaDeviceSynchronize();
 
+    // set the im2row divide cache
+    im2row_magic = Im2row_magic(output_prop, params);
+
     // MAT MUL GEMM CONFIGURATION --------------------------------------------------------------------
     cublasLtCreate(&ltHandle);
 
@@ -404,7 +454,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward_profile(const DevicePoi
 
     dim3 blocks( (input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
 
-    im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2row_kernel<<<blocks, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N, im2row_magic);
 
     cudaError_t error = cudaGetLastError();
     if(error)
@@ -438,7 +488,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     dim3 blocks_im2row( (input_M + tc_im2row.x - 1) / tc_im2row.x, (input_N + tc_im2row.y - 1) / tc_im2row.y);
     
-    im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N);
+    im2row_kernel<<<blocks_im2row, tc_im2row, 0, stream>>>(input_device.get(), input_row.get(), params, input_prop, output_prop, input_M, input_N, im2row_magic);
 
     cudaError_t error = cudaGetLastError();
     if(error)

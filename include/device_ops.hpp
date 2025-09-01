@@ -11,11 +11,12 @@ struct BatchNormRelu
     // all the pointers should be on the device
 public:
     float *mean;
-    float *var;
+    float *var; //unused TODO remove it
+    float *rsqrt_var;
     int N;
     const float eps = 1e-5;
 
-    __device__ inline float forward(float u, int buffer_index);
+    __device__ inline float forward(float u, int buffer_index) const;
 
     // Factory functions
     static inline BatchNormRelu create(const std::vector<float>& host_mean, const std::vector<float>& host_var) 
@@ -24,10 +25,18 @@ public:
         op.N = host_mean.size();
         
         cudaMalloc(&op.mean, op.N * sizeof(float));
-        cudaMalloc(&op.var, op.N * sizeof(float));
+        cudaMalloc(&op.var,  op.N * sizeof(float));
+        cudaMalloc(&op.rsqrt_var, op.N * sizeof(float));
         
         cudaMemcpy(op.mean, host_mean.data(), op.N * sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(op.var, host_var.data(), op.N * sizeof(float), cudaMemcpyHostToDevice);
+
+        std::vector<float> host_rsqvar(host_var.size());
+        for(int i=0; i<host_var.size(); i++)
+        {
+            host_rsqvar[i] = 1.0f / sqrtf(host_var[i] + op.eps);
+        }
+        cudaMemcpy(op.rsqrt_var, host_rsqvar.data(), op.N * sizeof(float), cudaMemcpyHostToDevice);
         
         return op;
     }
@@ -36,6 +45,7 @@ public:
     {
         if (mean) { cudaFree(mean); mean = nullptr; }
         if (var) { cudaFree(var); var = nullptr; }
+        if (rsqrt_var) { cudaFree(rsqrt_var); rsqrt_var = nullptr; }
     }
 
 };
@@ -48,7 +58,7 @@ public:
     int N;
     const float eps = 1e-5;
 
-    __device__ inline float forward(float u, int buffer_index)
+    __device__ inline float forward(float u, int buffer_index) const
     {
         return (buffer_index < N)? u + bias[buffer_index]:0.0f;;
     }
@@ -113,11 +123,11 @@ public:
 };
 
 #ifdef __CUDACC__
-__device__ inline float BatchNormRelu::forward(float u, int buffer_index)
+__device__ inline float BatchNormRelu::forward(float u, int buffer_index) const
 {
     float y = 0.0f;
     // y = (buffer_index < N)? (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps):0.0f;
-    y = (u - mean[buffer_index]) * rsqrtf(var[buffer_index] + eps);
+    y = (u - mean[buffer_index]) * rsqrt_var[buffer_index];
     y = fmaxf(y, 0.0f);
 
     return y;
