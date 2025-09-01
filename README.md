@@ -33,24 +33,24 @@ Maximum latency:        1.728 ms
 
 --- Performance Summary (This implementation with TF32 multiplications enabled (tensor cores) on 4070) ---
 cmake -D USE_TF32=ON ..
-Total time for 1000 runs: 872.740 ms
-Average latency:        0.873 ms
-Average throughput (FPS): 1145.817
-Median latency:         0.867 ms
-Minimum latency:        0.855 ms
-Maximum latency:        1.446 ms
-Mean,var: 0.873 ± 0.044 ms
+Total time for 1000 runs: 714.166 ms
+Average latency:        0.714 ms
+Average throughput (FPS): 1400.234
+Median latency:         0.695 ms
+Minimum latency:        0.689 ms
+Maximum latency:        0.763 ms
+Mean,var: 0.714 ± 0.030 ms
 ---------------------------
 
 --- Performance Summary (This implementation with full FP32 on 4070) ---
 cmake -D USE_TF32=OFF ..
-Total time for 1000 runs: 964.458 ms
-Average latency:        0.964 ms
-Average throughput (FPS): 1036.852
-Median latency:         0.960 ms
-Minimum latency:        0.913 ms
-Maximum latency:        1.491 ms
-Mean,var: 0.964 ± 0.039 ms
+Total time for 1000 runs: 815.103 ms
+Average latency:        0.815 ms
+Average throughput (FPS): 1226.839
+Median latency:         0.799 ms
+Minimum latency:        0.792 ms
+Maximum latency:        0.859 ms
+Mean,var: 0.815 ± 0.025 ms
 ---------------------------
 ```
 
