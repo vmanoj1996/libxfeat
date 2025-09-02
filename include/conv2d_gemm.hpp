@@ -44,7 +44,7 @@ https://iq.opengenus.org/im2col/
 #include <cublasLt.h>
 #include "int_fastdiv.h"
 
-// careful while reordering
+// int k1, k2, ci, co, s1, s2, p1, p2;
 struct Conv2DParams
 {
     int k1, k2, ci, co;
@@ -231,7 +231,7 @@ inline __global__ void kernel_im2row_kernel(const FLOAT __restrict__ *kernel_dev
 }
 
 template <typename Operation>
-inline __global__ void postop_kernel(FLOAT __restrict__ *data, Operation post_op, int total_elements, PostOp_magic po_magic)
+inline __global__ void postop_kernel(FLOAT __restrict__ *data, __grid_constant__ const Operation post_op, int total_elements, const PostOp_magic po_magic)
 {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     // const int total_elements = co * M;
@@ -507,7 +507,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
 
     if constexpr (!std::is_same_v<Operation, Identity>)
     {
-        int TC_post = 128;
+        int TC_post = 256;
         int blocks_post = (params.co * input_M + TC_post - 1) / TC_post;
         postop_kernel<<<blocks_post, TC_post, 0, stream>>>(output_device.get(), post_op, params.co * input_M, postop_magic);
     }

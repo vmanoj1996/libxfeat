@@ -55,9 +55,10 @@ private:
         ImgProperty layer1Prop = {IC, height, width};
         auto layername = "net." + block + "." + to_string(layer_idx) + ".layer.";
         auto weights_name = layername + "0.weight";
-        add_conv_layer<IC, OC, K, S, P>(layer1Prop, backbone_layers, BNR(model, layername + "1"), weights_name);
+        add_conv_layer<IC, OC, K, S, P>(layer1Prop, backbone_layers, BNR<OC>(model, layername + "1"), weights_name);
     }
 
+    // templates int IC, int OC, int K, int S, int P, typename Operation
     template<int IC, int OC, int K, int S, int P, typename Operation> void add_heatmap_layer(const std::string &layername, Operation operation)
     {
         using std::to_string;

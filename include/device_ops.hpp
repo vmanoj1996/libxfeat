@@ -6,6 +6,37 @@
 #include <cuda_runtime.h>
 #include <cmath>
 
+template<int N>
+struct BatchNormReluTemplated
+{
+    float mean[N];
+    float rsqrt_var[N];
+    static constexpr float eps = 1e-5f;
+
+    __device__ __forceinline__ float forward(float u, int buffer_index) const
+    {
+        float y = (u - mean[buffer_index]) * rsqrt_var[buffer_index];
+        return fmaxf(y, 0.0f);
+    }
+
+    static inline BatchNormReluTemplated<N> create(
+        const std::vector<float>& host_mean, 
+        const std::vector<float>& host_var) 
+    {
+        BatchNormReluTemplated<N> op;
+        
+        for(int i = 0; i < N; i++) {
+            op.mean[i] = host_mean[i];
+            op.rsqrt_var[i] = 1.0f / sqrtf(host_var[i] + eps);
+        }
+        
+        return op;
+    }
+
+    inline void destroy() {} // No GPU memory to free
+};
+
+/*
 struct BatchNormRelu
 {
     // all the pointers should be on the device
@@ -49,7 +80,7 @@ public:
     }
 
 };
-
+*/
 struct BiasOp
 {
     // all the pointers should be on the device
@@ -85,9 +116,9 @@ public:
 struct Sigmoid
 {
 public:
-    __device__ inline float forward(float u, int buffer_index)
+    __device__ inline float forward(float u, int buffer_index) const
     {
-        return 1.0f / (1.0f + __expf(-u)); // may have lower precision? TODO
+        return 1.0f / (1.0f + __expf(-u)); // may have lower precision? TODO check this
     }
 
     inline void destroy() {}
@@ -100,18 +131,18 @@ public:
     float bias = 0.0f;
     float scale = 1.0f;
 
-    __device__ float forward(float u, int idx = 0)
+    __device__ float forward(float u, int idx = 0) const
     {
         float y = scale * u + bias;
         return (y > 0) ? y : 0.0f;
     }
-    __device__ void deleter(){}
+    __device__ void destroy(){}
 };
 
 struct Identity
 {
 public:
-    __device__ float forward(float u, int idx = 0)
+    __device__ inline float forward(float u, int idx = 0) const
     {
         return u;
     }
@@ -122,6 +153,7 @@ public:
     }
 };
 
+/*
 #ifdef __CUDACC__
 __device__ inline float BatchNormRelu::forward(float u, int buffer_index) const
 {
@@ -145,7 +177,22 @@ inline BatchNormRelu BNR(Model model, std::string layername)
 {
     return BatchNormRelu::create(model.getParam(layername + ".running_mean"), model.getParam(layername + ".running_var"));
 }
+*/
 
+template<int N>
+inline BatchNormReluTemplated<N> BNR(const std::vector<float>& mean, const std::vector<float>& var) 
+{
+    return BatchNormReluTemplated<N>::create(mean, var);
+}
+
+template<int N, typename Model>
+inline BatchNormReluTemplated<N> BNR(Model model, std::string layername) 
+{
+    return BatchNormReluTemplated<N>::create(
+        model.getParam(layername + ".running_mean"), 
+        model.getParam(layername + ".running_var")
+    );
+}
 
 inline BiasOp Bias(const std::vector<float>& data) 
 {
