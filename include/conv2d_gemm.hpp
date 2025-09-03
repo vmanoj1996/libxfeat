@@ -117,7 +117,8 @@ private:
     cublasLtMatmulDesc_t operationDesc;
     cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
     cublasLtMatmulPreference_t preference;
-    cublasLtMatmulHeuristicResult_t heuristicResult[50]; // get the best algo and workspace size for the problem size
+    static constexpr int HEURISTIC_COUNT = 200;
+    cublasLtMatmulHeuristicResult_t heuristicResult[HEURISTIC_COUNT]; // get the best algo and workspace size for the problem size
     int best_gemm_algo_idx = 0;
 
     void *gemm_workspace = nullptr;
@@ -379,14 +380,14 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // Get heuristic. pick the best algo -----------------------------------------------------------------------
     cublasLtMatmulPreferenceCreate(&preference);
     int returnedResults = 0;
-    uint64_t workspaceSize = 32 * 1024 * 1024;
+    uint64_t workspaceSize = 128 * 1024 * 1024;
     cublasLtMatmulPreferenceSetAttribute(
         preference,
         CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
         &workspaceSize,
         sizeof(workspaceSize));
     cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc,
-                                                           preference, 50, heuristicResult, &returnedResults);
+                                                           preference, HEURISTIC_COUNT, heuristicResult, &returnedResults);
 
     // Run the matmul and make sure, we pick the actual best algo instead of the inaccurate heuristics
     { // TODO clean this code block
@@ -447,7 +448,8 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
         // Pick fastest
         auto best = std::min_element(algo_times.begin(), algo_times.end(),
             [](const auto& a, const auto& b) { return a.second < b.second; });
-        best_gemm_algo_idx = best->first;
+
+        best_gemm_algo_idx = best->first; // actual best algo with minimum runtime
 
         printf("Heuristic picked algo: 0, Benchmark picked algo: %d\n", best_gemm_algo_idx);
         if (returnedResults > 0) {

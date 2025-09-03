@@ -24,7 +24,7 @@ endif()
 # For Release builds (e.g., cmake .. OR cmake -DCMAKE_BUILD_TYPE=Release ..)
 # -O3 is for high optimization. -DNDEBUG disables asserts.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xptxas -allow-expensive-optimizations=true --fmad=true -arch=sm_89 -Xptxas -warn-spills --ptxas-options=-v -DNDEBUG")
+set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -Xptxas -allow-expensive-optimizations=true --use_fast_math --fmad=true -arch=sm_89 -Xptxas -warn-spills --ptxas-options=-v -DNDEBUG")
 
 # For Debug builds (e.g., cmake -DCMAKE_BUILD_TYPE=Debug ..)
 # -O0 disables optimization. -g adds debug symbols for GDB. -G adds debug information for gpu along with line info
@@ -82,6 +82,16 @@ endif()
 
 target_compile_definitions(xfeat_lib PUBLIC XFEAT_CUDA_GRAPH)
 set_target_properties(xfeat_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(xfeat_lib PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+# aggressive math optimizations - these dont add any extra benefit
+# target_compile_options(xfeat_lib PRIVATE 
+#     $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math>
+#     $<$<COMPILE_LANGUAGE:CUDA>:--ftz=true>
+#     $<$<COMPILE_LANGUAGE:CUDA>:--prec-div=false>
+#     $<$<COMPILE_LANGUAGE:CUDA>:--prec-sqrt=false>
+# )
+
 
 # Enable testing ------------------------------------------------------------------------------------
 enable_testing()
