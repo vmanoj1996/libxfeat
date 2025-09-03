@@ -118,6 +118,7 @@ private:
     cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
     cublasLtMatmulPreference_t preference;
     cublasLtMatmulHeuristicResult_t heuristicResult[50]; // get the best algo and workspace size for the problem size
+    int best_gemm_algo_idx = 0;
 
     void *gemm_workspace = nullptr;
     size_t gemm_workspace_size;
@@ -378,7 +379,7 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     // Get heuristic. pick the best algo -----------------------------------------------------------------------
     cublasLtMatmulPreferenceCreate(&preference);
     int returnedResults = 0;
-    uint64_t workspaceSize = 64 * 1024 * 1024; // 64 MB
+    uint64_t workspaceSize = 32 * 1024 * 1024;
     cublasLtMatmulPreferenceSetAttribute(
         preference,
         CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
@@ -387,20 +388,78 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
     cublasStatus_t status = cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc,
                                                            preference, 50, heuristicResult, &returnedResults);
 
-    // printf("Heuristic status: %d, Found algorithms: %d\n", status, returnedResults);
-    // if (returnedResults > 0)
-    // {
-    //     printf("Algorithm workspace size: %zu bytes\n", heuristicResult[0].workspaceSize);
-    //     printf("Algorithm status: %d\n", heuristicResult[0].state);
-    //     printf("Waves count: %f\n", heuristicResult[0].wavesCount);
-    // } else {
-    //     printf("WARNING: No algorithms found by heuristic!\n");
-    // }
+    // Run the matmul and make sure, we pick the actual best algo instead of the inaccurate heuristics
+    { // TODO clean this code block
+        size_t max_workspace_size = 0;
+        for (int i = 0; i < returnedResults; i++) {
+            max_workspace_size = std::max(max_workspace_size, heuristicResult[i].workspaceSize);
+        }
 
-    // Set the workspace
-    cudaMalloc(&gemm_workspace, heuristicResult[0].workspaceSize);
-    gemm_workspace_size = heuristicResult[0].workspaceSize;
+        // Allocate workspace for benchmarking
+        void* benchmark_workspace = nullptr;
+        cudaMalloc(&benchmark_workspace, max_workspace_size);
 
+        // Store timing results
+        std::vector<std::pair<int, float>> algo_times; // (algo_index, time_ms)
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+
+        // Warmup runs
+        const int warmup_runs = 3;
+        const int timing_runs = 20;
+
+        const FLOAT alpha = 1.0f;
+        const FLOAT beta = 0.0f;
+
+        for (int i = 0; i < returnedResults; i++) {
+            // Warmup
+            for (int w = 0; w < warmup_runs; w++) {
+                cublasLtMatmul(ltHandle, operationDesc, &alpha,
+                            kernel_im2row.get(), Adesc,
+                            input_row.get(), Bdesc, &beta,
+                            output_device.get(), Cdesc,
+                            output_device.get(), Cdesc,
+                            &heuristicResult[i].algo,
+                            benchmark_workspace, heuristicResult[i].workspaceSize, stream);
+            }
+            cudaStreamSynchronize(stream);
+            
+            // Timing runs
+            cudaEventRecord(start, stream);
+            for (int t = 0; t < timing_runs; t++) {
+                cublasLtMatmul(ltHandle, operationDesc, &alpha,
+                            kernel_im2row.get(), Adesc,
+                            input_row.get(), Bdesc, &beta,
+                            output_device.get(), Cdesc,
+                            output_device.get(), Cdesc,
+                            &heuristicResult[i].algo,  // Use algo i
+                            benchmark_workspace, heuristicResult[i].workspaceSize, stream);
+            }
+            cudaEventRecord(stop, stream);
+            cudaEventSynchronize(stop);
+            
+            float ms;
+            cudaEventElapsedTime(&ms, start, stop);
+            algo_times.push_back({i, ms / timing_runs});
+        }
+
+        // Pick fastest
+        auto best = std::min_element(algo_times.begin(), algo_times.end(),
+            [](const auto& a, const auto& b) { return a.second < b.second; });
+        best_gemm_algo_idx = best->first;
+
+        printf("Heuristic picked algo: 0, Benchmark picked algo: %d\n", best_gemm_algo_idx);
+        if (returnedResults > 0) {
+            printf("Heuristic time estimate: %f waves\n", heuristicResult[0].wavesCount);
+            printf("Actual best time: %.3f ms\n", best->second);
+        }
+
+        // Clean up benchmark workspace and allocate final workspace
+        cudaFree(benchmark_workspace);
+        cudaMalloc(&gemm_workspace, heuristicResult[best_gemm_algo_idx].workspaceSize);
+        gemm_workspace_size = heuristicResult[best_gemm_algo_idx].workspaceSize;
+    }
     // set the optimized kernel launch parameters obtained with pgo -----------------------------------------
     tc_im2row = get_profiled_threadcount();
 
@@ -500,7 +559,7 @@ DevicePointer<FLOAT> &Conv2D<params, Operation>::forward(const DevicePointer<FLO
         &beta,
         output_device.get(), Cdesc,
         output_device.get(), Cdesc,
-        &heuristicResult[0].algo,
+        &heuristicResult[best_gemm_algo_idx].algo,
         gemm_workspace,
         gemm_workspace_size,
         stream);
