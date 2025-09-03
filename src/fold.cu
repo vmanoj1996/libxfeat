@@ -17,8 +17,9 @@ nvcc -std=c++20 -arch=sm_89 fold.cu && ./a.out
 #include <iostream>
 
 #include "fold.hpp"
+#include "int_fastdiv.h"
 
-__global__ void fold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
+__global__ void fold_kernel(const FLOAT __restrict__ *input_device, FLOAT __restrict__ *output_device, int height, int width, int_fastdiv ratio)
 {
     // input idx
     int idx2 = threadIdx.x + blockIdx.x * blockDim.x;
@@ -78,7 +79,7 @@ DevicePointer<FLOAT>& Fold2D::forward(const DevicePointer<FLOAT>& input_device)
         return output_device;
     }
 
-__global__ void unfold_kernel(const FLOAT *input_device, FLOAT *output_device, int height, int width, int ratio)
+__global__ void unfold_kernel(const FLOAT __restrict__ *input_device, FLOAT __restrict__ *output_device, int height, int width, int_fastdiv ratio)
 {
     // OUTPUT INDEX
     int idx2 = threadIdx.x + blockIdx.x * blockDim.x;

@@ -182,11 +182,6 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
     const int theta = alpha_i_rem / md.k2; // alpha_i_rem / p.k2;
     const int phi = alpha_i_rem - theta * p.k2; // faster than (n%k1k2) % p.k2
 
-    // there is an off by one error in the division :( TODO
-    // assert(m/oprop.width == beta_o);
-    // assert(n/k1k2 == alpha_i);
-    // assert(alpha_i_rem / p.k2 == theta);
-
     // get the row and column of the input corresponding to m, n
     const int beta_i = beta_i_ + theta;
     const int gamma_i = gamma_i_ + phi;
@@ -195,7 +190,6 @@ inline __global__ void im2row_kernel(const FLOAT __restrict__ *input, FLOAT __re
 
     // gather operation - use unsigned trick to reduce comparisons. -ves become a large number
     const bool valid = ((unsigned)beta_i < (unsigned)iprop.height) & ((unsigned)gamma_i < (unsigned)iprop.width);
-    // output[n * M + m] = valid ? __ldcg(&input[alpha_i * (iprop.height * iprop.width) + beta_i * iprop.width + gamma_i]) : 0.0f;
     const float value = valid ? input[alpha_i * INPUT_IMAGE_SIZE + beta_i * iprop.width + gamma_i] : 0.0f;
     output[n * M + m] = value;
     // store the output in NxM format
@@ -236,11 +230,9 @@ template <typename Operation>
 inline __global__ void postop_kernel(FLOAT __restrict__ *data, __grid_constant__ const Operation post_op, int total_elements, const PostOp_magic po_magic)
 {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    // const int total_elements = co * M;
+
     if (idx >= total_elements) return;
     int co_idx = idx/po_magic.M;
-
-    // assert(co_idx == idx/M);
 
     data[idx] = post_op.forward(data[idx], co_idx);
 }
@@ -262,21 +254,21 @@ inline dim3 Conv2D<params, Operation>::get_profiled_threadcount()
     static const ProfileEntry profiles[] = 
         {
             {3, 1, 4, 1, 1, 480, 640, 128, 1},
-            {3, 4, 8, 2, 1, 480, 640, 64, 2},
-            {3, 8, 8, 1, 1, 240, 320, 32, 4},
-            {3, 8, 24, 2, 1, 240, 320, 64, 2},
-            {1, 1, 24, 1, 0, 120, 160, 64, 2},
-            {3, 24, 24, 1, 1, 120, 160, 64, 2},
+            {3, 4, 8, 2, 1, 480, 640, 32, 4},
+            {3, 8, 8, 1, 1, 240, 320, 64, 2},
+            {3, 8, 24, 2, 1, 240, 320, 32, 4},
+            {1, 1, 24, 1, 0, 120, 160, 128, 1},
+            {3, 24, 24, 1, 1, 120, 160, 32, 4},
             {3, 24, 64, 2, 1, 120, 160, 16, 8},
-            {3, 64, 64, 1, 1, 60, 80, 64, 2},
-            {1, 64, 64, 1, 0, 60, 80, 64, 2},
-            {3, 64, 64, 2, 1, 60, 80, 16, 8},
-            {3, 64, 64, 1, 1, 30, 40, 8, 16},
-            {3, 64, 128, 2, 1, 30, 40, 16, 16},
-            {3, 128, 128, 1, 1, 15, 20, 16, 16},
-            {1, 128, 64, 1, 0, 15, 20, 32, 8},
-            {1, 64, 1, 1, 0, 60, 80, 64, 2},
-            {1, 64, 65, 1, 0, 60, 80, 32, 4},
+            {3, 64, 64, 1, 1, 60, 80, 32, 4},
+            {1, 64, 64, 1, 0, 60, 80, 64, 4},
+            {3, 64, 64, 2, 1, 60, 80, 16, 16},
+            {3, 64, 64, 1, 1, 30, 40, 16, 8},
+            {3, 64, 128, 2, 1, 30, 40, 32, 8},
+            {3, 128, 128, 1, 1, 15, 20, 64, 4},
+            {1, 128, 64, 1, 0, 15, 20, 64, 4},
+            {1, 64, 1, 1, 0, 60, 80, 32, 8},
+            {1, 64, 65, 1, 0, 60, 80, 64, 4},
         };
 
     // Search for matching configuration using member variables and template params
@@ -451,11 +443,11 @@ Conv2D<params, Operation>::Conv2D(ImgProperty input_prop_, const std::vector<FLO
 
         best_gemm_algo_idx = best->first; // actual best algo with minimum runtime
 
-        printf("Heuristic picked algo: 0, Benchmark picked algo: %d\n", best_gemm_algo_idx);
-        if (returnedResults > 0) {
-            printf("Heuristic time estimate: %f waves\n", heuristicResult[0].wavesCount);
-            printf("Actual best time: %.3f ms\n", best->second);
-        }
+        // printf("Heuristic picked algo: 0, Benchmark picked algo: %d\n", best_gemm_algo_idx);
+        // if (returnedResults > 0) {
+        //     printf("Heuristic time estimate: %f waves\n", heuristicResult[0].wavesCount);
+        //     printf("Actual best time: %.3f ms\n", best->second);
+        // }
 
         // Clean up benchmark workspace and allocate final workspace
         cudaFree(benchmark_workspace);

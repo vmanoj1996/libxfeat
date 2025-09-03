@@ -12,7 +12,7 @@
 #include "device_ops.hpp"
 #include <iostream>
 
-__global__ void avgpool2d_kernel(const FLOAT *input_device, FLOAT *output_device, PoolParams p, ImgProperty input_prop, ImgProperty output_prop)
+__global__ void avgpool2d_kernel(const FLOAT __restrict__ *input_device, FLOAT __restrict__ *output_device, PoolParams p, ImgProperty input_prop, ImgProperty output_prop)
 {
     int out_col = threadIdx.x + blockIdx.x * blockDim.x;
     int out_row = threadIdx.y + blockIdx.y * blockDim.y;

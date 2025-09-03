@@ -8,7 +8,6 @@ private:
     DevicePointer<FLOAT> output_device;
     ImgProperty input_prop, output_prop;
     
-    float eps;
     int size;
     
     // Pre-allocated CUB workspace

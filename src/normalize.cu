@@ -7,6 +7,8 @@
 #include <thrust/device_ptr.h>
 #include "normalize.hpp"
 
+#define EPS 1e-5f
+
 __global__ void division_kernel(float* sum, int size) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         *sum = *sum / size;
@@ -16,25 +18,26 @@ __global__ void division_kernel(float* sum, int size) {
 struct VarianceOp {
     float* mean_ptr;
     
-    __host__ __device__ VarianceOp(float* mean) : mean_ptr(mean) {}
+    __host__ __device__ inline VarianceOp(float* mean) : mean_ptr(mean) {}
     
-    __device__ float operator()(float x) const {
+    __device__ inline float operator()(float x) const {
         float diff = x - *mean_ptr;
         return diff * diff;
     }
 };
 
-__global__ void instance_norm_kernel(const float* input, float* output, const float* mean, const float* variance, int size, float eps = 1e-5f)
+__global__ void instance_norm_kernel(const float* __restrict__ input, float* __restrict__ output, const float* __restrict__ mean, const float* __restrict__ variance, int size)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
-    if (idx < size) {
-        float std_inv = rsqrtf(*variance + eps);
-        output[idx] = (input[idx] - *mean) * std_inv;
-    }
+    if (idx >= size) return;
+
+    float std_inv = rsqrtf(*variance + EPS);
+    output[idx] = (input[idx] - *mean) * std_inv;
+    
 }
 
-ImageNorm2D::ImageNorm2D(ImgProperty input_prop_, float eps_, cudaStream_t stream_) : input_prop(input_prop_), eps(eps_), size(input_prop_.height * input_prop_.width)
+ImageNorm2D::ImageNorm2D(ImgProperty input_prop_, float eps_, cudaStream_t stream_) : input_prop(input_prop_), size(input_prop_.height * input_prop_.width)
 {
     stream = stream_;
     output_prop = {input_prop_.channels, input_prop_.height, input_prop_.width};
@@ -86,7 +89,7 @@ DevicePointer<FLOAT>& ImageNorm2D::forward(const DevicePointer<FLOAT>& input_dev
     // Apply normalization
     dim3 block(256);
     dim3 grid((size + block.x - 1) / block.x);
-    instance_norm_kernel<<<grid, block, 0, stream>>>(input_device.get(), output_device.get(), d_sum_result, d_var_result, size, eps);
+    instance_norm_kernel<<<grid, block, 0, stream>>>(input_device.get(), output_device.get(), d_sum_result, d_var_result, size);
     
     return output_device;
 }

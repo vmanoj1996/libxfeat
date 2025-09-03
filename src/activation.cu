@@ -15,7 +15,7 @@
 
 // CUDA kernel for applying activation functions
 template<typename Operation>
-__global__ void apply_activation_kernel(const float* input, float* output, int total_size, Operation op)
+__global__ void apply_activation_kernel(const float* __restrict__ input, float* __restrict__ output, int total_size, const Operation op)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < total_size) {
