@@ -23,34 +23,35 @@ cmake .. && make -j && ctest --verbose
 ```
 see perf_xfeat.py
 --- Performance Summary (original implementation on 4070) ---
-Total time for 1000 runs: 1087.497 ms
-Average latency:        1.087 ms
-Average throughput (FPS): 919.543
-Median latency:         1.078 ms
-Minimum latency:        1.050 ms
-Maximum latency:        1.728 ms
+10: Total time for 1000 runs: 1000.760 ms
+10: Average latency:        1.001 ms
+10: Average throughput (FPS): 999.241
+10: Median latency:         0.985 ms
+10: Minimum latency:        0.964 ms
+10: Maximum latency:        2.113 ms
 ---------------------------
 
 --- Performance Summary (This implementation with TF32 multiplications enabled (tensor cores) on 4070) ---
 cmake -D USE_TF32=ON ..
-Total time for 1000 runs: 714.166 ms
-Average latency:        0.714 ms
-Average throughput (FPS): 1400.234
-Median latency:         0.695 ms
-Minimum latency:        0.689 ms
-Maximum latency:        0.763 ms
-Mean,var: 0.714 ± 0.030 ms
+8: Total time for 1000 runs: 670.281 ms
+8: Average latency:        0.670 ms
+8: Average throughput (FPS): 1491.912
+8: Median latency:         0.668 ms
+8: Minimum latency:        0.645 ms
+8: Maximum latency:        1.564 ms
+8: Mean,var: 0.670 ± 0.040 ms
+
 ---------------------------
 
 --- Performance Summary (This implementation with full FP32 on 4070) ---
 cmake -D USE_TF32=OFF ..
-Total time for 1000 runs: 815.103 ms
-Average latency:        0.815 ms
-Average throughput (FPS): 1226.839
-Median latency:         0.799 ms
-Minimum latency:        0.792 ms
-Maximum latency:        0.859 ms
-Mean,var: 0.815 ± 0.025 ms
+8: Total time for 1000 runs: 757.521 ms
+8: Average latency:        0.758 ms
+8: Average throughput (FPS): 1320.095
+8: Median latency:         0.754 ms
+8: Minimum latency:        0.727 ms
+8: Maximum latency:        1.623 ms
+8: Mean,var: 0.758 ± 0.045 ms
 ---------------------------
 ```
 
